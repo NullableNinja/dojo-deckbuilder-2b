@@ -875,7 +875,6 @@ export default function CompanionApp() {
     closeUserMenu();
     setGlobalSearch("");
     setSelectionIntent(false);
-    if (next !== view) pushToast({ kind: next === "playtest" ? "success" : "stamp", eyebrow: "Department directory", title: VIEW_LABELS[next], message: next === "playtest" ? "Field test ready." : "The next filing is on the desk." });
     navigate(topLevelRoute(next));
     window.scrollTo({ top: 0, behavior: paperScrollBehavior() });
   };
@@ -895,7 +894,6 @@ export default function CompanionApp() {
     closeMenu(false, true);
     setGlobalSearch("");
     setSelectionIntent(false);
-    pushToast({ kind: "stamp", eyebrow: SEARCH_GROUP_LABELS[result.type], title: result.title, message: "Opened from Dojo Search." });
     navigate(result.route);
     window.scrollTo({ top: 0, behavior: paperScrollBehavior() });
   };
