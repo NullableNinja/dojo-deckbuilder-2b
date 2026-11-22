@@ -5809,3 +5809,100 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
   .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within { transform: translateY(calc(var(--hand-arc, 0) * 3.5px)) rotate(0deg) scale(1.2) !important; }
   .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: translateY(calc(var(--hand-arc, 0) * 3.5px - 10px)) rotate(0deg) scale(1.24) !important; }
 }
+
+/* ---------- Mat v3 on phones: face-off row, clash below, swipeable hand ---------- */
+@media (max-width: 860px) {
+  /* HUD: name + bar on each side, round badge stacked over the ribbon in the middle. */
+  .playtest-shell.mat-v3 > .playtest-topbar.battle-versus-hud { padding: 6px 8px 8px !important; border-radius: 8px 8px 0 0 !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > span { display: none !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > b { font-size: 15px !important; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > div { gap: 6px !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > div > i { height: 14px !important; border-width: 2px !important; box-shadow: 2px 2px 0 var(--stage-ink-deep) !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > div > strong { font-size: 18px !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter > div > strong small { display: none; }
+  .playtest-shell.mat-v3 .versus-center { min-width: 0 !important; margin: 0 6px !important; grid-template-columns: auto !important; justify-items: center !important; }
+  .playtest-shell.mat-v3 .versus-center > span { display: none !important; }
+  .playtest-shell.mat-v3 .versus-center > b { grid-column: 1; grid-row: 1; width: 34px !important; height: 34px !important; font-size: 18px !important; }
+  .playtest-shell.mat-v3 .versus-center > .phase-ribbon { grid-column: 1; grid-row: 2; }
+  .playtest-shell.mat-v3 .phase-ribbon-letters i { width: 15px; height: 15px; font-size: 8px; border-width: 1.5px; }
+  .phase-ribbon small { font-size: 9px; }
+
+  /* Face-off: both fighters side by side on the floor, the clash ring below them. */
+  .playtest-shell.mat-v3 > .playtest-arena { height: auto !important; border-radius: 0 0 8px 8px !important; }
+  .playtest-shell.mat-v3 .playtest-table { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; grid-template-rows: auto auto !important; gap: 12px 10px !important; padding: 10px 10px 14px !important; }
+  .playtest-shell.mat-v3 .fighter-column--player { grid-column: 1 !important; grid-row: 1 !important; order: 0 !important; min-width: 0; }
+  .playtest-shell.mat-v3 .fighter-column--enemy { grid-column: 2 !important; grid-row: 1 !important; order: 0 !important; min-width: 0; }
+  .playtest-shell.mat-v3 .combat-stage-column { grid-column: 1 / -1 !important; grid-row: 2 !important; order: 0 !important; }
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card,
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card.is-enemy,
+  .playtest-shell.mat-v3 .fighter-column:has(.fighter-combo-rack) .fighter-panel.living-fighter-card {
+    height: auto !important; min-height: 0 !important; grid-template-rows: auto 190px auto auto 0 0 auto !important; gap: 6px !important;
+  }
+  .playtest-shell.mat-v3 .fighter-status-tray, .playtest-shell.mat-v3 .fighter-ability { display: none !important; }
+  .playtest-shell.mat-v3 .fighter-dossier-name { font-size: 16px !important; }
+  .playtest-shell.mat-v3 .fighter-belt-badge { transform: scale(.8) rotate(3deg); }
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 4px !important; }
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b { min-height: 34px !important; padding: 2px 4px !important; }
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b small { display: none !important; }
+  .playtest-shell.mat-v3 .fighter-resource-strip { grid-template-columns: minmax(0, 1fr) auto !important; gap: 4px !important; }
+  .playtest-shell.mat-v3 .fighter-xp-meter small { display: none !important; }
+  .playtest-shell.mat-v3 .fighter-combo-rack, .playtest-shell.mat-v3 .fighter-combo-launch { display: none !important; }
+  .mat-stage-floor { top: 205px; bottom: auto; height: 72px; }
+  .mat-stage-curtain { bottom: auto; height: 250px; width: 12px; }
+
+  /* Hand: printed cards in a swipeable row. */
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel { border: 3px solid var(--stage-ink-deep) !important; border-radius: 10px !important; padding: 8px 0 10px !important; overflow: hidden !important; }
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel::before,
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel::after { display: none !important; }
+  .playtest-shell.mat-v3 .hand-panel > header { padding: 0 12px !important; }
+  .playtest-shell.mat-v3 .hand-panel > header h2 { font-family: var(--pf-display) !important; font-size: 19px !important; font-weight: 400 !important; text-transform: uppercase; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row {
+    zoom: 1 !important; display: flex !important; gap: 10px !important; height: auto !important; min-height: 0 !important; overflow-x: auto !important; overflow-y: visible !important;
+    justify-content: flex-start !important; padding: 16px 14px 6px !important; scroll-snap-type: x proximity; border: 0 !important; background: transparent !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card { flex: 0 0 126px !important; width: 126px !important; margin: 0 !important; transform: none !important; scroll-snap-align: center; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: translateY(-10px) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-main { display: grid !important; height: auto !important; min-height: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window { display: block !important; width: 100% !important; height: auto !important; aspect-ratio: 11 / 15 !important; margin: 0 !important; border-radius: 8px !important; box-shadow: 0 0 0 2px var(--stage-ink-deep), 3px 4px 0 var(--stage-ink-deep) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window > img { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window:has(img) ~ .play-card-fallback,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-kind,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-meta em { display: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-meta { display: flex !important; justify-content: center !important; gap: 6px !important; height: 22px !important; margin: 6px 0 0 !important; border: 2px solid var(--stage-ink-deep) !important; border-radius: 999px !important; background: var(--mat-raised) !important; font-size: 10px !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card.is-selected .play-card-art-window { box-shadow: 0 0 0 3px var(--pf-action), 0 0 0 5px var(--stage-ink-deep) !important; }
+}
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b { display: flex !important; align-items: center !important; justify-content: center !important; gap: 3px !important; }
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b span { display: inline !important; font-size: 15px !important; font-weight: 900 !important; }
+  .playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b svg { width: 14px !important; height: 14px !important; }
+  .playtest-shell.mat-v3 .fighter-dossier-name { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1 !important; }
+  .playtest-shell.mat-v3 > .playtest-topbar.battle-versus-hud, .playtest-shell.mat-v3 .versus-center { overflow: visible !important; }
+  .playtest-shell.mat-v3 .versus-center > .phase-ribbon { display: grid !important; }
+}
+
+/* ---------- Impact moment: the stage reacts to a landed hit ---------- */
+.playtest-shell.mat-v3.ddb-vfx-screen-impact > .playtest-arena { animation: pf-stage-shake .38s cubic-bezier(.36, .07, .19, .97) both; }
+.playtest-shell.mat-v3.ddb-vfx-screen-impact .mat-stage-burst { animation: pf-stage-burst .6s ease-out both; }
+.playtest-shell.mat-v3.ddb-vfx-screen-impact .mat-stage::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(255, 246, 215, .55), transparent 60%); animation: pf-stage-flash .45s ease-out both; }
+.playtest-shell.mat-v3.ddb-vfx-screen-impact .clash-field { animation: pf-clash-slam .42s cubic-bezier(.3, 1.6, .4, 1) both; }
+@keyframes pf-stage-shake { 10%, 90% { translate: -2px 0; } 20%, 80% { translate: 4px 1px; } 30%, 50%, 70% { translate: -7px -1px; } 40%, 60% { translate: 7px 1px; } }
+@keyframes pf-stage-burst { 0% { scale: 1; filter: brightness(2.2); } 100% { scale: 1.12; filter: none; } }
+@keyframes pf-stage-flash { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pf-clash-slam { 0% { scale: 1; } 30% { scale: 1.05 .96; } 60% { scale: .98 1.02; } 100% { scale: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .playtest-shell.mat-v3.ddb-vfx-screen-impact > .playtest-arena, .playtest-shell.mat-v3.ddb-vfx-screen-impact .mat-stage-burst,
+  .playtest-shell.mat-v3.ddb-vfx-screen-impact .mat-stage::after, .playtest-shell.mat-v3.ddb-vfx-screen-impact .clash-field { animation: none !important; }
+}
+.playtest-shell.mat-v3:is(.motion-reduced, .motion-off).ddb-vfx-screen-impact > .playtest-arena,
+.playtest-shell.mat-v3:is(.motion-reduced, .motion-off).ddb-vfx-screen-impact .clash-field { animation: none !important; }
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .phase-ribbon-letters { display: none !important; }
+  .playtest-shell.mat-v3 .versus-center > b { transform: rotate(-4deg) translateY(4px); }
+  .playtest-shell.mat-v3 .fighter-focus-seal { display: flex !important; align-items: center !important; justify-content: center !important; gap: 3px !important; }
+  .playtest-shell.mat-v3 .fighter-focus-seal span { display: inline !important; font-size: 15px !important; font-weight: 900 !important; }
+  .playtest-shell.mat-v3 .fighter-focus-seal small { display: none !important; }
+}
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .playtest-table { padding-top: 16px !important; }
+  .playtest-shell.mat-v3 .fighter-dossier-name { font-size: 14px !important; }
+}
