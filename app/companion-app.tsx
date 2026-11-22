@@ -20,6 +20,7 @@ import PlaytestView from "./playtest";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
 import SettingsPage from "./settings-page";
+import { ModeCard, modeMetaFor } from "./mode-card";
 import { navigate, readRoute, replaceRoute, subscribeToRoute, topLevelRoute, type RulingsTab, type SitePage, type SiteRoute } from "./routing";
 import { ALL_GLOSSARY_ENTRIES, SEARCH_GROUP_LABELS, cardSearchText, groupSearchResults, normalizeSearchQuery, publicCardDetails, searchDojo, type CardEntry, type SearchResult } from "./search";
 import { DESKTOP_NAVIGATION, MOBILE_BOTTOM_NAVIGATION, MOBILE_MENU_NAVIGATION, navigationItemIsActive } from "./site-navigation";
@@ -201,12 +202,6 @@ const VIEW_LABELS: Record<SitePage, string> = {
   lab: "Design Lab",
   settings: "Settings",
   search: "Search",
-};
-const HOME_MODE_META: Record<string, { number: string; status: string; tone: "action" | "blue" | "brass" | "violet"; hook: string }> = {
-  "tag-team": { number: "01", status: "Recommended", tone: "brass", hook: "Trade places, share the paperwork, and discover that teamwork is mostly a louder kind of arguing." },
-  "standard-clash": { number: "02", status: "Rules filed", tone: "blue", hook: "The classic Paper-Fu appointment: two fighters, three zones, and no excuse for losing the receipt." },
-  "quick-duel": { number: "03", status: "Live field test", tone: "action", hook: "A brisk, complete fight for proving the deck, the stance, and the exact volume of your HIYAH." },
-  "boss-blitz": { number: "04", status: "Boss room pending", tone: "violet", hook: "One oversized problem. A team of certified nuisances. The filing cabinet has requested backup." },
 };
 const CARD_IMAGE_URLS: Record<string, string> = {
   ...CHARACTER_CARD_URLS,
@@ -400,7 +395,7 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
     <section className="stats-strip" aria-label="Paper-Fu operating facts"><div className="shell stats-inner"><div><strong>04</strong><span>Official game formats</span></div><div><strong>15</strong><span>Cards in the opening packet</span></div><div><strong>03</strong><span>Combat zones to declare</span></div><div><strong>∞</strong><span>Ways to cite a technicality</span></div></div></section>
     <section className="shell home-command-section" aria-labelledby="mode-docket-title">
       <div className="home-section-heading"><div><span className="eyebrow">01 / Choose your docket</span><h2 id="mode-docket-title">Four ways to put the paperwork in danger.</h2></div><p>The rules already know how these formats work. The field desk is expanding to give every one of them a proper place to land.</p></div>
-      <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const meta = HOME_MODE_META[mode.id] ?? { number: "00", status: "Filed", tone: "blue" as const, hook: "A certified Paper-Fu format awaiting its next stamp." }; const isLive = mode.id === "quick-duel"; return <button className={`home-mode-card paper-stack interactive-paper tone-${meta.tone}${isLive ? " is-live" : ""}`} key={mode.id} onClick={() => goTo(isLive ? "playtest" : "quickstart")}><div className="home-mode-card-top"><span className="home-mode-index">{meta.number}</span><span className="home-mode-status">{meta.status}</span></div><h3>{mode.title}</h3><p>{meta.hook}</p><div className="home-mode-spec"><span>{mode.players}</span><span>{mode.fighters}</span></div><div className="home-mode-footer"><strong>{mode.win}</strong><span>{isLive ? "Enter field test" : "Review mode brief"} →</span></div></button>; })}</div>
+      <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const isLive = modeMetaFor(mode.id).live; return <ModeCard key={mode.id} mode={mode} action={isLive ? "Enter field test" : "Review mode brief"} onSelect={() => goTo(isLive ? "playtest" : "quickstart")} />; })}</div>
       <div className="home-command-foot"><span><b>Filed status:</b> Quick Duel is playable now. The other formats are documented in Quick Start while their dedicated tables are built.</span><button className="text-link" onClick={() => goTo("quickstart")}>Read every mode brief →</button></div>
     </section>
     <section className="shell home-briefing-section" aria-labelledby="briefing-title">
@@ -456,7 +451,7 @@ function QuickStartView({ goTo }: { goTo: (view: ViewId) => void }) {
 
     <section className="quickstart-mode-section" aria-labelledby="mode-picker-title">
       <div className="quickstart-section-intro"><div><span className="eyebrow">Choose your table</span><h2 id="mode-picker-title">Four ways to start the story.</h2></div><p>Every mode uses the same core language. Pick the amount of chaos your table can responsibly file today.</p></div>
-      <div className="quick-mode-grid">{CANONICAL_GAME_MODES.map((mode, index) => <button className={`mode-card paper-stack interactive-paper mode-card-${index + 1} ${mode.id === "tag-team" ? "recommended" : ""}`} onClick={() => setSelectedMode(mode)} key={mode.id}><span>{mode.label}</span><h2>{mode.title}</h2><p>{mode.players} · {mode.fighters}</p><b>{mode.win}</b><small>Open mode brief</small></button>)}</div>
+      <div className="quick-mode-grid">{CANONICAL_GAME_MODES.map((mode) => <ModeCard key={mode.id} mode={mode} action="Open mode brief" onSelect={() => setSelectedMode(mode)} />)}</div>
     </section>
 
     <section className="golden-rule-card quick-golden paper-stack"><div><span className="eyebrow">The table agreement</span><h2>The card wins.</h2></div><p>{GOLDEN_RULE}</p><span className="golden-stamp" aria-hidden="true">!</span></section>
