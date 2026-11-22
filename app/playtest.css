@@ -5203,3 +5203,9 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   .playtest-gateway-stamp { display: none; }
   .playtest-gateway-facts { display: flex; }
 }
+
+/* Touch targets on the setup screen (unlayered, so it settles the setup rules above). */
+@media (max-width: 860px) {
+  .playtest-rules-panel .playtest-setup-options select,
+  .roster-toolbar-actions button { min-height: 44px; }
+}

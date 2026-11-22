@@ -147,7 +147,8 @@
   .button.primary:hover { background: var(--pf-action-deep); }
   .button.ghost { border-color: var(--pf-line-strong); background: var(--pf-surface-raised); }
   .button.ghost:hover { background: var(--pf-surface); }
-  .text-link { border: 0; border-bottom: 1px solid currentColor; padding: 0 0 4px; color: var(--pf-blue); background: none; font-size: 12px; font-weight: 850; cursor: pointer; }
+  /* 44px tall hit area; the underline still hugs the words. */
+  .text-link { min-height: 44px; display: inline-flex; align-items: center; border: 0; border-bottom: 1px solid currentColor; padding: 10px 0 4px; color: var(--pf-blue); background: none; font-size: 12px; font-weight: 850; cursor: pointer; }
   .text-link.light { color: var(--pf-brass-on-ink); }
   .paper-stack { position: relative; isolation: isolate; border: 1px solid var(--pf-line); border-radius: var(--pf-radius) 3px var(--pf-radius) 4px; background: var(--pf-surface-raised); box-shadow: var(--pf-stack-sheets), var(--pf-shadow-paper); }
   /* Back sheets are drawn as offset hard shadows (see --pf-stack-sheets). Pseudo-element sheets cannot sit behind an
@@ -1236,7 +1237,7 @@
     .hero-paper-caption { left: -7px; bottom: 22px; }
     .hero-paper-caption strong { font-size: 15px; }
     .home-command-section { padding-block: 58px 52px; }
-    .home-section-heading { display: grid; gap: 14px; margin-bottom: 24px; }
+    .home-section-heading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 24px; }
     .home-section-heading h2, .home-briefing-lead h2 { font-size: 39px; }
     .home-mode-board { grid-template-columns: 1fr; }
     .home-mode-card { min-height: 275px; }
@@ -1541,7 +1542,10 @@
   @media (max-width: 600px) {
     .home-page .hero { padding-block: 32px; }
     .home-page .hero h1 { font-size: clamp(38px, 11vw, 54px); }
-    .home-page .hero-art-new { display: none; }
+    /* Keep the hero diorama on phones; it is the strongest Paper-Fu image on the site. */
+    .home-page .hero-art-new { display: grid; min-height: 0; margin: 22px 10px 6px 0; }
+    .home-page .hero-art-note { width: 138px; bottom: -6px; }
+    .home-page .hero-paper-caption strong { font-size: 15px; }
     .section-header { padding: 22px 18px; }
     .section-header h1 { font-size: clamp(32px, 9vw, 44px); }
     .section-header-copy > p { font-size: 15px; }
@@ -2105,3 +2109,41 @@
     .quickstart-v2 .quickstart-hero h1 { font-size: clamp(32px, 10vw, 44px); }
   }
 }
+
+/* Phone shell: thumb bar, compact header controls. Lives in the last layer so it settles the older
+   header/profile cascades above. */
+@layer responsive {
+  .thumb-bar { display: none; }
+  @media (max-width: 860px) {
+    .thumb-bar { position: fixed; inset: auto 0 0; z-index: 60; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; border-top: 2px solid var(--pf-line-strong); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); background: var(--pf-surface-raised); box-shadow: 0 -5px 0 var(--pf-line); }
+    .thumb-bar-item { min-height: 52px; display: grid; place-items: center; align-content: center; gap: 3px; border: 1px solid transparent; border-radius: 6px 3px 6px 4px; padding: 4px 2px; color: var(--pf-ink-soft); background: transparent; cursor: pointer; }
+    .thumb-bar-item span { font-family: var(--pf-display); font-size: 18px; line-height: 1; }
+    .thumb-bar-item b { font-family: var(--pf-label); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .thumb-bar-item.is-active { border-color: var(--pf-line-strong); color: var(--pf-ink); background: var(--pf-surface); box-shadow: inset 0 3px 0 var(--pf-action); }
+    .thumb-bar-item.is-play { color: #fffaf0; background: var(--pf-action); box-shadow: 3px 4px 0 var(--pf-action-deep); transform: translateY(-6px) rotate(-1.5deg); }
+    .thumb-bar-item.is-play.is-active { border-color: var(--pf-action-deep); box-shadow: 3px 4px 0 var(--pf-action-deep), inset 0 0 0 2px #fffaf0; }
+    .thumb-bar-item:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 2px; }
+    .site-frame { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+    .paper-toast-stack { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+    .back-to-top { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+    /* The live mat owns the whole screen. */
+    .site-frame:has(.playtest-shell--live) { padding-bottom: 0; }
+    .site-frame:has(.playtest-shell--live) .thumb-bar { display: none; }
+    .site-frame:has(.playtest-shell--live) .paper-toast-stack { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+    /* Avatar-only profile button on phones; the name lives in the menu it opens. */
+    .profile-menu-button { width: 46px; min-width: 46px; height: 46px; min-height: 46px; justify-content: center; padding: 0; }
+    .profile-menu-button > img { display: block; width: 36px; height: 36px; }
+    .profile-menu-button span, .profile-menu-button > strong { display: none; }
+    .site-header .brand { min-height: 44px; }
+  }
+  /* Touch targets: inputs fill their visible boxes; filter chips and selects reach 44px. */
+  @media (max-width: 860px) {
+    .search-box, .search-box input, .roster-toolbar-actions label, .roster-toolbar-actions input, .search-page-input input { min-height: 44px; }
+    .search-box input, .roster-toolbar-actions input { align-self: stretch; }
+    .library-control select, .binder-toggle, .type-filters button, .search-dashboard-filter-heading button,
+    .roster-toolbar-actions button, .playtest-shell--setup select { min-height: 44px; }
+    .search-dashboard-filter-heading button { min-width: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .thumb-bar-item.is-play { transform: none; } }
+}
+

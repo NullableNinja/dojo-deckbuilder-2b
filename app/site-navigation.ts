@@ -31,7 +31,8 @@ const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     description: "Fight the computer using the live card catalog.",
     desktop: true,
     mobileMenu: true,
-    mobileBottom: false,
+    mobileBottom: true,
+    mobileBottomIcon: "✦",
     order: 10,
   },
   {
@@ -41,8 +42,7 @@ const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     description: "Set up and play the first round.",
     desktop: true,
     mobileMenu: true,
-    mobileBottom: true,
-    mobileBottomIcon: "▶",
+    mobileBottom: false,
     order: 20,
   },
   {
