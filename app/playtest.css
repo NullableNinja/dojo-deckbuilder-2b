@@ -5388,3 +5388,57 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 /* Once the result screen owns the moment, the last exchange's combat cues stand down (no double K.O.). */
 .playtest-shell--live:has(.match-result) > .playtest-vfx-layer,
 body:has(.playtest-shell--live .match-result) > .playtest-vfx-layer--runtime { display: none; }
+
+/* ========================================================================
+   CARD MOTION PRIMITIVES (inert until wired; see docs/paper-fu-card-motion-plan.md)
+   The live-mat hook sets data-card-motion="<name>" on a card (or a ghost copy)
+   for one cycle. Durations mirror CARD_MOTION_DURATION in app/card-motion.ts.
+   ======================================================================== */
+[data-card-motion] { transform-origin: 50% 60%; backface-visibility: hidden; will-change: transform, opacity; }
+[data-card-motion="fold-in"] { animation: pf-card-fold-in 420ms cubic-bezier(.2, 1.25, .4, 1) both; }
+[data-card-motion="crumple"] { animation: pf-card-crumple 380ms cubic-bezier(.5, 0, .75, .4) both; pointer-events: none; }
+[data-card-motion="draw"] { animation: pf-card-draw 320ms cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--card-motion-index, 0) * 40ms); }
+[data-card-motion="restock"] { animation: pf-card-restock 360ms cubic-bezier(.2, 1.4, .4, 1) both; }
+[data-card-motion="destroy"] { animation: pf-card-tear 450ms ease-in both; pointer-events: none; }
+[data-card-motion="move"] { animation: pf-card-move 260ms ease-out both; }
+
+/* Paper folds open on its vertical crease; the crease shadow fades as it flattens. */
+@keyframes pf-card-fold-in {
+  0% { opacity: 0; transform: perspective(700px) rotateY(88deg) scale(.96); filter: brightness(.75); }
+  60% { opacity: 1; transform: perspective(700px) rotateY(-8deg) scale(1.02); filter: brightness(1.05); }
+  100% { transform: perspective(700px) rotateY(0) scale(1); filter: none; }
+}
+/* Balled up and tossed: squash, skew, wad into an irregular polygon, drop and fade. */
+@keyframes pf-card-crumple {
+  0% { opacity: 1; transform: none; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  45% { opacity: 1; transform: scale(.72, .6) rotate(-9deg) skewX(8deg); clip-path: polygon(8% 4%, 92% 10%, 97% 88%, 52% 99%, 4% 90%); }
+  100% { opacity: 0; transform: translateY(46px) scale(.22) rotate(28deg); clip-path: polygon(30% 22%, 74% 18%, 82% 70%, 48% 86%, 18% 66%); }
+}
+@keyframes pf-card-draw {
+  0% { opacity: 0; transform: translateY(70%) rotate(6deg) scale(.9); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes pf-card-restock {
+  0% { opacity: 0; transform: translateY(-38px) rotate(-4deg) scale(1.08); }
+  70% { opacity: 1; transform: translateY(3px) rotate(.5deg) scale(.99); }
+  100% { transform: none; }
+}
+/* Torn in half: the clip splits along a jagged line while the card drops. */
+@keyframes pf-card-tear {
+  0% { opacity: 1; transform: none; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  40% { opacity: 1; transform: rotate(-3deg); clip-path: polygon(0 0, 48% 0, 54% 30%, 46% 58%, 55% 100%, 0 100%); }
+  100% { opacity: 0; transform: translate(-30px, 40px) rotate(-14deg); clip-path: polygon(0 0, 48% 0, 54% 30%, 46% 58%, 55% 100%, 0 100%); }
+}
+@keyframes pf-card-move { from { opacity: .4; transform: scale(.96); } to { opacity: 1; transform: none; } }
+
+/* Ghost layer for cards that already left the DOM (crumple, destroy). */
+.card-motion-ghost-layer { position: absolute; inset: 0; z-index: var(--layer-floating, 30); overflow: visible; pointer-events: none; }
+.card-motion-ghost { position: absolute; pointer-events: none; }
+.card-motion-ghost img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Every reduced-motion signal turns card motion off. The diff still runs; only visuals are skipped. */
+@media (prefers-reduced-motion: reduce) { [data-card-motion] { animation: none !important; } .card-motion-ghost { display: none; } }
+:root[data-motion="reduced"] [data-card-motion],
+.playtest-shell--live:is(.motion-reduced, .motion-off) [data-card-motion] { animation: none !important; }
+:root[data-motion="reduced"] .card-motion-ghost,
+.playtest-shell--live:is(.motion-reduced, .motion-off) .card-motion-ghost { display: none; }
