@@ -6000,3 +6000,60 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 .playtest-shell.mat-v3 .clash-card-slot > button { grid-auto-flow: row !important; grid-template-areas: none !important; direction: ltr !important; }
 .playtest-shell.mat-v3 .clash-card-slot > button > .clash-card-art { order: 1 !important; grid-area: auto !important; }
 .playtest-shell.mat-v3 .clash-card-slot > button > .clash-card-copy { order: 2 !important; grid-area: auto !important; }
+
+/* ---------- Mat v3: the hand never hides the stage ----------
+   Hand height is one formula (padding + header + card + meta strip); the stage takes exactly
+   what is left, so the Loadout, Combos and filed-card trays sit above the hand. The hand panel
+   is frosted and translucent, and its empty space lets clicks fall through to the stage. */
+@media (min-width: 861px) {
+  .playtest-shell.playtest-shell--live.mat-v3 {
+    --hand-card-w: clamp(104px, 8.4vw, 132px);
+    --hand-header-h: 62px;
+    --hand-h: calc(44px + var(--hand-header-h) + var(--hand-card-w) * 15 / 11 + 50px);
+    --playtest-arena-height: max(300px, calc(100dvh - 117px - var(--hand-h) - 66px)) !important;
+  }
+  .playtest-shell.mat-v3 > .playtest-arena { height: var(--playtest-arena-height) !important; min-height: 0 !important; max-height: none !important; }
+  .playtest-shell.mat-v3 > .playtest-arena > .playtest-table { height: 100% !important; min-height: 0 !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row { height: calc(var(--hand-card-w) * 15 / 11 + 50px) !important; padding: 12px 24px 0 !important; }
+  .playtest-shell.mat-v3 .hand-panel > header { height: var(--hand-header-h) !important; min-height: 0 !important; padding: 0 !important; }
+  .playtest-shell.mat-v3 .hand-panel > header > .playtest-action-dock { min-height: 0 !important; padding-block: 4px !important; }
+  .playtest-shell.mat-v3 .playtest-action-dock button:not(.dock-secondary) { min-height: 46px !important; font-size: 18px !important; }
+
+  /* Frosted, translucent hand. */
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel {
+    background: color-mix(in srgb, var(--mat-surface) 62%, transparent) !important;
+    backdrop-filter: blur(10px) saturate(1.1); -webkit-backdrop-filter: blur(10px) saturate(1.1);
+    box-shadow: 0 -8px 24px rgba(2, 8, 16, .25) !important;
+  }
+  /* Empty hand space is click-through; cards, the header text and the action dock stay interactive. */
+  .playtest-shell.mat-v3 > .playtest-workspace--hand,
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row,
+  .playtest-shell.mat-v3 .hand-panel > header { pointer-events: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card,
+  .playtest-shell.mat-v3 .hand-panel > header > *,
+  .playtest-shell.mat-v3 .hand-panel > :not(header):not(.play-card-row) { pointer-events: auto !important; }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell.playtest-shell--live.mat-v3 { --hand-card-w: clamp(92px, 7.2vw, 110px); --hand-header-h: 54px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel { background: var(--mat-surface) !important; backdrop-filter: none; }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell.playtest-shell--live.mat-v3 { --clash-card-h: 84px; }
+  .playtest-shell.mat-v3 .playtest-table { padding-block: 8px 8px !important; }
+  .playtest-shell.mat-v3 .playtest-combat-desk.combat-stage { grid-template-rows: auto minmax(calc(var(--clash-card-h) + 40px), 1fr) auto minmax(0, auto) auto !important; gap: 6px !important; padding: 8px 10px !important; }
+  .playtest-shell.mat-v3 .clash-field { min-height: calc(var(--clash-card-h) + 40px) !important; padding: 6px 14px !important; }
+  .playtest-shell.mat-v3 .clash-card-copy, .playtest-shell.mat-v3 .clash-card-slot > span { display: none !important; }
+  .playtest-shell.mat-v3 .clash-seal { width: 58px !important; height: 58px !important; }
+  .playtest-shell.mat-v3 .combat-stage-heading > button { padding: 3px 10px !important; }
+  .playtest-shell.mat-v3 .combat-stage-heading > button > b { font-size: 16px !important; }
+  .playtest-shell.mat-v3 .combat-zone-board > span { min-height: 28px !important; }
+}
+@media (min-width: 861px) {
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card { transform: translateY(calc(var(--hand-arc, 0) * 2px)) rotate(calc(var(--hand-angle, 0deg) * .7)) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:hover,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within { transform: translateY(calc(var(--hand-arc, 0) * 2px)) rotate(0deg) scale(1.2) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: translateY(calc(var(--hand-arc, 0) * 2px - 10px)) rotate(0deg) scale(1.24) !important; }
+}
