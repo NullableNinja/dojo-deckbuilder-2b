@@ -4003,8 +4003,7 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   --mat-shadow: 0 5px 0 rgba(0, 0, 0, .38), 0 20px 38px rgba(0, 0, 0, .32);
 }
 
-:root[data-theme="light"] .site-frame:has(.playtest-shell--live) { background: #c8c9c7 !important; }
-:root[data-theme="dark"] .site-frame:has(.playtest-shell--live) { background: #171a1c !important; }
+.site-frame:has(.playtest-shell--live) { background: var(--pf-board-canvas) !important; }
 
 .playtest-shell--live .playtest-topbar.battle-versus-hud,
 .playtest-shell--live .battle-hud-fighter,

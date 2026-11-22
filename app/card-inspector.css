@@ -231,7 +231,7 @@ body:has(.universal-card-inspector-backdrop) {
   font-family: var(--display);
   font-size: clamp(38px, 4.2vw, 60px);
   line-height: .94;
-  letter-spacing: -.045em;
+  letter-spacing: 0;
 }
 .card-inspector-flavor {
   max-width: 680px;
