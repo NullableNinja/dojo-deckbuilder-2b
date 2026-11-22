@@ -5906,3 +5906,97 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
   .playtest-shell.mat-v3 .playtest-table { padding-top: 16px !important; }
   .playtest-shell.mat-v3 .fighter-dossier-name { font-size: 14px !important; }
 }
+
+/* ---------- Mat v3, the ring (center of the stage) ---------- */
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage {
+  display: grid !important; grid-template-rows: auto minmax(0, 1fr) auto auto auto !important; gap: 8px !important; padding: 10px 12px 12px !important;
+  background: color-mix(in srgb, var(--mat-raised) 92%, transparent) !important; backdrop-filter: blur(2px);
+}
+/* Now playing: the scene as a hanging marquee sign. */
+.playtest-shell.mat-v3 .combat-stage-heading > button {
+  position: relative; border: 3px solid var(--stage-ink-deep) !important; border-radius: 6px !important; padding: 6px 12px !important;
+  color: var(--stage-cream) !important; background: var(--stage-ink) !important; box-shadow: 3px 4px 0 var(--stage-ink-deep) !important; text-align: center !important;
+}
+.playtest-shell.mat-v3 .combat-stage-heading > button > span { color: var(--stage-gold) !important; font-family: var(--pf-label) !important; font-size: 10px !important; letter-spacing: .18em !important; }
+.playtest-shell.mat-v3 .combat-stage-heading > button > span::before { content: "★ Now playing · "; }
+.playtest-shell.mat-v3 .combat-stage-heading > button > b { color: var(--stage-cream) !important; font-family: var(--pf-display) !important; font-size: 20px !important; font-weight: 400 !important; text-transform: uppercase; }
+.playtest-shell.mat-v3 .combat-stage-heading > button > small { display: none !important; }
+.playtest-shell.mat-v3 .combat-stage-heading > div { display: none !important; }
+
+/* The clash: two upright cards facing off around the zone seal. */
+.playtest-shell.mat-v3 .clash-field {
+  position: relative; display: grid !important; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; align-items: center !important; gap: 10px !important; min-height: 0 !important;
+  border: 2px dashed var(--mat-line-strong) !important; border-radius: 50% / 18% !important; padding: 10px 18px !important;
+  background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--pf-action) 10%, transparent) 0 30%, transparent 62%) !important;
+}
+.playtest-shell.mat-v3 .clash-card-slot { display: grid !important; justify-items: center !important; gap: 6px !important; min-height: 0 !important; border: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+.playtest-shell.mat-v3 .clash-card-slot > span { color: var(--mat-ink-soft) !important; font-family: var(--pf-label) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: .14em !important; text-transform: uppercase; }
+.playtest-shell.mat-v3 .clash-card-slot > button { display: grid !important; justify-items: center !important; gap: 6px !important; border: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+.playtest-shell.mat-v3 .clash-card-slot .clash-card-art {
+  display: block !important; height: clamp(110px, 20vh, 190px) !important; width: auto !important; aspect-ratio: 11 / 15 !important; overflow: hidden !important; border-radius: 8px !important;
+  box-shadow: 0 0 0 2px var(--stage-ink-deep), 5px 6px 0 var(--stage-ink-deep) !important; transform: rotate(-4deg); animation: pf-clash-card-in .4s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.playtest-shell.mat-v3 .clash-card-slot--ai .clash-card-art { transform: rotate(4deg); animation-name: pf-clash-card-in-ai; }
+.playtest-shell.mat-v3 .clash-card-slot .clash-card-art img { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+.playtest-shell.mat-v3 .clash-card-copy { text-align: center !important; }
+.playtest-shell.mat-v3 .clash-card-copy b { font-family: var(--pf-display) !important; font-size: 16px !important; font-weight: 400 !important; text-transform: uppercase; }
+.playtest-shell.mat-v3 .clash-card-empty { display: grid !important; place-items: center !important; height: clamp(110px, 20vh, 190px) !important; aspect-ratio: 11 / 15; border: 2px dashed var(--mat-line-strong) !important; border-radius: 8px !important; background: transparent !important; }
+.playtest-shell.mat-v3 .clash-card-empty i { display: none !important; }
+.playtest-shell.mat-v3 .clash-card-empty small { color: var(--mat-ink-soft) !important; font-family: var(--pf-label) !important; letter-spacing: .14em; text-transform: uppercase; }
+@keyframes pf-clash-card-in { from { opacity: 0; translate: -60px 0; rotate: -14deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+@keyframes pf-clash-card-in-ai { from { opacity: 0; translate: 60px 0; rotate: 14deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+/* Zone seal between them */
+.playtest-shell.mat-v3 .clash-seal {
+  display: grid !important; place-items: center !important; width: 74px !important; height: 74px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 50% !important;
+  color: #fffaf0 !important; background: var(--pf-action) !important; box-shadow: 4px 5px 0 var(--stage-ink-deep) !important; transform: rotate(-6deg);
+}
+.playtest-shell.mat-v3 .clash-seal * { color: #fffaf0 !important; }
+.playtest-shell.mat-v3 .clash-seal b { font-family: var(--pf-impact) !important; font-size: 30px !important; line-height: .9 !important; }
+.playtest-shell.mat-v3 .clash-seal span { font-family: var(--pf-label) !important; font-size: 10px !important; letter-spacing: .1em !important; }
+
+/* Zones as targets: head, body, legs. */
+.playtest-shell.mat-v3 .combat-zone-board { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+.playtest-shell.mat-v3 .combat-zone-board > span { display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; min-height: 34px !important; border: 2px solid var(--mat-line-strong) !important; border-radius: 999px !important; color: var(--mat-ink) !important; background: var(--mat-surface) !important; font-family: var(--pf-label) !important; font-size: 13px !important; font-weight: 700 !important; letter-spacing: .08em !important; text-transform: uppercase; box-shadow: none !important; }
+.playtest-shell.mat-v3 .combat-zone-board > span b { display: grid !important; place-items: center !important; width: 22px !important; height: 22px !important; border-radius: 50% !important; color: var(--stage-cream) !important; background: var(--mat-ink-soft) !important; font-family: var(--pf-impact) !important; font-size: 11px !important; }
+.playtest-shell.mat-v3 .combat-zone-board > span::after { color: var(--mat-ink-soft); font-family: var(--pf-mono); font-size: 10px; font-weight: 400; letter-spacing: .04em; text-transform: lowercase; }
+.playtest-shell.mat-v3 .combat-zone-board > span:nth-child(1)::after { content: "· head"; }
+.playtest-shell.mat-v3 .combat-zone-board > span:nth-child(2)::after { content: "· body"; }
+.playtest-shell.mat-v3 .combat-zone-board > span:nth-child(3)::after { content: "· legs"; }
+.playtest-shell.mat-v3 .combat-zone-board > span.is-hot { border-color: var(--stage-ink-deep) !important; color: #fffaf0 !important; background: var(--pf-action) !important; box-shadow: 3px 3px 0 var(--stage-ink-deep) !important; transform: translateY(-2px) rotate(-1deg); }
+.playtest-shell.mat-v3 .combat-zone-board > span.is-hot b { color: var(--pf-action) !important; background: #fffaf0 !important; }
+.playtest-shell.mat-v3 .combat-zone-board > span.is-hot::after { color: rgba(255, 250, 240, .85); }
+
+/* Filed-card trays: a thin slip until something is filed. */
+.playtest-shell.mat-v3 .live-mat-play--stage .mat-lane { min-height: 0 !important; }
+.playtest-shell.mat-v3 .live-mat-play--stage .mat-lane:not(:has(.mat-lane-cards > button)) .mat-lane-cards { display: none !important; }
+.playtest-shell.mat-v3 .live-mat-play--stage .mat-lane:not(:has(.mat-lane-cards > button)) .mat-lane-toggle { opacity: .7; }
+.playtest-shell.mat-v3 .clash-card-slot > button,
+.playtest-shell.mat-v3 .clash-card-slot { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto !important; }
+.playtest-shell.mat-v3 .clash-card-slot .clash-card-art { max-height: none !important; max-width: none !important; min-width: 0 !important; }
+.playtest-shell.mat-v3 .clash-card-empty { grid-template-columns: minmax(0, 1fr) !important; width: auto !important; max-width: none !important; }
+.playtest-shell.mat-v3 .clash-field { min-height: clamp(190px, 28vh, 270px) !important; overflow: visible !important; }
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .clash-field { padding: 10px 8px !important; border-radius: 30% / 14% !important; }
+  .playtest-shell.mat-v3 .clash-card-slot .clash-card-art, .playtest-shell.mat-v3 .clash-card-empty { height: 130px !important; }
+  .playtest-shell.mat-v3 .clash-seal { width: 56px !important; height: 56px !important; }
+  .playtest-shell.mat-v3 .clash-seal b { font-size: 22px !important; }
+  .playtest-shell.mat-v3 .combat-zone-board > span::after { content: none !important; }
+}
+/* The ring keeps its room; filed-card trays shrink and scroll instead of squeezing it. */
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage { grid-template-rows: auto minmax(200px, 1fr) auto minmax(0, auto) auto !important; overflow: hidden !important; }
+.playtest-shell.mat-v3 .live-mat-play--stage { max-height: 104px !important; min-height: 0 !important; overflow: hidden !important; }
+.playtest-shell.mat-v3 .live-mat-play--stage .mat-lane-cards { max-height: 76px !important; }
+.playtest-shell.mat-v3 .live-mat-play--stage .mat-lane-cards > button { height: 70px !important; min-height: 0 !important; }
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .playtest-combat-desk.combat-stage { grid-template-rows: auto auto auto auto auto !important; overflow: visible !important; }
+  .playtest-shell.mat-v3 .live-mat-play--stage { max-height: none !important; }
+}
+.playtest-shell.playtest-shell--live.mat-v3 { --clash-card-h: clamp(96px, 15vh, 156px); }
+.playtest-shell.mat-v3 .clash-card-slot .clash-card-art,
+.playtest-shell.mat-v3 .clash-card-empty { height: var(--clash-card-h) !important; }
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage { grid-template-rows: auto minmax(calc(var(--clash-card-h) + 72px), 1fr) auto minmax(0, auto) auto !important; }
+.playtest-shell.mat-v3 .clash-field { min-height: calc(var(--clash-card-h) + 72px) !important; }
+@media (max-width: 860px) { .playtest-shell.playtest-shell--live.mat-v3 { --clash-card-h: 130px; } }
+.playtest-shell.mat-v3 .clash-card-slot > button { grid-auto-flow: row !important; grid-template-areas: none !important; direction: ltr !important; }
+.playtest-shell.mat-v3 .clash-card-slot > button > .clash-card-art { order: 1 !important; grid-area: auto !important; }
+.playtest-shell.mat-v3 .clash-card-slot > button > .clash-card-copy { order: 2 !important; grid-area: auto !important; }
