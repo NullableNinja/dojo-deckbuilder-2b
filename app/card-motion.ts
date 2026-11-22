@@ -32,7 +32,8 @@ const copiesByZone = (snapshot: ZoneSnapshot) => {
 export function motionFor(from: CardZone | null, to: CardZone | null): CardMotionName {
   if (to === "destroyed") return "destroy";
   if (to === "discard" && (from === "hand" || from === "playArea" || from === "filing")) return "crumple";
-  if (to === "hand" && (from === "deck" || from === null)) return "draw";
+  // Anything arriving in hand (drawn, returned from discard or play) slides in like a draw.
+  if (to === "hand") return "draw";
   if (to === "market") return "restock";
   if (to === "playArea" || to === "filing") return "fold-in";
   return "move";

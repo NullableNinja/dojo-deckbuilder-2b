@@ -30,6 +30,7 @@ test("motion names cover reveal, restock and destroy", () => {
   assert.equal(motionFor(null, "market"), "restock");
   assert.equal(motionFor("playArea", "destroyed"), "destroy");
   assert.equal(motionFor("discard", "deck"), "move");
+  assert.equal(motionFor("discard", "hand"), "draw");
 });
 
 test("in-game Motion off or reduced disables card motion", () => {

@@ -1,7 +1,8 @@
 # Paper-Fu card motion plan
 
-Status: preparation. The diff helper, its tests and the inert CSS primitives are in place;
-nothing is wired into the live mat yet.
+Status: first pass wired. `app/use-card-motion.ts` runs on the live mat: discards crumple (as
+ghosts) and cards arriving in hand slide in; Market restocks use `restock`. Still to wire:
+`fold-in` for filed cards (MatLane buttons need `data-card-id`), `destroy`, and visual tuning.
 
 ## Goal
 
@@ -25,7 +26,7 @@ changed*; it never decides what happens. Game state, rules and engine behavior a
    zone -> card ids (duplicates allowed: two Bad Habits are two cards) and returns the
    cards that moved, entered or left, each with `from` and `to` zones and a `motion`
    name from the table above. It is pure and unit tested (`tests/card-motion.test.mjs`).
-2. A small React hook (next step, not built yet) keeps the previous snapshot in a ref,
+2. `app/use-card-motion.ts` (wired in `PlaytestView`) keeps the previous snapshot in a ref,
    diffs on each render of the live mat, and sets `data-card-motion="<name>"` on the
    matching card element for one animation cycle.
 3. CSS in `app/playtest.css` (section "CARD MOTION PRIMITIVES") owns the keyframes. Every

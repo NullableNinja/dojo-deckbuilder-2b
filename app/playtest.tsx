@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type SetStateAction } from "react";
 import { MODE_META, ModeCard, type ModeMeta } from "./mode-card";
+import { useCardMotion } from "./use-card-motion";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import starterJabArtUrl from "./assets/starter/starter-jab-art-v2.webp";
 import highGuardArtUrl from "./assets/starter/high-guard-art-v2.webp";
@@ -3034,6 +3035,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     } catch { return null; }
   });
   const [matVfx, setMatVfx] = useState<MatVfxEvent | null>(null);
+  const liveShellRef = useRef<HTMLElement>(null);
+  const duelSerial = useRef(0);
   const matVfxSequence = useRef(0);
   const previousMatchRef = useRef<Match | null>(null);
   const dialogRestoreRef = useRef<HTMLElement | null>(null);
@@ -3206,6 +3209,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   }, [inspectedId, deskView, logOpen, coachOpen]);
 
   const begin = (fighterId = selectedId) => {
+    duelSerial.current += 1;
     const choices = characters.filter((card) => card.id !== fighterId);
     const player = { ...emptyBoard(fighterId), xp: 1 };
     const challenge = DIFFICULTIES[settings.difficulty];
@@ -4770,6 +4774,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     else if (!isPermanent(card)) playSupport(id);
   };
 
+  // Presentation-only card motion (fold, crumple, draw, restock). Must run before the early return.
+  useCardMotion(liveShellRef, match && player ? { deck: player.deck, hand: player.hand, discard: player.discard, playArea: player.playArea, market: match.market } : null, settings.motion, duelSerial.current);
   if (!match || !player || !ai || !playerFighter || !aiFighter) return <SetupView selectedId={selectedId} setSelectedId={setSelectedId} settings={settings} setSettings={setSettings} begin={begin} mode={mode} setMode={setMode} goTo={goTo} />;
   const pendingAttack = match.selectedAttackId ? cardFor(match.selectedAttackId) : null;
   const currentLocation = cardFor(match.locationId);
@@ -4945,7 +4951,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     {match.phase === "ai-ready" && !settings.autoAi && <button onClick={runAiTurn}>Run computer turn →</button>}
   </nav>;
 
-  return <main className={`playtest-shell playtest-shell--live location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
+  return <main ref={liveShellRef} className={`playtest-shell playtest-shell--live location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
     {matVfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${matVfx.cueTone}`} style={{ "--cue-scale": matVfx.cueScale ?? 1 } as CSSProperties} key={matVfx.id}><strong>{matVfx.cue}</strong><small>{matVfx.announcement}</small></div>{matVfx.xp && <div className={`playtest-xp-pop playtest-xp-pop--${matVfx.xp.side}`} key={`xp-${matVfx.id}`}>+{matVfx.xp.amount} XP</div>}{matVfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${matVfx.promotion.side}`} key={`promotion-${matVfx.id}`}><span>{matVfx.promotion.side === "player" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{matVfx.promotion.belt} BELT</strong><small>{matVfx.promotion.previousBelt} → {matVfx.promotion.belt} · {matVfx.promotion.side === "player" ? "Your rank has advanced." : "The paperwork got taller."}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{matVfx.announcement}</div></>}
 
     <header className="playtest-topbar battle-versus-hud">
