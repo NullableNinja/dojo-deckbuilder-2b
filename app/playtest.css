@@ -5507,3 +5507,305 @@ body:has(.playtest-shell--live .match-result) > .playtest-vfx-layer--runtime { d
 /* While a scene reveal is up, combat cues from the mat underneath stand down. */
 body:has(> .scene-reveal) > .playtest-vfx-layer--runtime,
 body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display: none; }
+
+/* ========================================================================
+   MAT v3: FIGHT NIGHT
+   The arena is a stage (always an ink-blue house, like the Home bout and the
+   scene reveal): the current Location glows behind it, fighters stand on paper
+   standees, the HUD reads like a fighting game. Paper slips carry the numbers.
+   Scoped to .mat-v3 so it settles the older mat layers above.
+   ======================================================================== */
+.playtest-shell.playtest-shell--live.mat-v3 { --stage-ink: #0e2943; --stage-ink-deep: #050d17; --stage-cream: #fffaf0; --stage-gold: #f0dca9; }
+
+/* ---------- HUD ---------- */
+.playtest-shell.mat-v3 > .playtest-topbar.battle-versus-hud {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; align-items: center !important; gap: 0 !important;
+  height: auto !important; max-height: none !important; min-height: 74px !important; padding: 8px 14px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 10px 10px 0 0 !important;
+  background: linear-gradient(180deg, #13355a, var(--stage-ink)) !important; box-shadow: none !important;
+}
+.playtest-shell.mat-v3 .battle-hud-fighter {
+  position: relative !important; display: grid !important; grid-template-columns: 1fr auto !important; grid-template-rows: auto auto auto !important; height: auto !important; max-height: none !important; overflow: visible !important; align-items: end !important; gap: 2px 10px !important;
+  min-height: 0 !important; height: auto !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; color: var(--stage-cream) !important;
+}
+.playtest-shell.mat-v3 .battle-hud-fighter > span { grid-column: 1 / -1; }
+.playtest-shell.mat-v3 .battle-hud-fighter > span small { color: var(--stage-gold) !important; font-family: var(--pf-label) !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: .12em !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > b { grid-row: 1; color: var(--stage-cream) !important; font-family: var(--pf-display) !important; font-size: 26px !important; font-weight: 400 !important; line-height: 1 !important; text-shadow: 3px 3px 0 var(--stage-ink-deep); }
+.playtest-shell.mat-v3 .battle-hud-fighter > div { grid-column: 1 / -1; display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: center !important; gap: 10px !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > div > strong { order: 2; color: var(--stage-cream) !important; font-family: var(--pf-impact) !important; font-size: 26px !important; font-weight: 400 !important; line-height: 1; text-shadow: 3px 3px 0 var(--stage-ink-deep); }
+.playtest-shell.mat-v3 .battle-hud-fighter > div > strong small { color: var(--stage-gold) !important; font-size: 11px !important; }
+/* The life bar: a thick slanted paper strip. */
+.playtest-shell.mat-v3 .battle-hud-fighter > div > i {
+  position: relative !important; display: block !important; height: 22px !important; overflow: hidden !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 3px !important;
+  background: #3a1a1a !important; box-shadow: 3px 4px 0 var(--stage-ink-deep) !important; transform: skewX(-14deg);
+}
+.playtest-shell.mat-v3 .battle-hud-fighter > div > i > em {
+  display: block !important; height: 100% !important; background: linear-gradient(180deg, #ffe08a, #f0b43a 55%, #d88f1c) !important; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15);
+  transition: width .5s cubic-bezier(.2, .9, .3, 1) !important;
+}
+.playtest-shell.mat-v3 .battle-hud-fighter.hp-tier-warning > div > i > em { background: linear-gradient(180deg, #ffc27a, #ef8a3a) !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter.hp-tier-critical > div > i > em { background: linear-gradient(180deg, #ff8a7a, #d9452f) !important; animation: pf-hp-critical 1s ease-in-out infinite; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > b { justify-self: end; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > span { text-align: right; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > strong { order: 0; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div { grid-template-columns: auto minmax(0, 1fr) !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > i { transform: skewX(14deg); }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > i > em { margin-left: auto; }
+@keyframes pf-hp-critical { 50% { filter: brightness(1.35); } }
+
+/* Round badge + H.I.Y.A.H. ribbon */
+.playtest-shell.mat-v3 .versus-center { position: relative !important; display: grid !important; justify-items: center !important; gap: 2px !important; min-width: 150px; margin: 0 16px !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.playtest-shell.mat-v3 .versus-center > span { color: var(--stage-gold) !important; font-family: var(--pf-label) !important; font-size: 11px !important; font-weight: 700; letter-spacing: .2em !important; }
+.playtest-shell.mat-v3 .versus-center > b {
+  display: grid !important; place-items: center !important; width: 52px !important; height: 52px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 8px !important;
+  color: var(--stage-cream) !important; background: var(--pf-action) !important; box-shadow: 3px 4px 0 var(--stage-ink-deep) !important; font-family: var(--pf-impact) !important; font-size: 28px !important; transform: rotate(-4deg);
+}
+.phase-ribbon { display: grid; justify-items: center; gap: 2px; margin-top: 4px; }
+.phase-ribbon-letters { display: flex; gap: 3px; }
+.phase-ribbon-letters i { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid rgba(240, 220, 169, .45); border-radius: 4px; color: rgba(240, 220, 169, .6); font-family: var(--pf-impact); font-size: 11px; font-style: normal; }
+.phase-ribbon-letters i.is-done { border-color: rgba(240, 220, 169, .7); color: var(--stage-gold, #f0dca9); background: rgba(240, 220, 169, .12); }
+.phase-ribbon-letters i.is-active { border-color: #050d17; color: #fffaf0; background: var(--pf-action); transform: translateY(-2px) scale(1.18) rotate(-4deg); box-shadow: 2px 3px 0 #050d17; }
+.phase-ribbon small { color: var(--stage-gold, #f0dca9); font-family: var(--pf-label); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.phase-ribbon.is-opponent .phase-ribbon-letters i { opacity: .45; }
+.phase-ribbon.is-opponent small { color: #ffb4a6; }
+
+/* ---------- STAGE ---------- */
+.playtest-shell.mat-v3 > .playtest-arena {
+  position: relative !important; isolation: isolate; overflow: hidden !important; margin-top: 0 !important; border: 3px solid var(--stage-ink-deep) !important; border-top: 0 !important; border-radius: 0 0 10px 10px !important;
+  background: radial-gradient(ellipse at 50% 30%, #24476d 0%, var(--stage-ink) 58%, #081a2c 100%) !important; box-shadow: 0 8px 0 rgba(5, 13, 23, .3) !important;
+}
+.mat-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.mat-stage > img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; object-position: center 38%; filter: blur(14px) saturate(1.25) brightness(.55); opacity: .9; }
+.mat-stage-burst { position: absolute; left: 50%; top: 55%; width: 1600px; height: 1600px; translate: -50% -50%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(240, 220, 169, .06) 0deg 7deg, transparent 7deg 18deg); }
+.mat-stage-curtain { position: absolute; top: 0; bottom: 20%; width: 22px; background: repeating-linear-gradient(90deg, #8e2f24 0 8px, #a63a2c 8px 15px); box-shadow: 6px 0 0 rgba(0, 0, 0, .25); }
+.mat-stage-curtain--left { left: 0; }
+.mat-stage-curtain--right { right: 0; transform: scaleX(-1); }
+.mat-stage-floor { position: absolute; left: -4%; right: -4%; bottom: 0; height: 24%; border-top: 3px solid var(--stage-ink-deep, #050d17); background: linear-gradient(#e9dcc2, #cdbb98); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
+.mat-stage-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(23, 38, 58, .13) calc(10% - 1px) 10%); }
+.playtest-shell.mat-v3 > .playtest-arena > .playtest-table,
+.playtest-shell.mat-v3 > .playtest-arena > .playtest-active-variants { position: relative; z-index: 1; }
+.playtest-shell.mat-v3 .playtest-table { padding: 12px 30px 14px !important; background: transparent !important; }
+
+/* ---------- FIGHTERS as standees ---------- */
+.playtest-shell.mat-v3 .fighter-panel.living-fighter-card,
+.playtest-shell.mat-v3 .fighter-panel.living-fighter-card.is-enemy {
+  border: 0 !important; background: transparent !important; box-shadow: none !important; color: var(--stage-cream) !important; overflow: visible !important; padding: 0 !important;
+}
+.playtest-shell.mat-v3 .fighter-panel.living-fighter-card::before,
+.playtest-shell.mat-v3 .fighter-panel.living-fighter-card::after,
+.playtest-shell.mat-v3 .fighter-paperclip,
+.playtest-shell.mat-v3 .fighter-art-halo { display: none !important; }
+/* Name plate */
+.playtest-shell.mat-v3 .fighter-card-heading { border: 0 !important; padding: 0 !important; background: transparent !important; }
+.playtest-shell.mat-v3 .fighter-card-heading span { color: var(--stage-gold) !important; font-family: var(--pf-label) !important; font-size: 11px !important; letter-spacing: .14em !important; }
+.playtest-shell.mat-v3 .fighter-dossier-name { color: var(--stage-cream) !important; font-family: var(--pf-display) !important; font-size: 24px !important; line-height: 1 !important; text-shadow: 3px 3px 0 var(--stage-ink-deep); }
+.playtest-shell.mat-v3 .fighter-belt-badge { border: 2px solid var(--stage-ink-deep) !important; color: #17263a !important; background: var(--stage-cream) !important; box-shadow: 2px 3px 0 var(--stage-ink-deep) !important; transform: rotate(3deg); }
+/* The standee itself */
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration {
+  position: relative !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; cursor: pointer;
+}
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: -6px; height: 12px; z-index: 0; border: 2px solid var(--stage-ink-deep); border-radius: 3px; background: var(--pf-action); box-shadow: 0 5px 0 var(--stage-ink-deep); }
+.playtest-shell.mat-v3 .fighter-panel.is-enemy .fighter-panel-art.fighter-card-illustration::after { background: #5d6672; }
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration img {
+  position: relative; z-index: 1; width: 100% !important; height: 100% !important; max-height: none !important; object-fit: contain !important; object-position: center bottom !important; transform-origin: 50% 100%;
+  filter: drop-shadow(3px 0 0 #fffaf0) drop-shadow(-3px 0 0 #fffaf0) drop-shadow(0 -3px 0 #fffaf0) drop-shadow(7px 9px 0 rgba(5, 13, 23, .55)) !important;
+  animation: pf-standee-idle 3.4s ease-in-out infinite;
+}
+.playtest-shell.mat-v3 .fighter-panel.is-enemy .fighter-panel-art.fighter-card-illustration img { transform: scaleX(-1); animation-delay: -1.7s; }
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration > span:last-child { position: absolute; right: 0; bottom: 10px; z-index: 2; opacity: 0; transition: opacity .15s ease; }
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration:hover > span:last-child,
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration:focus-visible > span:last-child { opacity: 1; }
+@keyframes pf-standee-idle { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+/* Reactions (vfxKind from the exchange) */
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-hit .fighter-panel-art img,
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-ko .fighter-panel-art img { animation: pf-standee-hit .55s cubic-bezier(.3, 1.6, .4, 1) both !important; }
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-attack .fighter-panel-art img,
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-combo .fighter-panel-art img { animation: pf-standee-lunge .5s cubic-bezier(.3, 1.4, .4, 1) both !important; }
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-block .fighter-panel-art img { animation: pf-standee-block .45s ease-out both !important; }
+.playtest-shell.mat-v3 .fighter-panel.ddb-vfx-ko .fighter-panel-art img { animation: pf-standee-ko .9s cubic-bezier(.4, 0, .6, 1) forwards !important; }
+@keyframes pf-standee-hit { 0% { translate: 0 0; rotate: 0deg; filter: brightness(2) saturate(0); } 25% { translate: -14px 0; rotate: -7deg; } 50% { translate: 10px 0; rotate: 4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.playtest-shell.mat-v3 .fighter-panel.is-enemy.ddb-vfx-hit .fighter-panel-art img { animation-name: pf-standee-hit-ai !important; }
+@keyframes pf-standee-hit-ai { 0% { translate: 0 0; rotate: 0deg; filter: brightness(2) saturate(0); } 25% { translate: 14px 0; rotate: 7deg; } 50% { translate: -10px 0; rotate: -4deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes pf-standee-lunge { 0% { translate: 0 0; } 35% { translate: 36px -10px; rotate: 6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+.playtest-shell.mat-v3 .fighter-panel.is-enemy.ddb-vfx-attack .fighter-panel-art img,
+.playtest-shell.mat-v3 .fighter-panel.is-enemy.ddb-vfx-combo .fighter-panel-art img { animation-name: pf-standee-lunge-ai !important; }
+@keyframes pf-standee-lunge-ai { 0% { translate: 0 0; } 35% { translate: -36px -10px; rotate: -6deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes pf-standee-block { 0% { scale: 1; } 30% { scale: .94 1.04; filter: drop-shadow(0 0 0 #8fc6c4) drop-shadow(0 0 14px #8fc6c4); } 100% { scale: 1; } }
+@keyframes pf-standee-ko { 0% { rotate: 0deg; } 100% { rotate: -82deg; translate: -20px 30px; opacity: .85; } }
+
+/* Info slips under the standee: paper on the stage. */
+.playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b,
+.playtest-shell.mat-v3 .fighter-focus-seal,
+.playtest-shell.mat-v3 .fighter-xp-meter,
+.playtest-shell.mat-v3 .fighter-combo-launch {
+  border: 2px solid var(--stage-ink-deep) !important; color: #17263a !important; background: var(--stage-cream) !important; box-shadow: 3px 3px 0 var(--stage-ink-deep) !important;
+}
+.playtest-shell.mat-v3 .fighter-stats.fighter-stats--combat > b * , .playtest-shell.mat-v3 .fighter-focus-seal *, .playtest-shell.mat-v3 .fighter-xp-meter *, .playtest-shell.mat-v3 .fighter-combo-launch * { color: inherit !important; }
+.playtest-shell.mat-v3 .fighter-focus-seal { background: #f0dca9 !important; }
+.playtest-shell.mat-v3 .fighter-status-tray span { border: 2px solid var(--stage-ink-deep) !important; color: var(--stage-cream) !important; background: rgba(5, 13, 23, .6) !important; }
+.playtest-shell.mat-v3 .fighter-ability { border: 0 !important; border-left: 4px solid var(--pf-action) !important; border-radius: 4px !important; color: var(--stage-cream) !important; background: rgba(5, 13, 23, .6) !important; backdrop-filter: blur(3px); }
+.playtest-shell.mat-v3 .fighter-ability b { color: var(--stage-gold) !important; }
+.playtest-shell.mat-v3 .fighter-ability span { color: var(--stage-cream) !important; }
+
+/* ---------- CENTER: the ring ---------- */
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage {
+  border: 3px solid var(--stage-ink-deep) !important; border-radius: 10px !important; box-shadow: 0 10px 0 rgba(5, 13, 23, .45), 0 24px 40px rgba(0, 0, 0, .35) !important;
+}
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage::before,
+.playtest-shell.mat-v3 .playtest-combat-desk.combat-stage::after { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .playtest-shell.mat-v3 .fighter-panel-art img, .playtest-shell.mat-v3 .battle-hud-fighter em { animation: none !important; transition: none !important; }
+}
+.playtest-shell.mat-v3:is(.motion-reduced, .motion-off) .fighter-panel-art img { animation: none !important; }
+
+/* ---------- v3 fixes over older HUD/fighter layers ---------- */
+.playtest-shell.mat-v3 .battle-hud-fighter::before,
+.playtest-shell.mat-v3 .battle-hud-fighter::after { display: none !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > span { grid-row: 1 !important; grid-column: 1 / -1 !important; position: static !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > b { grid-row: 2 !important; grid-column: 1 / -1 !important; position: static !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > div { grid-row: 3 !important; grid-column: 1 / -1 !important; position: static !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > div > i { position: relative !important; inset: auto !important; width: auto !important; height: 22px !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > div > i > em { position: absolute !important; inset: 0 auto 0 0 !important; height: 100% !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > i > em { inset: 0 0 0 auto !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter > div > strong { position: static !important; }
+.playtest-shell.mat-v3 .fighter-column,
+.playtest-shell.mat-v3 .combat-stage-column { background: transparent !important; background-image: none !important; border: 0 !important; box-shadow: none !important; }
+
+/* ---------- Desktop layout: big stage, peeking hand ---------- */
+@media (min-width: 861px) {
+  .playtest-shell.playtest-shell--live.mat-v3 {
+    --hand-row-h: 210px;
+    --playtest-arena-height: clamp(380px, calc(100dvh - 74px - (var(--hand-card-w) * 15 / 11 + 52px) - 150px), 720px);
+  }
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card,
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card.is-enemy,
+  .playtest-shell.mat-v3 .fighter-column:has(.fighter-combo-rack) .fighter-panel.living-fighter-card {
+    height: 100% !important; min-height: 0 !important;
+    grid-template-rows: 40px minmax(110px, 1fr) 40px 34px 24px minmax(0, 46px) 34px !important; gap: 5px !important;
+  }
+  .playtest-shell.mat-v3 .fighter-ability { overflow: hidden !important; }
+  .playtest-shell.mat-v3 .fighter-ability span { display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* Hand: the printed cards themselves, fanned on an arc. Overlap is computed from the hand size so any
+     hand fits the width; hover/focus lifts a card upright and the selected card stands in front. */
+  .playtest-shell.playtest-shell--live.mat-v3 { --hand-card-w: clamp(112px, 9.6vw, 150px); }
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel {
+    padding: 8px 18px 6px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 12px !important;
+    background: linear-gradient(180deg, var(--mat-raised), var(--mat-surface)) !important; overflow: visible !important;
+  }
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel::before,
+  .playtest-shell.mat-v3 > .playtest-workspace--hand > .hand-panel::after { display: none !important; }
+  .playtest-shell.mat-v3 .hand-panel > header { min-height: 0 !important; padding: 2px 0 0 !important; align-items: center !important; }
+  .playtest-shell.mat-v3 .hand-panel > header .eyebrow { margin-bottom: 0 !important; }
+  .playtest-shell.mat-v3 .hand-panel > header h2 { font-family: var(--pf-display) !important; font-size: 22px !important; font-weight: 400 !important; text-transform: uppercase; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row {
+    zoom: 1 !important; height: calc(var(--hand-card-w) * 15 / 11 + 52px) !important; min-height: 0 !important; overflow: visible !important;
+    display: flex !important; align-items: flex-start !important; justify-content: center !important;
+    padding: 14px 24px 0 !important; border: 0 !important; background: transparent !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card {
+    flex: 0 0 var(--hand-card-w) !important; width: var(--hand-card-w) !important; min-width: 0 !important;
+    margin: 0 min(-4px, calc((100vw - 200px - var(--hand-total, 7) * var(--hand-card-w)) / (2 * var(--hand-total, 7)))) !important;
+    border: 0 !important; background: transparent !important; box-shadow: none !important;
+    transform-origin: 50% 380% !important; transform: rotate(calc(var(--hand-angle, 0deg) * .6)) !important;
+    transition: transform .2s cubic-bezier(.2, 1.2, .4, 1), filter .18s ease !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-main {
+    display: grid !important; grid-template-rows: auto auto !important; gap: 0 !important; height: auto !important; min-height: 0 !important; overflow: visible !important;
+    padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window {
+    display: block !important; width: 100% !important; height: auto !important; aspect-ratio: 11 / 15 !important; margin: 0 !important; overflow: hidden !important;
+    border-radius: 8px !important; background: var(--mat-dim) !important; box-shadow: 0 0 0 2px var(--stage-ink-deep), 3px 4px 0 var(--stage-ink-deep) !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window > img { width: 100% !important; height: 100% !important; object-fit: contain !important; object-position: center !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-art-window:has(img) ~ .play-card-fallback,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-kind { display: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-meta {
+    display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; height: 24px !important; margin: 6px 4px 0 !important; padding: 0 6px !important;
+    border: 2px solid var(--stage-ink-deep) !important; border-radius: 999px !important; background: var(--mat-raised) !important; font-size: 11px !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-meta em { display: none !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-inspect { top: 6px !important; right: 6px !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:hover,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within {
+    z-index: var(--layer-floating) !important; transform: translateY(-28px) rotate(0deg) scale(1.14) !important;
+    filter: drop-shadow(0 18px 18px rgba(5, 13, 23, .35)) !important;
+  }
+  /* The selected card stands upright in front of the fan (the Design Lab hand treatment). */
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected {
+    z-index: calc(var(--layer-floating) + 1) !important; transform: translateY(-34px) rotate(0deg) scale(1.16) !important; outline: 0 !important;
+    filter: drop-shadow(0 0 0 var(--pf-action)) drop-shadow(0 0 12px color-mix(in srgb, var(--pf-action) 75%, transparent)) drop-shadow(0 20px 20px rgba(5, 13, 23, .4)) !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected::after {
+    content: "SELECTED"; position: absolute; top: -12px; left: 50%; z-index: 5; translate: -50% 0; border: 2px solid var(--stage-ink-deep); border-radius: 4px; padding: 1px 7px;
+    color: #fffaf0; background: var(--pf-action); font-family: var(--pf-impact); font-size: 9px; letter-spacing: .06em; transform: rotate(-4deg);
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-disabled { filter: saturate(.3) brightness(.82) !important; }
+  :root[data-theme="dark"] .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-disabled { filter: saturate(.3) brightness(.6) !important; }
+
+  /* Next legal action: a big ember button, not a form row. */
+  .playtest-shell.mat-v3 .hand-panel > header > .playtest-action-dock {
+    border: 3px solid var(--stage-ink-deep) !important; border-radius: 10px !important; box-shadow: 4px 5px 0 var(--stage-ink-deep) !important;
+  }
+  .playtest-shell.mat-v3 .playtest-action-dock button:not(.dock-secondary) {
+    min-height: 52px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 8px 4px 8px 5px !important; padding: 0 22px !important;
+    color: #fffaf0 !important; background: var(--pf-action) !important; box-shadow: 4px 5px 0 var(--stage-ink-deep) !important;
+    font-family: var(--pf-display) !important; font-size: 20px !important; text-transform: uppercase !important; transform: rotate(-1.5deg); transition: transform .15s ease;
+  }
+  .playtest-shell.mat-v3 .playtest-action-dock button:not(.dock-secondary):hover { transform: translate(-1px, -2px) rotate(-2.5deg); }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell.playtest-shell--live.mat-v3 { --hand-card-w: clamp(100px, 8vw, 122px); }
+}
+@media (prefers-reduced-motion: reduce) { .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card { transition: none !important; } }
+/* The selected highlight lives on the card art, not on the old outline box. */
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card.is-selected .play-card-main,
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card.is-selected { outline: 0 !important; border-color: transparent !important; box-shadow: none !important; }
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card.is-selected .play-card-art-window { box-shadow: 0 0 0 3px var(--pf-action), 0 0 0 6px var(--stage-ink-deep), 4px 6px 0 6px var(--stage-ink-deep) !important; }
+
+.playtest-shell.mat-v3 .battle-hud-fighter > div > i { opacity: 1 !important; }
+/* Lifted cards pivot at their own base, so scaling doesn't fling them up the arc. */
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:hover,
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within,
+.playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform-origin: 50% 100% !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--player > div > i { grid-column: 1 !important; grid-row: 1 !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--player > div > strong { grid-column: 2 !important; grid-row: 1 !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > strong { grid-column: 1 !important; grid-row: 1 !important; }
+.playtest-shell.mat-v3 .battle-hud-fighter--ai > div > i { grid-column: 2 !important; grid-row: 1 !important; }
+/* Compact HUD: round badge beside its ribbon. */
+.playtest-shell.mat-v3 > .playtest-topbar.battle-versus-hud { min-height: 0 !important; padding: 6px 14px 8px !important; }
+.playtest-shell.mat-v3 .versus-center { grid-template-columns: auto auto !important; grid-template-rows: auto auto !important; column-gap: 8px !important; row-gap: 0 !important; align-items: center !important; }
+.playtest-shell.mat-v3 .versus-center > span { grid-column: 1; grid-row: 1; }
+.playtest-shell.mat-v3 .versus-center > b { grid-column: 1; grid-row: 2; width: 44px !important; height: 44px !important; font-size: 24px !important; }
+.playtest-shell.mat-v3 .versus-center > .phase-ribbon { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+@media (min-width: 861px) {
+  .playtest-shell.playtest-shell--live.mat-v3 { --playtest-arena-height: clamp(310px, calc(100dvh - 64px - (var(--hand-card-w) * 15 / 11 + 52px) - 140px), 720px) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row { padding-bottom: 14px !important; height: calc(var(--hand-card-w) * 15 / 11 + 66px) !important; }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell.mat-v3 .hand-panel > header .eyebrow { display: none !important; }
+  .playtest-shell.mat-v3 .hand-panel > header h2 { font-size: 18px !important; }
+  .playtest-shell.mat-v3 .playtest-action-dock button:not(.dock-secondary) { min-height: 44px !important; font-size: 17px !important; }
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card,
+  .playtest-shell.mat-v3 .fighter-panel.living-fighter-card.is-enemy,
+  .playtest-shell.mat-v3 .fighter-column:has(.fighter-combo-rack) .fighter-panel.living-fighter-card { grid-template-rows: 36px minmax(80px, 1fr) 38px 32px 0 0 32px !important; }
+  .playtest-shell.mat-v3 .fighter-status-tray, .playtest-shell.mat-v3 .fighter-ability { display: none !important; }
+}
+/* Hover must never move a card out from under the pointer (that flickers). Grow from the base instead of sliding. */
+@media (min-width: 861px) {
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:hover,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within { transform: rotate(0deg) scale(1.2) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: rotate(0deg) scale(1.24) !important; }
+}
+/* Arc = a per-card drop (--hand-arc is distance-from-center squared) + a tilt about the card's own base.
+   Hover keeps the drop and only straightens/grows, so the card never leaves the pointer. */
+@media (min-width: 861px) {
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card {
+    transform-origin: 50% 100% !important;
+    transform: translateY(calc(var(--hand-arc, 0) * 3.5px)) rotate(calc(var(--hand-angle, 0deg) * .8)) !important;
+  }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:hover,
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within { transform: translateY(calc(var(--hand-arc, 0) * 3.5px)) rotate(0deg) scale(1.2) !important; }
+  .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: translateY(calc(var(--hand-arc, 0) * 3.5px - 10px)) rotate(0deg) scale(1.24) !important; }
+}

@@ -2698,7 +2698,7 @@ function PlayCard({ card, selected, disabled, onClick, onInspect, handIndex, han
     event.dataTransfer.setData("application/x-dojo-card", card.id);
     event.dataTransfer.setData("text/plain", card.id);
   };
-  const handStyle = handIndex === undefined ? undefined : { "--hand-index": handIndex, "--hand-total": handTotal ?? 1, "--hand-angle": `${(handIndex - ((handTotal ?? 1) - 1) / 2) * 5}deg` } as CSSProperties;
+  const handStyle = handIndex === undefined ? undefined : { "--hand-index": handIndex, "--hand-total": handTotal ?? 1, "--hand-angle": `${(handIndex - ((handTotal ?? 1) - 1) / 2) * 5}deg`, "--hand-arc": (handIndex - ((handTotal ?? 1) - 1) / 2) ** 2 } as CSSProperties;
   return <article className={`play-card play-card--${kind} ${selected ? "is-selected" : ""} ${disabled ? "is-disabled" : ""}`} style={handStyle} draggable={canDrag} onDragStart={beginDrag} data-card-id={card.id}>
     <button className="play-card-main" disabled={disabled || !onClick} onClick={onClick} aria-label={`Use ${card.name}`}>
       <span className="play-card-art-window">{art ? <img src={art} alt="" loading="lazy" decoding="async" /> : <NativeCardArt card={card} />}</span>
@@ -2767,6 +2767,18 @@ function FighterEquipmentTabs({ board, enemy, onInspect }: { board: Board; enemy
       </button>;
     })}{equipment.length > 6 && <button type="button" className="fighter-equipment-overflow" onClick={() => onInspect(cardFor(board.fighterId)!)}>+{equipment.length - 6}<span className="sr-only"> more Equipment cards</span></button>}</div>
   </section>;
+}
+
+// H.I.Y.A.H. ribbon under the round badge: which phase it is, and whose turn.
+const PHASE_RIBBON = [["H", "Honor"], ["I", "Initiate"], ["Y", "Yell"], ["A", "Ascend"], ["H", "Hide"]] as const;
+function PhaseRibbon({ phase }: { phase: Match["phase"] }) {
+  const playerTurn = phase === "player-initiate" || phase === "player-yell" || phase === "player-ascend";
+  const active = phase === "player-initiate" ? 1 : phase === "player-yell" ? 2 : phase === "player-ascend" ? 3 : -1;
+  const owner = playerTurn ? "Your turn" : phase === "defense-window" ? "Defend!" : phase === "reversal-window" ? "Reversal!" : "Opponent's turn";
+  return <span className={`phase-ribbon${playerTurn ? " is-player" : " is-opponent"}`} role="status" aria-label={`${owner}${active >= 0 ? `, ${(PHASE_RIBBON as readonly (readonly [string, string])[])[active]?.[1] ?? ""} phase` : ""}`}>
+    <span className="phase-ribbon-letters" aria-hidden="true">{PHASE_RIBBON.map(([letter, name], index) => <i key={`${letter}-${index}`} className={index === active ? "is-active" : index < active ? "is-done" : ""} title={name}>{letter}</i>)}</span>
+    <small aria-hidden="true">{owner}</small>
+  </span>;
 }
 
 function FighterPanel({ board, label, enemy, vfxKind, vfxVariant, onInspect, onOpenCombo, beltThresholds }: { board: Board; label: string; enemy?: boolean; vfxKind?: MatVfxKind; vfxVariant?: number; onInspect: (card: CardEntry) => void; onOpenCombo?: () => void; beltThresholds: number[] }) {
@@ -4967,7 +4979,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     {match.phase === "ai-ready" && !settings.autoAi && <button onClick={runAiTurn}>Run computer turn →</button>}
   </nav>;
 
-  return <main ref={liveShellRef} className={`playtest-shell playtest-shell--live location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
+  return <main ref={liveShellRef} className={`playtest-shell playtest-shell--live mat-v3 location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
     {sceneRevealElement}
     {matVfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${matVfx.cueTone}`} style={{ "--cue-scale": matVfx.cueScale ?? 1 } as CSSProperties} key={matVfx.id}><strong>{matVfx.cue}</strong><small>{matVfx.announcement}</small></div>{matVfx.xp && <div className={`playtest-xp-pop playtest-xp-pop--${matVfx.xp.side}`} key={`xp-${matVfx.id}`}>+{matVfx.xp.amount} XP</div>}{matVfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${matVfx.promotion.side}`} key={`promotion-${matVfx.id}`}><span>{matVfx.promotion.side === "player" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{matVfx.promotion.belt} BELT</strong><small>{matVfx.promotion.previousBelt} → {matVfx.promotion.belt} · {matVfx.promotion.side === "player" ? "Your rank has advanced." : "The paperwork got taller."}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{matVfx.announcement}</div></>}
 
@@ -4976,7 +4988,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         <span><small>YOU · {playerFighter.name}</small></span><b>{agentName}</b>
         <div><strong>{player.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${playerFighter.name} health`} aria-valuemin={0} aria-valuemax={player.maxHp} aria-valuenow={player.hp}><em style={{ width: `${playerHpPercent}%` }} /></i></div>
       </div>
-      <div className="versus-center" aria-label={`Round ${match.round}`}><span>ROUND</span><b>{match.round}</b></div>
+      <div className="versus-center" aria-label={`Round ${match.round}`}><span>ROUND</span><b>{match.round}</b><PhaseRibbon phase={match.phase} /></div>
       <div className={`battle-hud-fighter battle-hud-fighter--ai hp-tier-${healthTier(ai.hp, ai.maxHp)}`} style={{ "--hp-progress": `${aiHpPercent}%` } as CSSProperties}>
         <span><small>COMPUTER · {aiFighter.name}</small></span><b>COMPUTER</b>
         <div><strong>{ai.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${aiFighter.name} health`} aria-valuemin={0} aria-valuemax={ai.maxHp} aria-valuenow={ai.hp}><em style={{ width: `${aiHpPercent}%` }} /></i></div>
@@ -4995,7 +5007,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={() => begin(player.fighterId)}>Instant rematch →</button><button className="button ghost" onClick={() => setMatch(null)}>Choose another fighter</button></div></div>
       </div>
     </section>}
-    <section className="playtest-arena">{settings.houseRuleIds.length > 0 && <div className="playtest-active-variants"><b>House rules active:</b>{QUICK_DUEL_HOUSE_RULES.filter((rule) => settings.houseRuleIds.includes(rule.id)).map((rule) => <span key={rule.id}>{rule.name}</span>)}</div>}
+    <section className="playtest-arena"><div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>{settings.houseRuleIds.length > 0 && <div className="playtest-active-variants"><b>House rules active:</b>{QUICK_DUEL_HOUSE_RULES.filter((rule) => settings.houseRuleIds.includes(rule.id)).map((rule) => <span key={rule.id}>{rule.name}</span>)}</div>}
       <section className="playtest-table">
         <div className="fighter-column fighter-column--player"><FighterPanel board={player} label="You" vfxKind={matVfx?.player} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} onOpenCombo={() => setDeskView("combo")} /><LearnedComboRack states={learnedComboStates} onInspect={(card) => setInspectedId(card.id)} /></div>
         <div className="combat-stage-column">
