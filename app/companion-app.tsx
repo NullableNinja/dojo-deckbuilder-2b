@@ -11,6 +11,7 @@ import headerGlossaryUrl from "./assets/art/glossary-fieldguide-v3.webp";
 import headerQuickstartUrl from "./assets/art/quickstart-expo-v3.webp";
 import headerRulingsUrl from "./assets/art/rulings-dispute-v3.webp";
 import heroPaperFuUrl from "./assets/art/home-expo-v3.webp";
+import indexPlayArtUrl from "./assets/fighters/karatesaurus.webp";
 import starterJabArtUrl from "./assets/cards/starters/ddb-sta-core-003_basic-jab.webp";
 import highGuardArtUrl from "./assets/cards/starters/ddb-sta-core-009_high-guard.webp";
 import cardsJson from "./data/cards.json";
@@ -191,6 +192,16 @@ const DOWNLOADS = {
   cardCatalog: `${import.meta.env.BASE_URL}downloads/Dojo_Deckbuilder_v2.3_Card_Catalog.xlsx`,
   defenseEquipmentSources: `${import.meta.env.BASE_URL}downloads/Dojo_Deckbuilder_v2.3_Defensive_Equipment_Editable_ORA.zip`,
   consumableSources: `${import.meta.env.BASE_URL}downloads/Dojo_Deckbuilder_v2.3_Consumable_Cards_Editable_ORA.zip`,
+};
+const INDEX_ART: Partial<Record<SitePage, string>> = {
+  home: heroPaperFuUrl,
+  playtest: indexPlayArtUrl,
+  quickstart: headerQuickstartUrl,
+  story: headerBackstoryUrl,
+  rules: headerRulesUrl,
+  cards: headerCardsUrl,
+  rulings: headerRulingsUrl,
+  glossary: headerGlossaryUrl,
 };
 const VIEW_LABELS: Record<SitePage, string> = {
   home: "Dojo Desk",
@@ -692,6 +703,8 @@ export default function CompanionApp() {
   const [avatar, setAvatar] = useState<AvatarKey>(initialAvatar);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRestoreRef = useRef<HTMLElement | null>(null);
   const [globalSelection, setGlobalSelection] = useState(0);
   const [selectionIntent, setSelectionIntent] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -769,6 +782,15 @@ export default function CompanionApp() {
     window.addEventListener("keydown", close);
     return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", close); };
   }, [closeMenu, menuClosing, menuOpen]);
+
+  // Opening the Dojo Index moves focus to the current page's card (or the first card).
+  useEffect(() => {
+    if (!menuOpen) return;
+    window.requestAnimationFrame(() => {
+      const menu = document.getElementById("mobile-menu");
+      (menu?.querySelector<HTMLElement>(".index-card[aria-current='page']") ?? menu?.querySelector<HTMLElement>(".index-card"))?.focus({ preventScroll: true });
+    });
+  }, [menuOpen]);
 
   useEffect(() => {
     if (menuOpen || menuClosing || !menuRestoreRef.current) return;
@@ -868,15 +890,50 @@ export default function CompanionApp() {
       const isTyping = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
       if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
         event.preventDefault();
-        searchInputRef.current?.focus({ preventScroll: true });
+        if (!searchRestoreRef.current) searchRestoreRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setSearchOpen(true);
       } else if (!isTyping && event.key === "/") {
         event.preventDefault();
-        searchInputRef.current?.focus({ preventScroll: true });
+        if (!searchRestoreRef.current) searchRestoreRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setSearchOpen(true);
       }
     };
     window.addEventListener("keydown", openSearch);
     return () => window.removeEventListener("keydown", openSearch);
   }, []);
+
+  const closeSearch = useCallback((restoreFocus = true) => {
+    setSearchOpen(false);
+    setGlobalSearch("");
+    const restore = searchRestoreRef.current;
+    searchRestoreRef.current = null;
+    if (restoreFocus && restore?.isConnected) window.requestAnimationFrame(() => restore.focus({ preventScroll: true }));
+  }, []);
+  const openSearchPalette = (event?: ReactMouseEvent<HTMLElement>) => {
+    searchRestoreRef.current = event?.currentTarget ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    closeMenu(false, true);
+    closeUserMenu();
+    setSearchOpen(true);
+  };
+  useEffect(() => {
+    if (!searchOpen) return;
+    window.requestAnimationFrame(() => searchInputRef.current?.focus({ preventScroll: true }));
+    const trap = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeSearch(); return; }
+      if (event.key !== "Tab") return;
+      const palette = document.getElementById("dojo-search-palette");
+      const focusable = Array.from(palette?.querySelectorAll<HTMLElement>("input, button:not([disabled])") ?? []);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", trap);
+    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", trap); };
+  }, [closeSearch, searchOpen]);
 
   const goTo = (next: ViewId) => {
     closeMenu(false, true);
@@ -900,6 +957,7 @@ export default function CompanionApp() {
 
   const chooseResult = (result: SearchResult) => {
     closeMenu(false, true);
+    closeSearch(false);
     setGlobalSearch("");
     setSelectionIntent(false);
     navigate(result.route);
@@ -910,6 +968,7 @@ export default function CompanionApp() {
     const query = globalSearch.normalize("NFKC").trim().replace(/\s+/g, " ");
     if (query.length < 2) return;
     closeMenu(false, true);
+    closeSearch(false);
     setGlobalSearch("");
     setSelectionIntent(false);
     navigate({ page: "search", query });
@@ -918,9 +977,9 @@ export default function CompanionApp() {
 
   const handleGlobalSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
-      setGlobalSearch("");
+      event.preventDefault();
       setSelectionIntent(false);
-      event.currentTarget.blur();
+      closeSearch();
       return;
     }
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -958,8 +1017,33 @@ export default function CompanionApp() {
         : view;
 
   return <ToastContext.Provider value={pushToast}><div className="site-frame">
-    <header className={`site-header${route.page === "playtest" ? " site-header--gameplay" : ""}`}><div className="header-inner shell"><button className="brand" onClick={() => goTo("home")} aria-label="Dojo Deckbuilder home"><BrandMark /><span><b>DOJO</b><em>DECKBUILDER</em></span></button><nav id="primary-navigation" aria-label="Primary navigation">{DESKTOP_NAVIGATION.map((item) => <button aria-current={navigationItemIsActive(item, route) ? "page" : undefined} className={navigationItemIsActive(item, route) ? "active" : ""} onClick={() => goTo(item.page)} key={item.page}>{item.label}</button>)}</nav><div className="header-search-wrap"><label className="header-search"><span>⌕</span><input ref={searchInputRef} value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} onKeyDown={handleGlobalSearchKeyDown} placeholder="Search the dojo" aria-label="Search cards, rules, rulings, variants, and glossary" role="combobox" aria-autocomplete="list" aria-controls="dojo-global-results" aria-expanded={globalResults.length > 0} aria-activedescendant={globalActiveDescendant} /><kbd>Ctrl K</kbd></label>{globalResults.length > 0 && renderGlobalResults("global-results", "dojo-global-results")}</div><div className="user-menu-wrap" data-user-menu><button ref={userMenuButtonRef} type="button" className={`profile-menu-button${userMenuOpen ? " is-open" : ""}`} onClick={() => setUserMenuOpen((current) => !current)} aria-haspopup="dialog" aria-expanded={userMenuOpen} aria-label={`Open personal menu for ${displayName || "Dojo Agent"}`}><img src={AVATAR_IMAGES[avatar]} alt="" /><span><b>{displayName || "Dojo Agent"}</b><small>FIELD AGENT</small></span><strong aria-hidden="true">⌄</strong></button>{userMenuOpen && <aside className="user-menu-panel" role="dialog" aria-label="Personal dojo menu"><header><img src={AVATAR_IMAGES[avatar]} alt="" /><div><span>Current filing</span><strong>{displayName || "Dojo Agent"}</strong><small>{AVATAR_OPTIONS.find((option) => option.id === avatar)?.quip}</small></div></header><button type="button" className="user-menu-settings" onClick={() => goTo("settings")}>Personal settings <span>→</span></button><div className="user-menu-lighting"><span>Lighting</span><ThemeToggle theme={theme} onToggle={toggleTheme} full /></div><div className="user-menu-accent"><span>Accent</span><b>{accent.toLocaleUpperCase()}</b></div></aside>}</div><button className="menu-button" onClick={toggleMenu} aria-controls="mobile-menu" aria-expanded={menuOpen} aria-label={menuOpen ? "Close site menu" : "Open site menu"}><span /><span /><span /></button></div><div className="reading-progress" role="progressbar" aria-label={`${VIEW_LABELS[view]} reading progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scrollProgress * 100)}><span style={{ width: `${scrollProgress * 100}%` }} /><b>{VIEW_LABELS[view]}</b></div></header>
-    {menuOpen && <><button className="menu-scrim" onClick={() => closeMenu()} aria-label="Close site menu" /><aside className="mobile-menu-panel" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Site menu"><div className="mobile-menu-heading"><div><span className="eyebrow">Department directory</span><h2>Find your fight.</h2></div><button className="mobile-menu-close" onClick={() => closeMenu()} aria-label="Close site menu">×</button></div><label className="mobile-global-search"><span aria-hidden="true">⌕</span><input autoFocus role="combobox" aria-autocomplete="list" aria-controls="dojo-mobile-search-results" aria-expanded={globalResults.length > 0} aria-activedescendant={mobileGlobalActiveDescendant} value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} onKeyDown={handleGlobalSearchKeyDown} placeholder="Search the dojo" aria-label="Search cards, rules, rulings, variants, and glossary" /></label>{globalSearch.trim().length >= 2 && (globalResults.length ? renderGlobalResults("mobile-search-results", "dojo-mobile-search-results") : <div className="mobile-search-results"><p>No matching filing number. Try a shorter search.</p></div>)}<nav className="mobile-menu-links" aria-label="All site pages">{MOBILE_MENU_NAVIGATION.map((item) => <button aria-current={navigationItemIsActive(item, route) ? "page" : undefined} className={navigationItemIsActive(item, route) ? "active" : ""} onClick={() => goTo(item.page)} key={item.page}><span>{item.label}</span><small>{item.description}</small></button>)}</nav></aside></>}
+    <header className={`site-header${route.page === "playtest" ? " site-header--gameplay" : ""}`}><div className="header-inner shell">
+      <button className="brand" onClick={() => goTo("home")} aria-label="Dojo Deckbuilder home"><BrandMark /><span><b>DOJO</b><em>DECKBUILDER</em></span></button>
+      {view !== "home" && <span className="page-tab" aria-hidden="true"><small>Filed under</small><b>{VIEW_LABELS[view]}</b></span>}
+      <div className="header-actions">
+        <button type="button" className="header-tool search-trigger" onClick={openSearchPalette} aria-label="Search the dojo" aria-keyshortcuts="/ Control+K Meta+K" aria-haspopup="dialog" aria-expanded={searchOpen}><span aria-hidden="true">⌕</span><kbd aria-hidden="true">/</kbd></button>
+        {view !== "playtest" && <button type="button" className="header-play" onClick={() => goTo("playtest")}><span aria-hidden="true">✦</span>Play</button>}
+        <div className="user-menu-wrap" data-user-menu><button ref={userMenuButtonRef} type="button" className={`profile-menu-button${userMenuOpen ? " is-open" : ""}`} onClick={() => setUserMenuOpen((current) => !current)} aria-haspopup="dialog" aria-expanded={userMenuOpen} aria-label={`Open personal menu for ${displayName || "Dojo Agent"}`}><img src={AVATAR_IMAGES[avatar]} alt="" /><span><b>{displayName || "Dojo Agent"}</b><small>FIELD AGENT</small></span><strong aria-hidden="true">⌄</strong></button>{userMenuOpen && <aside className="user-menu-panel" role="dialog" aria-label="Personal dojo menu"><header><img src={AVATAR_IMAGES[avatar]} alt="" /><div><span>Current filing</span><strong>{displayName || "Dojo Agent"}</strong><small>{AVATAR_OPTIONS.find((option) => option.id === avatar)?.quip}</small></div></header><button type="button" className="user-menu-settings" onClick={() => goTo("settings")}>Personal settings <span>→</span></button><div className="user-menu-lighting"><span>Lighting</span><ThemeToggle theme={theme} onToggle={toggleTheme} full /></div><div className="user-menu-accent"><span>Accent</span><b>{accent.toLocaleUpperCase()}</b></div></aside>}</div>
+        <button type="button" className={`index-button${menuOpen ? " is-open" : ""}`} onClick={toggleMenu} aria-controls="mobile-menu" aria-expanded={menuOpen} aria-haspopup="dialog"><span className="index-button-drawer" aria-hidden="true"><i /><i /><i /></span><b>{menuOpen ? "Close" : "Index"}</b></button>
+      </div>
+    </div><div className="reading-progress" role="progressbar" aria-label={`${VIEW_LABELS[view]} reading progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scrollProgress * 100)}><span style={{ width: `${scrollProgress * 100}%` }} /><b>{VIEW_LABELS[view]}</b></div></header>
+    {menuOpen && <><button className="menu-scrim" onClick={() => closeMenu()} aria-label="Close the Dojo Index" tabIndex={-1} /><aside className="dojo-index" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="dojo-index-title">
+      <div className="dojo-index-inner shell">
+        <div className="dojo-index-heading"><div><span className="eyebrow">Dojo Index · drawer 01</span><h2 id="dojo-index-title">Where to, Agent?</h2></div><button className="mobile-menu-close" onClick={() => closeMenu()} aria-label="Close the Dojo Index">×</button></div>
+        <nav className="dojo-index-cards" aria-label="All site pages">{MOBILE_MENU_NAVIGATION.map((item, index) => { const active = navigationItemIsActive(item, route); const art = INDEX_ART[item.page]; return <button type="button" key={item.page} className={`index-card${active ? " is-active" : ""}${item.page === "playtest" ? " is-play" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)} style={{ "--index-tilt": `${((index % 3) - 1) * .6}deg` } as CSSProperties}>
+          <span className="index-card-tab">{String(index + 1).padStart(2, "0")}</span>
+          {art && <span className="index-card-art"><img src={art} alt="" loading="lazy" decoding="async" /></span>}
+          <span className="index-card-copy"><b>{item.label}</b><small>{item.description}</small></span>
+          {active && <span className="index-card-stamp" aria-hidden="true">You are here</span>}
+        </button>; })}</nav>
+        <button type="button" className="dojo-index-search" onClick={(event) => openSearchPalette(event)}><span aria-hidden="true">⌕</span>Search cards, rules and rulings<kbd>/</kbd></button>
+      </div>
+    </aside></>}
+    {searchOpen && <div className="search-palette-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeSearch()}><div className="search-palette" id="dojo-search-palette" role="dialog" aria-modal="true" aria-label="Search the dojo">
+      <label className="search-palette-field"><span aria-hidden="true">⌕</span><input ref={searchInputRef} value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} onKeyDown={handleGlobalSearchKeyDown} placeholder="Search cards, rules, rulings, glossary…" aria-label="Search cards, rules, rulings, variants, and glossary" role="combobox" aria-autocomplete="list" aria-controls="dojo-global-results" aria-expanded={globalResults.length > 0} aria-activedescendant={globalActiveDescendant} /><kbd aria-hidden="true">Esc</kbd></label>
+      {globalResults.length > 0 ? renderGlobalResults("global-results", "dojo-global-results") : <div className="search-palette-empty">{globalSearch.trim().length >= 2 ? <p>No matching filing number. Try a shorter search.</p> : <><span>Try a filing</span><div>{["Basic Jab", "Tempo", "Combo", "Belt", "Reaction"].map((hint) => <button type="button" key={hint} onClick={() => { setGlobalSearch(hint); searchInputRef.current?.focus(); }}>{hint}</button>)}</div></>}</div>}
+      <footer className="search-palette-foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
+    </div></div>}
     <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesView initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} />}{route.page === "cards" && <CardsView cardId={route.cardId} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryView initialQuery={route.term ?? ""} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
     <nav className="thumb-bar" aria-label="Quick navigation">{MOBILE_BOTTOM_NAVIGATION.map((item) => { const active = navigationItemIsActive(item, route); return <button type="button" key={item.page} className={`thumb-bar-item${item.page === "playtest" ? " is-play" : ""}${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)}><span aria-hidden="true">{item.mobileBottomIcon}</span><b>{item.shortLabel}</b></button>; })}</nav>
     <footer className="site-footer"><div className="shell footer-inner"><div className="brand footer-brand"><BrandMark /><span><b>DOJO</b><em>PAPER-FU // DECKBUILDER</em></span></div><p>Build your deck. Earn your belt. File the incident.</p><span>Filed with the Department. Probably correctly.</span></div></footer>
