@@ -273,7 +273,8 @@ function SectionHeader({ eyebrow, title, intro, art }: { eyebrow: string; title:
 }
 
 function BrandMark() {
-  return <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M4 25 22 15l13 24-18 10z" fill="#d7ccb9" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/><path d="M14 13 34 8l8 29-20 5z" fill="#eee3cf" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/><path d="m27 5 22 3 9 10-5 24-30-3z" fill="#fff8e9" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/><path d="m37 17-4 13 6-5-2 9 11-12-7 4 3-9z" fill="#b91035"/><path d="M9 36c12 6 32 6 47-4l3 7c-13 9-35 11-50 5z" fill="#b91035" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/><path d="m29 38 6-3 7 5-3 7-7 2-6-5z" fill="#d62143" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/><path d="m29 46-12 13 8 3 11-14m4-3 12 11-7 4-12-12" fill="#b91035" stroke="#252629" strokeWidth="2.5" strokeLinejoin="round"/></svg></span>;
+  // Origami shuriken: the same mark as public/favicon.svg.
+  return <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" rx="14" fill="#0e2943"/><path transform="translate(3 4)" fill="#050d17" opacity=".65" d="M21 21h22V3Zm22 0v22h18ZM43 43H21v18ZM21 43V21H3Z"/><g stroke="#17263a" strokeWidth="2.4" strokeLinejoin="round"><path d="M21 21h22L43 3Z" fill="#c84c35"/><path d="M43 21v22h18Z" fill="#fffaf0"/><path d="M43 43H21v18Z" fill="#c84c35"/><path d="M21 43V21H3Z" fill="#fffaf0"/><path d="M21 21h22v22H21Z" fill="#f0dca9"/><path d="M21 21 43 43M43 21 21 43" strokeWidth="1.6" opacity=".55"/></g></svg></span>;
 }
 
 function ThemeToggle({ theme, onToggle, full = false }: { theme: Theme; onToggle: () => void; full?: boolean }) {
