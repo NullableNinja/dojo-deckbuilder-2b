@@ -244,7 +244,6 @@ const numeric = (value: string | number | null | undefined) => {
 };
 const cardImageUrl = (card: CardEntry) => card.image ? CARD_IMAGE_URLS[card.image] ?? card.image : COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId] ?? cardPlaceholderUrl;
 const hasCardArt = (card: CardEntry) => Boolean(card.image || COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId]);
-const isCompleteCardArt = (card: CardEntry) => Boolean(COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId]);
 
 function RuleTable({ rows }: { rows: (string | number)[][] }) {
   if (!rows.length) return null;
@@ -534,10 +533,21 @@ function RulesView({ initialChapterId = "", initialSectionId = "" }: { initialCh
 }
 
 function CardTile({ card, onOpen, saved = false }: { card: CardEntry; onOpen: () => void; saved?: boolean }) {
+  const typeClass = `type-${card.cardType.toLocaleLowerCase().replaceAll(" ", "-")}`;
+  const savedStar = saved && <span className="binder-star" aria-label="Saved in Dojo Binder" title="Saved in Dojo Binder">★</span>;
+  // Printed cards already carry name, stats and rules on the art, so the tile shows the whole card and a short caption.
+  if (hasCardArt(card)) {
+    return <button className={`library-card library-card--printed paper-stack interactive-paper ${typeClass}`} onClick={onOpen} aria-label={`${card.name}, ${card.cardType}. Open card details.`}>
+      {savedStar}
+      <span className="library-card-print"><img src={cardImageUrl(card)} alt="" loading="lazy" decoding="async" /></span>
+      <span className="library-card-caption"><small>{card.catalogId} · {card.deck}</small><b>{card.name}</b></span>
+      <span className="open-card">View card →</span>
+    </button>;
+  }
   const statPairs = Object.entries(card.stats).slice(0, 3);
-  return <button className={`library-card paper-stack interactive-paper type-${card.cardType.toLocaleLowerCase().replaceAll(" ", "-")}`} onClick={onOpen}>
-    {saved && <span className="binder-star" aria-label="Saved in Dojo Binder" title="Saved in Dojo Binder">★</span>}
-    <div className="card-topline"><span>{card.cardType}</span><b>{card.deck}</b></div><div className={`card-art${isCompleteCardArt(card) ? " card-art--complete" : ""}${!hasCardArt(card) ? " card-art--pending" : ""}`}><img src={cardImageUrl(card)} alt={hasCardArt(card) ? card.name : `Artwork pending for ${card.name}`} loading="lazy" decoding="async" /><span>{card.catalogId}</span></div>
+  return <button className={`library-card paper-stack interactive-paper ${typeClass}`} onClick={onOpen}>
+    {savedStar}
+    <div className="card-topline"><span>{card.cardType}</span><b>{card.deck}</b></div><div className="card-art card-art--pending"><img src={cardImageUrl(card)} alt={`Artwork pending for ${card.name}`} loading="lazy" decoding="async" /><span>{card.catalogId}</span></div>
     <div className="card-body"><small>{card.cardType}</small><h3>{card.name}</h3><div className="card-costs">{card.fpCost !== null && card.fpCost !== undefined && <span><b>{valueLabel(card.fpCost)}</b> Focus Cost</span>}{card.focusValue !== null && card.focusValue !== undefined && <span><b>{valueLabel(card.focusValue)}</b> Focus</span>}{card.zone && <span>{card.zone}</span>}</div>{statPairs.length > 0 && <div className="mini-stats">{statPairs.map(([key, value]) => <span key={key}><b>{value}</b>{key}</span>)}</div>}<p>{card.rulesText || card.flavorText || "Open for complete card details."}</p><div className="tag-row">{card.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div></div><span className="open-card">View card →</span>
   </button>;
 }

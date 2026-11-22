@@ -530,6 +530,15 @@
   .library-card.type-location::before { background: var(--pf-brass); }
   .binder-star { position: absolute; top: 12px; right: 12px; z-index: 3; width: 29px; height: 29px; display: grid; place-items: center; border: 1px solid var(--pf-line); color: var(--pf-brass); background: rgba(255,250,240,.92); cursor: pointer; }
   .card-topline { display: flex; justify-content: space-between; gap: 8px; padding: 13px 12px 7px; color: var(--pf-muted); font-family: var(--pf-mono); font-size: 7px; text-transform: uppercase; }
+  /* Printed card tile: the whole 11:15 card on a paper mount, caption underneath. */
+  .library-card--printed .library-card-print { position: relative; display: block; flex: 0 0 auto; align-self: stretch; margin: 12px 12px 0; aspect-ratio: 11 / 15; overflow: hidden; border-radius: 6px; background: var(--pf-surface); box-shadow: 0 0 0 1px var(--pf-line), 3px 4px 0 var(--pf-line-strong); }
+  .library-card--printed .library-card-print img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .library-card--printed { padding: 0; }
+  @media (max-width: 600px) { .library-card--printed .library-card-print { margin: 8px 8px 0; } .library-card-caption { padding: 10px; } .library-card-caption b { font-size: 16px; } }
+  .library-card-caption { display: grid; gap: 3px; padding: 12px 14px 12px; text-align: left; }
+  .library-card-caption small { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+  .library-card-caption b { color: var(--pf-ink); font-family: var(--pf-display); font-size: 19px; font-weight: 400; line-height: 1; text-transform: uppercase; }
+  .library-card--printed .open-card { margin-top: auto; }
   .card-art { aspect-ratio: 1.2 / 1; overflow: hidden; border-block: 1px solid var(--pf-line); background: var(--pf-surface); }
   .card-art img { width: 100%; height: 100%; object-fit: cover; }
   .card-art--pending { display: grid; place-items: center; padding: 16px; }
