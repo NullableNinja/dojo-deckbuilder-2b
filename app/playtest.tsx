@@ -303,7 +303,7 @@ type HouseSettings = { tempo: boolean; locations: boolean; openMarket: boolean; 
 type DeskView = "market" | "combo" | "belt";
 type GameModeId = (typeof CANONICAL_GAME_MODES)[number]["id"];
 type MatVfxKind = "attack" | "hit" | "block" | "combo" | "ko" | "brace" | "certified" | "promotion";
-type MatVfxEvent = { id: number; player?: MatVfxKind; ai?: MatVfxKind; screen?: "impact" | "scene"; cue: string; cueTone: "attack" | "damage" | "block" | "certified" | "promotion" | "summary"; announcement: string; xp?: { side: "player" | "ai"; amount: number }; promotion?: { side: "player" | "ai"; belt: string; previousBelt: string } };
+type MatVfxEvent = { id: number; player?: MatVfxKind; ai?: MatVfxKind; screen?: "impact" | "scene"; cue: string; cueScale?: number; cueTone: "attack" | "damage" | "block" | "certified" | "promotion" | "summary"; announcement: string; xp?: { side: "player" | "ai"; amount: number }; promotion?: { side: "player" | "ai"; belt: string; previousBelt: string } };
 
 const BINDER_STORAGE_KEY = "dojo-binder-v1";
 
@@ -2659,6 +2659,18 @@ function playAreaCleanup(board: Board) {
 // Keep mechanics out of rendering helpers whenever possible.
 // -----------------------------------------------------------------------------
 
+// Presentation only: the onomatopoeia grows with the hit. Variants rotate by exchange so repeats stay absurd.
+const IMPACT_WORDS: Array<{ min: number; scale: number; words: string[] }> = [
+  { min: 7, scale: 1.55, words: ["HIYAH!!", "KA-BLAM!", "OVERTIME!"] },
+  { min: 5, scale: 1.32, words: ["WHAM!", "KRAK!", "STAMPED!"] },
+  { min: 3, scale: 1.14, words: ["POW!", "THWAP!", "FILED!"] },
+  { min: 1, scale: 1, words: ["BONK!", "BOP!", "TAP!"] },
+];
+function impactWord(damage: number, seed: number) {
+  const tier = IMPACT_WORDS.find((entry) => damage >= entry.min) ?? IMPACT_WORDS[IMPACT_WORDS.length - 1];
+  return { word: tier.words[Math.abs(seed) % tier.words.length], scale: tier.scale };
+}
+
 function NativeCardArt({ card }: { card: CardEntry }) {
   const glyph = isAttack(card) ? "✦" : isDefense(card) ? "◆" : isKata(card) ? "◎" : isPermanent(card) ? "▣" : card.cardType === "Combo" ? "∞" : "✺";
   return <span className="native-card-art" aria-hidden="true">
@@ -3060,13 +3072,16 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
       const blocked = exchange.outcome === "block";
       const knockedOut = (exchange.target === "player" ? match.player.hp : match.ai.hp) <= 0;
       const comboTriggered = /combo/i.test(match.log[0] ?? "");
-      const cue = knockedOut ? "KO!" : comboTriggered ? "COMBO!" : blocked ? "BLOCK!" : exchange.damage > 0 ? "POW!" : "CLASH!";
+      const impact = impactWord(exchange.damage, matVfxSequence.current + 1);
+      const cue = knockedOut ? "K.O.!" : comboTriggered ? "COMBO!" : blocked ? "BLOCK!" : exchange.damage > 0 ? impact.word : "CLASH!";
+      const cueScale = knockedOut ? 1.7 : blocked || comboTriggered ? 1.1 : exchange.damage > 0 ? impact.scale : 1;
       const cueTone = knockedOut || exchange.damage > 0 ? "damage" : blocked ? "block" : comboTriggered ? "attack" : "attack";
       event = {
         player: exchange.actor === "player" ? (knockedOut ? "ko" : comboTriggered ? "combo" : "attack") : exchange.target === "player" ? (knockedOut ? "ko" : blocked ? "block" : "hit") : undefined,
         ai: exchange.actor === "ai" ? (knockedOut ? "ko" : comboTriggered ? "combo" : "attack") : exchange.target === "ai" ? (knockedOut ? "ko" : blocked ? "block" : "hit") : undefined,
         screen: blocked ? undefined : "impact",
         cue,
+        cueScale,
         cueTone,
         announcement: knockedOut ? "The field test has reached a conclusive impact." : blocked ? "Defense filed. The hit has been redirected to the paperwork." : exchange.damage > 0 ? `${exchange.damage} damage certified.` : "Attack resolved.",
         xp: playerXpGain ? { side: "player", amount: playerXpGain } : aiXpGain ? { side: "ai", amount: aiXpGain } : undefined,
@@ -4914,10 +4929,13 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   const winnerArt = artistUrl(winnerFighter);
   const playerHpPercent = Math.max(0, Math.min(100, player.hp / player.maxHp * 100));
   const aiHpPercent = Math.max(0, Math.min(100, ai.hp / ai.maxHp * 100));
+  // Presentation only: explain an Initiate phase with nothing to equip instead of silently dimming the hand.
+  const initiateHasEquipment = player.hand.some((id) => { const card = cardFor(id); return Boolean(card && isPermanent(card)); });
+  const initiateIdle = match.phase === "player-initiate" && !match.pendingChoice && !match.pendingDiscard && !initiateHasEquipment;
   const phaseActionDock = !match.winner && <nav className={`playtest-action-dock dock-${match.phase}`} aria-label="Next legal action">
     <div>
       <span>{match.pendingDiscard ? "DISCARD" : match.phase === "player-initiate" ? "INITIATE" : match.phase === "player-yell" ? "YELL" : match.phase === "player-ascend" ? "ASCEND" : match.phase === "defense-window" ? "REACTION" : match.phase === "reversal-window" ? "REVERSAL" : "OPPONENT"}</span>
-      <b>{match.pendingDiscard ? "Choose a card from your hand" : match.phase === "player-initiate" ? "Equipment first" : match.phase === "player-yell" ? pendingAttack ? `${pendingAttack.name} selected` : `${player.attacksThisTurn} attack${player.attacksThisTurn === 1 ? "" : "s"} played · no cap` : match.phase === "player-ascend" ? `${player.focus} Focus · Market + Combo → Belt` : match.phase === "defense-window" ? `${match.pendingStrike?.zone} strike incoming` : match.phase === "reversal-window" ? pendingAttack ? `${pendingAttack.name} ready` : "Choose an Attack" : settings.autoAi ? "Clipboard thinking…" : "Computer is waiting"}</b>
+      <b>{match.pendingDiscard ? "Choose a card from your hand" : match.phase === "player-initiate" ? (initiateHasEquipment ? "Equipment first" : "Nothing to equip") : match.phase === "player-yell" ? pendingAttack ? `${pendingAttack.name} selected` : `${player.attacksThisTurn} attack${player.attacksThisTurn === 1 ? "" : "s"} played · no cap` : match.phase === "player-ascend" ? `${player.focus} Focus · Market + Combo → Belt` : match.phase === "defense-window" ? `${match.pendingStrike?.zone} strike incoming` : match.phase === "reversal-window" ? pendingAttack ? `${pendingAttack.name} ready` : "Choose an Attack" : settings.autoAi ? "Clipboard thinking…" : "Computer is waiting"}</b>
     </div>
     {match.phase === "player-initiate" && <button onClick={beginYell}>Proceed to Yell →</button>}
     {match.phase === "player-yell" && !match.pendingDiscard && <div className="dock-action-group">{pendingAttack && <button onClick={declareAttack}>Declare Attack →</button>}<button className={pendingAttack ? "dock-secondary" : ""} onClick={enterAscend}>{pendingAttack ? "Skip selected card · Ascend" : "Proceed to Ascend →"}</button></div>}
@@ -4928,7 +4946,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   </nav>;
 
   return <main className={`playtest-shell playtest-shell--live location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
-    {matVfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${matVfx.cueTone}`} key={matVfx.id}><strong>{matVfx.cue}</strong><small>{matVfx.announcement}</small></div>{matVfx.xp && <div className={`playtest-xp-pop playtest-xp-pop--${matVfx.xp.side}`} key={`xp-${matVfx.id}`}>+{matVfx.xp.amount} XP</div>}{matVfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${matVfx.promotion.side}`} key={`promotion-${matVfx.id}`}><span>{matVfx.promotion.side === "player" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{matVfx.promotion.belt} BELT</strong><small>{matVfx.promotion.previousBelt} → {matVfx.promotion.belt} · {matVfx.promotion.side === "player" ? "Your rank has advanced." : "The paperwork got taller."}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{matVfx.announcement}</div></>}
+    {matVfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${matVfx.cueTone}`} style={{ "--cue-scale": matVfx.cueScale ?? 1 } as CSSProperties} key={matVfx.id}><strong>{matVfx.cue}</strong><small>{matVfx.announcement}</small></div>{matVfx.xp && <div className={`playtest-xp-pop playtest-xp-pop--${matVfx.xp.side}`} key={`xp-${matVfx.id}`}>+{matVfx.xp.amount} XP</div>}{matVfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${matVfx.promotion.side}`} key={`promotion-${matVfx.id}`}><span>{matVfx.promotion.side === "player" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{matVfx.promotion.belt} BELT</strong><small>{matVfx.promotion.previousBelt} → {matVfx.promotion.belt} · {matVfx.promotion.side === "player" ? "Your rank has advanced." : "The paperwork got taller."}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{matVfx.announcement}</div></>}
 
     <header className="playtest-topbar battle-versus-hud">
       <div className={`battle-hud-fighter battle-hud-fighter--player hp-tier-${healthTier(player.hp, player.maxHp)}`} style={{ "--hp-progress": `${playerHpPercent}%` } as CSSProperties}>
@@ -4943,6 +4961,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     </header>
     {match.winner && <section className={`match-result paper-stack ${match.winner === "player" ? "is-victory" : "is-defeat"}`}>
       {match.winner === "player" && <div className="victory-confetti" aria-hidden="true">{Array.from({ length: 44 }, (_, index) => <i className={`confetti-bit confetti-bit--${["action", "brass", "guard", "violet", "blue", "paper"][index % 6]}`} style={{ left: `${(index * 37) % 100}%`, animationDelay: `${(index % 11) * .09}s`, animationDuration: `${2.35 + (index % 7) * .18}s`, "--confetti-drift": `${((index % 9) - 4) * 12}px` } as CSSProperties} key={index} />)}</div>}
+      <div className="ko-slam" aria-hidden="true"><b>K.O.!</b><span>{match.winner === "player" ? "Opponent filed under defeated" : "You have been filed under defeated"}</span></div>
       <div className="victory-certificate">
         <div className="victory-stamp"><span>{match.winner === "player" ? "VICTORY" : "CLOSED"}</span><b>{match.winner === "player" ? "CERTIFIED" : "FIELD TEST"}</b></div>
         <div className="victory-fighter">
@@ -4965,8 +4984,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
       </section>
     </section>
     <section className="playtest-workspace playtest-workspace--hand">
-      <section className="hand-panel paper-stack">
-        <header><div><span className="eyebrow">Your hand · {player.hand.length} cards</span><h2>{match.pendingChoice ? "Resolve the Equipment decision" : match.pendingDiscard ? `Choose ${match.pendingDiscard.remaining} card to discard` : match.phase === "player-initiate" ? "Equip before the yelling starts" : match.phase === "defense-window" ? `Defend ${match.pendingStrike?.zone} or let it land` : match.phase === "reversal-window" ? "Return the favor immediately" : "Choose your next card"}</h2></div><div className="hand-counters"><span>Deck {player.deck.length}</span><span>Discard {player.discard.length}</span><span>Attacks played {player.attacksThisTurn}</span><span>Flow {player.flowUsedThisTurn ? "used" : "ready"}</span><span>Practice {player.defensePracticeUsed ? "used" : "ready"}</span><span>Habit {player.badHabitFocusUsed ? "used" : "ready"}</span></div>{phaseActionDock}</header>
+      <section className={`hand-panel paper-stack${initiateIdle ? " hand-panel--idle" : ""}`}>
+        <header><div><span className="eyebrow">Your hand · {player.hand.length} cards</span><h2>{match.pendingChoice ? "Resolve the Equipment decision" : match.pendingDiscard ? `Choose ${match.pendingDiscard.remaining} card to discard` : match.phase === "player-initiate" ? (initiateHasEquipment ? "Equip before the yelling starts" : "No Equipment in hand. Proceed to Yell.") : match.phase === "defense-window" ? `Defend ${match.pendingStrike?.zone} or let it land` : match.phase === "reversal-window" ? "Return the favor immediately" : "Choose your next card"}</h2></div><div className="hand-counters"><span>Deck {player.deck.length}</span><span>Discard {player.discard.length}</span><span>Attacks played {player.attacksThisTurn}</span><span>Flow {player.flowUsedThisTurn ? "used" : "ready"}</span><span>Practice {player.defensePracticeUsed ? "used" : "ready"}</span><span>Habit {player.badHabitFocusUsed ? "used" : "ready"}</span></div>{phaseActionDock}</header>
         {match.pendingDiscard && <div className="discard-choice-notice" role="status"><b>{cardFor(match.pendingDiscard.sourceCardId)?.name}</b><span>Select the card you want to discard. The engine will not choose for you.</span></div>}
         {equipmentReactions.length > 0 && <div className="equipment-reaction-strip" aria-label="Available Equipment reactions"><span>Equipment reactions</span>{equipmentReactions.map((item) => <button type="button" disabled={Boolean(match.pendingChoice)} onClick={() => activateEquipment(item.id)} key={item.id}><b>Exhaust {item.name}</b><small>{equipmentActivationSummary(item)}</small></button>)}</div>}
         {equipmentActions.length > 0 && <div className="equipment-reaction-strip equipment-trigger-strip" aria-label="Available Equipment actions"><span>Equipment actions</span>{equipmentActions.map((item) => <button type="button" disabled={Boolean(match.pendingChoice)} onClick={() => activateEquipment(item.id)} key={item.id}><b>Exhaust {item.name}</b><small>{equipmentActivationSummary(item)}</small></button>)}</div>}
@@ -5040,7 +5059,17 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
             <div className="belt-track">{belts.map((belt, index) => <span className={index <= player.belt ? "earned" : ""} key={belt.name} style={{ "--belt-rank": belt.color } as CSSProperties} title={`${belt.name} Belt · ${beltThresholds[index]} XP · ${belt.exam.title}`}>{belt.name.slice(0, 1)}</span>)}</div>
             <TrainingStripeRack board={player} match={match} />
             <div className="belt-ledger-list">{belts.map((belt, index) => <article className={index === player.belt ? "is-current" : index < player.belt ? "is-earned" : ""} key={belt.name} style={{ "--belt-rank": belt.color } as CSSProperties}><span>{index < player.belt ? "✓" : index === player.belt ? "●" : index + 1}</span><div><b>{belt.name} Belt · {belt.exam.title}</b><small>{beltThresholds[index]} XP · {belt.exam.summary}</small><small>{belt.reward.summary}</small></div></article>)}</div>
-            {nextBelt && <button className="button primary" disabled={match.phase !== "player-ascend" || !canPromote} onClick={promote}>{canPromote && match.phase === "player-ascend" ? `Promote to ${nextBelt.name} →` : match.phase !== "player-ascend" ? "Promotion opens during Ascend" : !promotionAction.canUse ? "Belt Check action used · promotion next turn" : `${nextBelt.name}: ${nextBeltXp} XP + completed task`}</button>}
+            {nextBelt && (canPromote && match.phase === "player-ascend"
+              ? <button className="button primary" onClick={promote}>Promote to {nextBelt.name} →</button>
+              : <div className="belt-requirements" role="status" aria-label={`${nextBelt.name} Belt requirements`}>
+                <span>{nextBelt.name} Belt · requirements</span>
+                <ul>
+                  <li className={player.xp >= nextBeltXp ? "is-met" : ""}><i aria-hidden="true">{player.xp >= nextBeltXp ? "✓" : ""}</i>{nextBeltXp} XP <small>{player.xp} filed</small><b className="sr-only">{player.xp >= nextBeltXp ? " (met)" : " (not met)"}</b></li>
+                  <li className={playerTask ? "is-met" : ""}><i aria-hidden="true">{playerTask ? "✓" : ""}</i>Belt Exam task completed<b className="sr-only">{playerTask ? " (met)" : " (not met)"}</b></li>
+                  {match.phase !== "player-ascend" && <li className="is-note"><i aria-hidden="true">!</i>Promotion opens during Ascend</li>}
+                  {match.phase === "player-ascend" && !promotionAction.canUse && <li className="is-note"><i aria-hidden="true">!</i>Belt Check action used. Promotion next turn</li>}
+                </ul>
+              </div>)}
           </section>}
         </div>
         <footer className="ascend-desk-footer"><details><summary>Recent fight filings</summary><ol>{match.log.slice(0, 6).map((line, index) => <li key={`${line}-${index}`}>{line}</li>)}</ol></details>{match.phase === "player-ascend" && <div className="ascend-guide-actions">{deskView === "belt" && <button className="button ghost" onClick={() => setDeskView("market")}>← Previous review</button>}<div><small>{deskView === "belt" ? "Last stop. Hide clears any unspent Focus." : "Next: check Belt progress."}</small><button className="button primary ascend-next" onClick={advanceAscendReview}>{ascendNextLabel}</button></div></div>}</footer>
