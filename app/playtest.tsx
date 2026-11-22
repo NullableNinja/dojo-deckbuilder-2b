@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type SetStateAction } from "react";
 import { MODE_META, ModeCard, type ModeMeta } from "./mode-card";
 import { useCardMotion } from "./use-card-motion";
+import { cardMotionDisabled } from "./card-motion";
+import { SceneReveal } from "./scene-reveal";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import starterJabArtUrl from "./assets/starter/starter-jab-art-v2.webp";
 import highGuardArtUrl from "./assets/starter/high-guard-art-v2.webp";
@@ -3036,6 +3038,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   });
   const [matVfx, setMatVfx] = useState<MatVfxEvent | null>(null);
   const liveShellRef = useRef<HTMLElement>(null);
+  const [sceneReveal, setSceneReveal] = useState<{ key: number; locationId: string; previousId: string | null; round: number; opening: boolean } | null>(null);
+  const sceneSeenRef = useRef<{ serial: number; locationId: string } | null>(null);
   const duelSerial = useRef(0);
   const matVfxSequence = useRef(0);
   const previousMatchRef = useRef<Match | null>(null);
@@ -4775,6 +4779,18 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   };
 
   // Presentation-only card motion (fold, crumple, draw, restock). Must run before the early return.
+  // Scene reveal (presentation only): the opening Location and every scene change take the stage once.
+  useEffect(() => {
+    if (!match || match.winner || !match.locationId || !settings.locations) return;
+    const seen = sceneSeenRef.current;
+    const serial = duelSerial.current;
+    if (seen && seen.serial === serial && seen.locationId === match.locationId) return;
+    const opening = !seen || seen.serial !== serial;
+    sceneSeenRef.current = { serial, locationId: match.locationId };
+    setSceneReveal({ key: Date.now(), locationId: match.locationId, previousId: opening ? null : seen?.locationId ?? null, round: match.round, opening });
+  }, [match?.locationId, match?.round, match?.winner, settings.locations]); // eslint-disable-line react-hooks/exhaustive-deps
+  const revealedScene = sceneReveal ? cardFor(sceneReveal.locationId) : null;
+  const sceneRevealElement = sceneReveal && revealedScene && !match?.winner ? <SceneReveal key={sceneReveal.key} card={revealedScene} art={artistUrl(revealedScene)} previousName={sceneReveal.previousId ? cardFor(sceneReveal.previousId)?.name : null} round={sceneReveal.round} opening={sceneReveal.opening} targetSelector=".playtest-shell--live .combat-stage-heading > button" reducedMotion={cardMotionDisabled(settings.motion)} onDone={() => setSceneReveal(null)} /> : null;
   useCardMotion(liveShellRef, match && player ? { deck: player.deck, hand: player.hand, discard: player.discard, playArea: player.playArea, market: match.market } : null, settings.motion, duelSerial.current);
   if (!match || !player || !ai || !playerFighter || !aiFighter) return <SetupView selectedId={selectedId} setSelectedId={setSelectedId} settings={settings} setSettings={setSettings} begin={begin} mode={mode} setMode={setMode} goTo={goTo} />;
   const pendingAttack = match.selectedAttackId ? cardFor(match.selectedAttackId) : null;
@@ -4952,6 +4968,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   </nav>;
 
   return <main ref={liveShellRef} className={`playtest-shell playtest-shell--live location-${locationTheme(currentLocation)} motion-${settings.motion} ${settings.guided ? "playtest-shell--guided" : ""} ${match.winner ? "playtest-shell--finished" : ""}${matVfx?.screen === "impact" ? " ddb-vfx-screen-impact" : ""}${matVfx?.screen === "scene" ? " ddb-vfx-scene" : ""}${matVfx?.screen === "impact" ? ` ddb-vfx-screen-v${matVfx.id % 5}` : ""} shell`}>
+    {sceneRevealElement}
     {matVfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${matVfx.cueTone}`} style={{ "--cue-scale": matVfx.cueScale ?? 1 } as CSSProperties} key={matVfx.id}><strong>{matVfx.cue}</strong><small>{matVfx.announcement}</small></div>{matVfx.xp && <div className={`playtest-xp-pop playtest-xp-pop--${matVfx.xp.side}`} key={`xp-${matVfx.id}`}>+{matVfx.xp.amount} XP</div>}{matVfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${matVfx.promotion.side}`} key={`promotion-${matVfx.id}`}><span>{matVfx.promotion.side === "player" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{matVfx.promotion.belt} BELT</strong><small>{matVfx.promotion.previousBelt} → {matVfx.promotion.belt} · {matVfx.promotion.side === "player" ? "Your rank has advanced." : "The paperwork got taller."}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{matVfx.announcement}</div></>}
 
     <header className="playtest-topbar battle-versus-hud">

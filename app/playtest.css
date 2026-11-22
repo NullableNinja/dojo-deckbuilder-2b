@@ -5442,3 +5442,68 @@ body:has(.playtest-shell--live .match-result) > .playtest-vfx-layer--runtime { d
 .playtest-shell--live:is(.motion-reduced, .motion-off) [data-card-motion] { animation: none !important; }
 :root[data-motion="reduced"] .card-motion-ghost,
 .playtest-shell--live:is(.motion-reduced, .motion-off) .card-motion-ghost { display: none; }
+
+/* ========================================================================
+   SCENE REVEAL: a new Location takes the stage, then files itself under
+   Current Scene (app/scene-reveal.tsx). Portaled to <body>; theme tokens apply.
+   ======================================================================== */
+.scene-reveal { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
+.scene-reveal-backdrop { position: fixed; inset: 0; overflow: hidden; background: var(--pf-scrim); backdrop-filter: blur(5px); animation: pf-scene-backdrop .3s ease-out both; }
+.scene-reveal-burst { position: absolute; left: 50%; top: 50%; width: 1600px; height: 1600px; translate: -50% -50%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(240, 220, 169, .1) 0deg 8deg, transparent 8deg 20deg); animation: pf-burst-spin 60s linear infinite; }
+.scene-reveal-stage { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(200px, 340px) minmax(0, 460px); align-items: center; gap: clamp(20px, 4vw, 48px); width: min(900px, 100%); }
+.scene-reveal-card { aspect-ratio: 11 / 15; border-radius: 12px; background: var(--pf-surface); box-shadow: 0 0 0 4px #fffaf0, 12px 14px 0 rgba(5, 13, 23, .55), 0 30px 60px rgba(0, 0, 0, .45); transform: rotate(-3deg); transform-origin: 50% 60%; animation: pf-scene-card-in .7s cubic-bezier(.2, 1.2, .35, 1) .08s both; }
+.scene-reveal-card img { width: 100%; height: 100%; border-radius: 12px; object-fit: contain; }
+.scene-reveal-card-fallback { display: grid; place-content: center; gap: 10px; height: 100%; padding: 20px; text-align: center; }
+.scene-reveal-card-fallback b { font-family: var(--pf-display); font-size: 28px; font-weight: 400; text-transform: uppercase; }
+.scene-reveal-copy { display: grid; gap: 14px; justify-items: start; color: #fffaf0; animation: pf-scene-copy-in .45s cubic-bezier(.2, .9, .3, 1) .35s both; }
+.scene-reveal-stamp { border: 3px solid var(--pf-action); border-radius: 4px; padding: 5px 12px 4px; color: #fffaf0; background: var(--pf-action); font-family: var(--pf-impact); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; transform: rotate(-3deg); box-shadow: 4px 5px 0 rgba(5, 13, 23, .6); animation: pf-scene-stamp .4s cubic-bezier(.2, 1.6, .4, 1) .55s both; }
+.scene-reveal-copy h2 { display: grid; gap: 4px; margin: 0; font-family: var(--pf-display); font-size: clamp(36px, 5vw, 60px); font-weight: 400; line-height: .92; text-transform: uppercase; text-shadow: 4px 5px 0 #050d17; }
+.scene-reveal-copy h2 small { color: #f0dca9; font-family: var(--pf-label); font-size: 15px; font-weight: 700; letter-spacing: .16em; text-shadow: none; }
+.scene-reveal-previous { margin: -4px 0 0; color: rgba(255, 250, 240, .75); font-family: var(--pf-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.scene-reveal-previous s { text-decoration-color: var(--pf-action); text-decoration-thickness: 2px; }
+.scene-reveal-rule { width: 100%; border: 2px solid #050d17; border-radius: 6px; padding: 14px 16px; color: #17263a; background: #fffaf0; box-shadow: 6px 7px 0 rgba(5, 13, 23, .6); transform: rotate(.6deg); }
+.scene-reveal-rule span { display: block; margin-bottom: 6px; color: #8e2f24; font-family: var(--pf-mono); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.scene-reveal-rule p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; }
+.scene-reveal-flavor { margin: 0; color: rgba(255, 250, 240, .82); font-size: 14px; font-style: italic; }
+.scene-reveal-dismiss { min-height: 52px; display: inline-flex; align-items: center; gap: 10px; border: 3px solid #050d17; border-radius: 8px 4px 8px 5px; padding: 0 22px; color: #fffaf0; background: var(--pf-action); box-shadow: 5px 6px 0 #050d17; font-family: var(--pf-display); font-size: 20px; text-transform: uppercase; cursor: pointer; transform: rotate(-1deg); }
+.scene-reveal-dismiss:hover { transform: translate(-1px, -2px) rotate(-2deg); box-shadow: 7px 8px 0 #050d17; }
+.scene-reveal-dismiss:focus-visible { outline: 3px solid #f0dca9; outline-offset: 4px; }
+.scene-reveal-hint { color: rgba(255, 250, 240, .65); font-size: 12px; }
+.scene-reveal.is-leaving { pointer-events: none; }
+
+/* Where the card lands: the Current Scene slot pulses so the eye follows it. */
+.playtest-shell--live .combat-stage-heading > button[data-scene-landed] { animation: pf-scene-landed 1.4s ease-out both; }
+@keyframes pf-scene-landed {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pf-action) 70%, transparent); transform: scale(1.04); }
+  40% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--pf-action) 0%, transparent); transform: scale(1); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes pf-scene-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pf-scene-card-in {
+  0% { opacity: 0; transform: perspective(900px) translateY(-40px) rotateY(80deg) rotate(-10deg) scale(.8); }
+  60% { opacity: 1; transform: perspective(900px) rotateY(-10deg) rotate(-1deg) scale(1.04); }
+  100% { opacity: 1; transform: rotate(-3deg); }
+}
+@keyframes pf-scene-copy-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes pf-scene-stamp { from { opacity: 0; transform: rotate(-14deg) scale(1.8); } to { opacity: 1; transform: rotate(-3deg) scale(1); } }
+
+@media (max-width: 700px) {
+  .scene-reveal { align-items: start; }
+  .scene-reveal-stage { grid-template-columns: 1fr; justify-items: center; gap: 16px; padding-block: 8px; }
+  .scene-reveal-card { width: auto; height: min(40dvh, 330px); }
+  .scene-reveal-copy { justify-items: stretch; }
+  .scene-reveal-copy h2 { font-size: 34px; }
+  .scene-reveal-rule p { font-size: 15px; }
+  .scene-reveal-dismiss { justify-content: center; }
+  .scene-reveal-flavor { display: none; }
+}
+
+/* Reduced motion: the reveal still stops play so the change is noticed, but nothing flies or spins. */
+@media (prefers-reduced-motion: reduce) {
+  .scene-reveal *, .scene-reveal-backdrop, .playtest-shell--live .combat-stage-heading > button[data-scene-landed] { animation: none !important; }
+}
+.scene-reveal.is-still *, .scene-reveal.is-still .scene-reveal-backdrop { animation: none !important; }
+:root[data-motion="reduced"] .playtest-shell--live .combat-stage-heading > button[data-scene-landed] { animation: none !important; outline: 3px solid var(--pf-action); }
+/* While a scene reveal is up, combat cues from the mat underneath stand down. */
+body:has(> .scene-reveal) > .playtest-vfx-layer--runtime,
+body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display: none; }
