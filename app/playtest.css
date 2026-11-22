@@ -5381,3 +5381,10 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 .playtest-shell--live .ascend-market-grid .play-card-meta > b::before { content: ""; position: absolute; top: 50%; left: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--mat-raised); transform: translateY(-50%); }
 .playtest-shell--live .ascend-market-grid .play-card-meta > b small { color: rgba(255, 250, 240, .85) !important; font-family: var(--pf-label); font-size: 9px !important; letter-spacing: .1em; }
 .playtest-shell--live .ascend-market-grid .play-card.is-disabled .play-card-meta > b { background: #5d6672 !important; }
+
+/* The shell is an isolated stacking context, so its fixed result overlay can only rise above the page
+   (footer included) if the shell itself does while a result is open. */
+.playtest-shell--live:has(.match-result) { z-index: var(--layer-critical, 100); }
+/* Once the result screen owns the moment, the last exchange's combat cues stand down (no double K.O.). */
+.playtest-shell--live:has(.match-result) > .playtest-vfx-layer,
+body:has(.playtest-shell--live .match-result) > .playtest-vfx-layer--runtime { display: none; }
