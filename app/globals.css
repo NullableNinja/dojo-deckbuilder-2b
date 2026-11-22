@@ -2123,3 +2123,9 @@
   @media (prefers-reduced-motion: reduce) { .thumb-bar-item.is-play { transform: none; } }
 }
 
+@layer components {
+  .mat-loading { display: grid; place-content: center; justify-items: center; gap: 6px; min-height: 60vh; color: var(--pf-ink); text-align: center; }
+  .mat-loading b { font-family: var(--pf-display); font-size: clamp(28px, 4vw, 44px); font-weight: 400; text-transform: uppercase; }
+  .mat-loading span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+}
+

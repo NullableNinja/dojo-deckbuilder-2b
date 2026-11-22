@@ -2991,7 +2991,7 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   .playtest-shell--live .ascend-desk--functional .ascend-market:has(.ascend-featured-combo[data-combo-popout="ready"]) { display: grid; grid-template-columns: minmax(0, 1fr) clamp(116px, 11vw, 132px); grid-template-rows: auto clamp(332px, 40dvh, 366px); grid-template-areas: "heading heading" "market combo"; align-content: start; align-items: start; gap: 8px 10px; min-height: 0; }
   .playtest-shell--live .ascend-desk--functional .ascend-market:has(.ascend-featured-combo[data-combo-popout="ready"]) > header { grid-area: heading; }
   .playtest-shell--live .ascend-desk--functional .ascend-market:has(.ascend-featured-combo[data-combo-popout="ready"]) > .ascend-market-grid { grid-area: market; width: 100%; min-width: 0; height: clamp(332px, 40dvh, 366px); min-height: 332px; max-height: 366px; align-self: start; align-content: start; align-items: start; padding-top: 2px; padding-bottom: 10px; }
-  .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) { grid-area: combo; position: relative; inset: auto; z-index: 3; width: clamp(110px, 10vw, 126px); min-width: clamp(110px, 10vw, 126px); max-width: clamp(110px, 10vw, 126px); height: 132px; min-height: 132px; max-height: 132px; align-self: center; justify-self: center; display: block; margin: 0; padding: 0; overflow: hidden; border: 1px solid rgba(236, 205, 112, .78); border-radius: 12px 5px 13px 6px; background: linear-gradient(145deg, rgba(41, 91, 68, .99), rgba(11, 43, 32, .99)); box-shadow: 0 8px 0 rgba(214, 165, 40, .22), inset 0 0 0 1px rgba(255, 244, 192, .09); cursor: pointer; }
+  .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) { grid-area: combo; position: relative; inset: auto; z-index: 3; width: clamp(110px, 10vw, 126px); min-width: clamp(110px, 10vw, 126px); max-width: clamp(110px, 10vw, 126px); height: 132px; min-height: 132px; max-height: 132px; align-self: center; justify-self: center; display: block; margin: 0; padding: 0; overflow: hidden; border: 1px solid rgba(236, 205, 112, .78); border-radius: 12px 5px 13px 6px; background: var(--mat-raised); box-shadow: 0 8px 0 rgba(214, 165, 40, .22), inset 0 0 0 1px rgba(255, 244, 192, .09); cursor: pointer; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > header { box-sizing: border-box; width: 100%; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; place-content: stretch; place-items: center; gap: 8px; margin: 0; padding: 14px 10px 11px; text-align: center; cursor: pointer; outline: none; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > header::before { content: "FEATURED COMBO"; width: 100%; color: #f1c84f; font-size: 8px; font-weight: 1000; line-height: 1; letter-spacing: .11em; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > header::after { content: "OPEN COMBO ↗"; width: 100%; padding-top: 8px; border-top: 1px solid rgba(236, 205, 112, .28); color: #f7e5a9; font-size: 8px; font-weight: 950; line-height: 1; letter-spacing: .08em; }
@@ -3004,7 +3004,7 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > .ascend-featured-combo-copy,
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > .ascend-featured-combo-actions { display: none; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > header h3 { display: -webkit-box; width: 100%; overflow: hidden; margin: 0; color: #fff8df; font-size: clamp(11px, 1.1vw, 14px); font-weight: 900; line-height: 1.14; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-  .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"].is-open { grid-area: unset; position: absolute; inset: auto; top: 54px; left: 0; right: 0; bottom: auto; z-index: 24; box-sizing: border-box; width: 100%; min-width: 100%; max-width: 100%; height: clamp(332px, 40dvh, 366px); min-height: 332px; max-height: 366px; display: grid; grid-template-columns: clamp(195px, 20vw, 230px) minmax(0, 1fr); grid-template-rows: 46px minmax(0, 1fr) 54px; grid-template-areas: "combo-head combo-head" "combo-card combo-copy" "combo-meta combo-actions"; column-gap: clamp(16px, 2.4vw, 28px); row-gap: 8px; overflow: hidden; margin: 0; padding: 12px 20px 14px; justify-self: stretch; transform: none; cursor: default; border: 2px solid rgba(236, 205, 112, .78); border-left-width: 7px; border-radius: 11px 4px 12px 5px; background: linear-gradient(155deg, rgba(18, 55, 42, .998), rgba(8, 35, 26, .998)); box-shadow: 0 8px 24px rgba(0, 0, 0, .34); }
+  .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"].is-open { grid-area: unset; position: absolute; inset: auto; top: 54px; left: 0; right: 0; bottom: auto; z-index: 24; box-sizing: border-box; width: 100%; min-width: 100%; max-width: 100%; height: clamp(332px, 40dvh, 366px); min-height: 332px; max-height: 366px; display: grid; grid-template-columns: clamp(195px, 20vw, 230px) minmax(0, 1fr); grid-template-rows: 46px minmax(0, 1fr) 54px; grid-template-areas: "combo-head combo-head" "combo-card combo-copy" "combo-meta combo-actions"; column-gap: clamp(16px, 2.4vw, 28px); row-gap: 8px; overflow: hidden; margin: 0; padding: 12px 20px 14px; justify-self: stretch; transform: none; cursor: default; border: 2px solid rgba(236, 205, 112, .78); border-left-width: 7px; border-radius: 11px 4px 12px 5px; background: var(--mat-raised); box-shadow: 0 8px 24px rgba(0, 0, 0, .34); }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"].is-open > header { grid-area: combo-head; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-width: 0; margin: 0; padding: 0 4px 4px; cursor: pointer; border-bottom: 1px dashed rgba(236, 205, 112, .32); }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"].is-open > header::before { content: none; }
   .playtest-shell--live .ascend-featured-combo[data-combo-popout="ready"].is-open > header::after { content: "CLOSE ×"; flex: 0 0 auto; color: #f4d267; font-size: 10px; font-weight: 1000; letter-spacing: .1em; }
@@ -3078,16 +3078,14 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   .playtest-shell--live .ascend-belt .belt-ledger-list { grid-template-columns: 1fr; }
 }
 
-/* Keep card taxonomy inside the same dark-mode palette as the board. */
-:root[data-theme="dark"] .play-card--defense .play-card-kind { background: #3d7653; }
-:root[data-theme="dark"] .play-card--combo .play-card-kind,
+/* Card taxonomy in dark mode uses the semantic tokens (guard / violet / brass), never ad-hoc greens. */
 :root[data-theme="dark"] .combo-limit,
-:root[data-theme="dark"] .battle-callout.is-paperwork { background: #467b55; }
-:root[data-theme="dark"] .ascend-market-grid .play-card--defense { --market-type-accent: #5e9a6c; }
-:root[data-theme="dark"] .ascend-market-grid .play-card--kata { --market-type-accent: #7d9e73; }
-:root[data-theme="dark"] .ascend-market-grid .play-card--combo { --market-type-accent: #aa9458; }
-:root[data-theme="dark"] .playtest-vfx-banner--combo { background: #467b55; }
-:root[data-theme="dark"] .playtest-shell--live .ascend-combo .combo-digital-note { border-left-color: #79b58c; background: rgba(121, 181, 140, .14); }
+:root[data-theme="dark"] .playtest-vfx-banner--combo { background: color-mix(in srgb, var(--pf-violet) 45%, var(--pf-board-charcoal)); }
+:root[data-theme="dark"] .battle-callout.is-paperwork { background: color-mix(in srgb, var(--pf-brass) 45%, var(--pf-board-charcoal)); }
+:root[data-theme="dark"] .ascend-market-grid .play-card--defense { --market-type-accent: var(--pf-guard); }
+:root[data-theme="dark"] .ascend-market-grid .play-card--kata,
+:root[data-theme="dark"] .ascend-market-grid .play-card--combo { --market-type-accent: var(--pf-violet); }
+:root[data-theme="dark"] .playtest-shell--live .ascend-combo .combo-digital-note { border-left-color: var(--pf-violet); background: color-mix(in srgb, var(--pf-violet) 14%, transparent); }
 
 /* Printed-effect decisions should present as a compact, stable dialog. Keep
    long option lists scrollable inside the list instead of making the entire
@@ -3241,11 +3239,6 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 }
 .playtest-shell--live .contextual-coach-slip > span { color: var(--mat-green); }
 .playtest-shell--live .live-mat-play--stage .mat-lane { border-color: rgba(64,91,176,.36); background: rgba(255,253,247,.55); }
-.playtest-shell--live .play-card-kind,
-.playtest-shell--live .play-card-meta strong { color: #fff; background: var(--mat-green); }
-.playtest-shell--live .play-card--attack .play-card-kind { background: var(--mat-red); }
-.playtest-shell--live .play-card--defense .play-card-kind { background: #377b8b; }
-.playtest-shell--live .play-card--combo .play-card-kind { background: #72518c; }
 .playtest-shell--live .playtest-action-dock,
 .playtest-shell--live .hand-panel > header > .playtest-action-dock {
   background: #202b4d;
@@ -3325,11 +3318,6 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 :root[data-theme="dark"] .playtest-shell--live .play-card { border-color: #596783; background: #1b2130; }
 :root[data-theme="dark"] .playtest-shell--live .play-card-main { color: #edf0f8; background: #252b3b; }
 :root[data-theme="dark"] .playtest-shell--live .play-card-meta { color: #edf0f8; border-color: #596783; background: #303747; }
-:root[data-theme="dark"] .playtest-shell--live .play-card-kind,
-:root[data-theme="dark"] .playtest-shell--live .play-card-meta strong { background: #405bb0; }
-:root[data-theme="dark"] .playtest-shell--live .play-card--attack .play-card-kind { background: #b94735; }
-:root[data-theme="dark"] .playtest-shell--live .play-card--defense .play-card-kind { background: #377b8b; }
-:root[data-theme="dark"] .playtest-shell--live .play-card--combo .play-card-kind { background: #72518c; }
 :root[data-theme="dark"] .playtest-shell--live .playtest-action-dock,
 :root[data-theme="dark"] .playtest-shell--live .hand-panel > header > .playtest-action-dock { background: #161d31; }
 :root[data-theme="dark"] .playtest-shell--live .fighter-combo-launch { background: linear-gradient(160deg, #405bb0, #2f4385); }
@@ -3583,11 +3571,6 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 :root[data-theme="dark"] .playtest-shell--live .play-card { color: var(--pf-ink); border-color: var(--pf-line-strong); background: var(--pf-surface-raised); }
 :root[data-theme="dark"] .playtest-shell--live .play-card-main { color: var(--pf-ink); background: var(--pf-surface-raised); }
 :root[data-theme="dark"] .playtest-shell--live .play-card-meta { color: var(--pf-ink); border-color: var(--pf-line); background: var(--pf-surface-dim); }
-:root[data-theme="dark"] .playtest-shell--live .play-card-kind,
-:root[data-theme="dark"] .playtest-shell--live .play-card-meta strong { color: var(--pf-surface-raised); background: var(--mat-plate); }
-:root[data-theme="dark"] .playtest-shell--live .play-card--attack .play-card-kind { background: var(--pf-action); }
-:root[data-theme="dark"] .playtest-shell--live .play-card--defense .play-card-kind { background: var(--pf-guard); }
-:root[data-theme="dark"] .playtest-shell--live .play-card--combo .play-card-kind { background: var(--pf-violet); }
 :root[data-theme="dark"] .playtest-shell--live .playtest-action-dock,
 :root[data-theme="dark"] .playtest-shell--live .hand-panel > header > .playtest-action-dock { color: var(--pf-ink); border-color: var(--pf-line-strong); background: var(--pf-surface-raised); }
 :root[data-theme="dark"] .playtest-shell--live .fighter-combo-launch { color: var(--pf-surface-raised); background: var(--mat-plate); }
