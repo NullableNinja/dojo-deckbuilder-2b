@@ -393,45 +393,108 @@ function DetailModal({ eyebrow, title, children, onClose, accent = "red" }: { ey
   return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><article ref={modalRef} className={`detail-modal paper-stack accent-${accent}`} role="dialog" aria-modal="true" aria-labelledby="detail-modal-title"><i className="modal-burst" aria-hidden="true" /><button autoFocus className="modal-close" onClick={onClose} aria-label="Close details">×</button><span className="eyebrow">{eyebrow}</span><h2 id="detail-modal-title">{title}</h2>{children}</article></div>, document.body);
 }
 
+const fighterCutoutModules = import.meta.glob<string>("./assets/fighters/*.webp", { eager: true, query: "?url", import: "default" });
+const FIGHTER_CUTOUTS: Record<string, string> = Object.fromEntries(Object.entries(fighterCutoutModules).map(([path, url]) => [path.split("/").at(-1)?.replace(/\.webp$/i, "") ?? path, url]));
+const fighterSlug = (name: string) => name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+type HomeFighter = { card: CardEntry; art: string };
+const HOME_FIGHTERS: HomeFighter[] = cardData.cards
+  .filter((card) => card.cardType === "Character")
+  .flatMap((card) => { const art = FIGHTER_CUTOUTS[fighterSlug(card.name)]; return art ? [{ card, art }] : []; });
+const PRINTED_CARDS = cardData.cards.filter((card) => hasCardArt(card) && card.cardType !== "Character" && card.cardType !== "Boss");
+const dayNumber = () => Math.floor(Date.now() / 86_400_000);
+const boutFor = (seed: number): [number, number] => {
+  const total = HOME_FIGHTERS.length;
+  const left = ((seed * 7919) % total + total) % total;
+  const right = (left + 1 + ((seed * 104_729) % (total - 1) + (total - 1)) % (total - 1)) % total;
+  return [left, right];
+};
+const fighterStat = (card: CardEntry, key: string) => card.stats?.[key] ?? "—";
+
+function FighterStandee({ fighter, side }: { fighter: HomeFighter; side: "left" | "right" }) {
+  return <figure className={`standee standee--${side}`}>
+    <div className="standee-art"><img src={fighter.art} alt={`${fighter.card.name}, Paper-Fu fighter`} decoding="async" /></div>
+    <span className="standee-base" aria-hidden="true" />
+    <figcaption className="standee-plate">
+      <b>{fighter.card.name}</b>
+      <span className="standee-stats"><i>ATK <strong>{fighterStat(fighter.card, "ATK")}</strong></i><i>DEF <strong>{fighterStat(fighter.card, "DEF")}</strong></i><i>SPD <strong>{fighterStat(fighter.card, "Speed")}</strong></i></span>
+    </figcaption>
+  </figure>;
+}
+
 function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void; displayName: string; avatar: AvatarKey }) {
-  return <main className="home-page">
-    <section className="hero shell">
-      <div className="hero-copy">
-        <span className="version-pill"><span className="status-dot" /> Paper-Fu field desk / active</span>
-        <p className="kicker">A tabletop sport, carefully laminated.</p>
-        <h1>Pick your fight.<br /><em>File your legend.</em></h1>
-        <p className="hero-lede">Paper-Fu is a fixed-pack deckbuilder with more than one way to make a mess: duel a rival, trade places with a team, or leave room for the boss that is currently being measured for a bigger chair.</p>
-        <div className="hero-actions"><button className="button primary desktop-play-cta" onClick={() => goTo("playtest")}>Play Quick Duel <span>→</span></button><button className="button ghost" onClick={() => goTo("quickstart")}>Open the mode docket</button></div>
-        <div className="hero-note"><span className="hero-agent-greeting"><img src={AVATAR_IMAGES[avatar]} alt="" /><span>Welcome back, <strong>{displayName || "Paper-Fu Agent"}</strong>.</span></span><strong>4 official formats</strong> · {cardData.total} filed cards · 27 fighter faces on record</div>
+  const [boutSeed, setBoutSeed] = useState(dayNumber);
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [cardSeed, setCardSeed] = useState(dayNumber);
+  const [left, right] = boutFor(boutSeed);
+  const daily = boutSeed === dayNumber();
+  const featuredCard = PRINTED_CARDS[((cardSeed * 2_654_435) % PRINTED_CARDS.length + PRINTED_CARDS.length) % PRINTED_CARDS.length];
+  const phase = CANONICAL_PHASES[phaseIndex];
+  const movePhase = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const last = CANONICAL_PHASES.length - 1;
+    const next = event.key === "ArrowRight" ? (phaseIndex === last ? 0 : phaseIndex + 1) : event.key === "ArrowLeft" ? (phaseIndex === 0 ? last : phaseIndex - 1) : event.key === "Home" ? 0 : event.key === "End" ? last : null;
+    if (next === null) return;
+    event.preventDefault();
+    setPhaseIndex(next);
+    event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("[role='tab']")[next]?.focus();
+  };
+  if (!HOME_FIGHTERS.length) return null;
+  return <main className="home-v3">
+    {/* 1. The bout: two paper standees face off on a cut-paper stage. */}
+    <section className="bout" aria-labelledby="bout-title">
+      <div className="bout-stage" aria-hidden="true"><span className="bout-burst" /><span className="bout-curtain bout-curtain--left" /><span className="bout-curtain bout-curtain--right" /><span className="bout-floor" /></div>
+      <div className="bout-copy shell">
+        <span className="bout-eyebrow"><img src={AVATAR_IMAGES[avatar]} alt="" />Welcome back, {displayName || "Paper-Fu Agent"} · {daily ? "Bout of the day" : "Exhibition bout"}</span>
+        <h1 id="bout-title">Pick your fight.<em>File the paperwork later.</em></h1>
       </div>
-      <div className="hero-art-new"><div className="hero-paper-card"><span className="paper-shadow shadow-one" /><span className="paper-shadow shadow-two" /><i className="fastener tape-strip hero-tape-one" aria-hidden="true" /><i className="fastener tape-strip hero-tape-two" aria-hidden="true" /><span className="hero-paper-label">FORM 07 · LICENSED CHAOS</span><img src={heroPaperFuUrl} alt="Paper-Fu fighters and a city inspector at the annual licensing tournament" fetchPriority="high" decoding="async" /><div className="hero-paper-caption"><span>PAPER-FU / FIELD EVIDENCE</span><strong>THE MAT IS A DESK</strong></div><div className="impact-word" aria-hidden="true">HIYAH!</div></div><div className="hero-art-note"><b>Cleared for yelling</b><small>Filed by the Department of Competitive Safety. Stamped twice for confidence.</small></div></div>
+      <div className="bout-ring shell" key={boutSeed}>
+        <FighterStandee fighter={HOME_FIGHTERS[left]} side="left" />
+        <div className="bout-vs" aria-hidden="true"><b>VS</b></div>
+        <FighterStandee fighter={HOME_FIGHTERS[right]} side="right" />
+      </div>
+      <div className="bout-actions shell">
+        <button type="button" className="bout-fight" onClick={() => goTo("playtest")}>Fight now <span aria-hidden="true">→</span></button>
+        <button type="button" className="bout-shuffle" onClick={() => setBoutSeed((seed) => seed + 1)}><span aria-hidden="true">↻</span> Shuffle the bout</button>
+        <p className="bout-note">{HOME_FIGHTERS.length} fighters on file · {cardData.total} cards · 4 formats · one very tired clipboard</p>
+      </div>
+      <p className="sr-only" aria-live="polite">{HOME_FIGHTERS[left].card.name} versus {HOME_FIGHTERS[right].card.name}</p>
     </section>
-    <section className="stats-strip" aria-label="Paper-Fu operating facts"><div className="shell stats-inner"><div><strong>04</strong><span>Official game formats</span></div><div><strong>15</strong><span>Cards in the opening packet</span></div><div><strong>03</strong><span>Combat zones to declare</span></div><div><strong>∞</strong><span>Ways to cite a technicality</span></div></div></section>
-    <section className="shell home-command-section" aria-labelledby="mode-docket-title">
-      <div className="home-section-heading"><div><span className="eyebrow">01 / Choose your docket</span><h2 id="mode-docket-title">Four ways to put the paperwork in danger.</h2></div><p>The rules already know how these formats work. The field desk is expanding to give every one of them a proper place to land.</p></div>
-      <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const isLive = modeMetaFor(mode.id).live; return <ModeCard key={mode.id} mode={mode} action={isLive ? "Enter field test" : "Review mode brief"} onSelect={() => goTo(isLive ? "playtest" : "quickstart")} />; })}</div>
-      <div className="home-command-foot"><span><b>Filed status:</b> Quick Duel is playable now. The other formats are documented in Quick Start while their dedicated tables are built.</span><button className="text-link" onClick={() => goTo("quickstart")}>Read every mode brief →</button></div>
+
+    {/* 2. Formats. */}
+    <section className="shell home-block" aria-labelledby="formats-title">
+      <header className="home-block-head"><span className="home-block-tab">01</span><div><h2 id="formats-title">Four ways to start trouble.</h2><p>Quick Duel is playable right now. The other three are fully filed in the rules while their tables get built.</p></div></header>
+      <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const isLive = modeMetaFor(mode.id).live; return <ModeCard key={mode.id} mode={mode} action={isLive ? "Play it now" : "Read the brief"} onSelect={() => goTo(isLive ? "playtest" : "quickstart")} />; })}</div>
     </section>
-    <section className="shell home-briefing-section" aria-labelledby="briefing-title">
-      <div className="home-briefing-lead"><span className="eyebrow">02 / The Paper-Fu brief</span><h2 id="briefing-title">Small deck.<br /><em>Big paperwork.</em></h2><p>Every fight starts with the same readable foundation: choose a stance, build with a fixed packet, declare a zone, then let the table argue in public.</p><button className="button ghost" onClick={() => goTo("quickstart")}>Learn the first round <span>→</span></button></div>
-      <div className="home-proof-grid"><article className="paper-stack"><span>01</span><h3>Build mid-disaster</h3><p>Buy the next useful card while the opponent is still explaining their last one.</p><b>DECKBUILDER / NO FILLER</b></article><article className="paper-stack"><span>02</span><h3>Read the hit</h3><p>Three zones, one clear formula, and enough receipts to settle the argument.</p><b>COMBAT / WITH WITNESS</b></article><article className="paper-stack"><span>03</span><h3>Make it a table</h3><p>Quick Duel is the first appointment. Teams, bosses, and full-table chaos are on the docket.</p><b>MODULAR / READY TO EXPAND</b></article></div>
+
+    {/* 3. One round, as five yells. */}
+    <section className="hiyah" aria-labelledby="hiyah-title">
+      <div className="shell">
+        <header className="home-block-head home-block-head--inverse"><span className="home-block-tab">02</span><div><h2 id="hiyah-title">Every round is five yells.</h2><p>Tap a letter. That's the whole turn order.</p></div></header>
+        <div className="hiyah-letters" role="tablist" aria-label="Round phases">{CANONICAL_PHASES.map((entry, index) => <button key={`${entry.name}-${index}`} type="button" role="tab" id={`hiyah-tab-${index}`} aria-selected={index === phaseIndex} aria-controls="hiyah-panel" tabIndex={index === phaseIndex ? 0 : -1} className={index === phaseIndex ? "is-active" : ""} onClick={() => setPhaseIndex(index)} onKeyDown={movePhase}><b>{entry.letter}</b><span>{entry.name}</span></button>)}</div>
+        <div className="hiyah-panel" id="hiyah-panel" role="tabpanel" aria-labelledby={`hiyah-tab-${phaseIndex}`} key={phaseIndex}><span>Phase {phaseIndex + 1} of {CANONICAL_PHASES.length}</span><h3>{phase.name}</h3><p>{phase.text}</p><button type="button" className="text-link light" onClick={() => goTo("quickstart")}>Learn the full round →</button></div>
+      </div>
     </section>
-    <section className="phase-section"><div className="shell"><div className="section-title-row inverse"><div><span className="eyebrow">03 / One round. Five approved noises.</span><h2>H.I.Y.A.H. is the workflow.</h2></div><button className="text-link light" onClick={() => goTo("quickstart")}>Read the full protocol →</button></div><div className="phase-track">{CANONICAL_PHASES.map((phase, index) => <article key={`${phase.name}-${index}`}><span className="phase-letter">{phase.letter}</span><div><b>0{index + 1}</b><h3>{phase.name}</h3><p>{phase.text}</p></div></article>)}</div></div></section>
-    <section className="shell route-section">
-      <div className="section-title-row"><div><span className="eyebrow">04 / Open the field desk</span><h2>Everything around the mat.</h2></div><p>Find the next useful thing before somebody cites a napkin as precedent. The forms are short. The grudges are not.</p></div>
-      <div className="route-grid">{[
-        ["playtest", "01", "Field Test", "Throw hands with a literal rules engine. It has receipts and no sense of humor."],
-        ["quickstart", "02", "Get Certified", "Learn the legal order of operations before the fire marshal learns your name."],
-        ["story", "03", "Origin File", "A permit, a ferret, and one overworked cabinet accidentally invented a martial art."],
-        ["rules", "04", "Rulebook", "The complete official law, including the paragraphs nobody wanted to laminate."],
-        ["cards", "05", "Card Cabinet", `Browse all ${cardData.total} registered cards. Judge the art. Then squint at the tiny text.`],
-        ["rulings", "06", "Tiny Court", "Official rulings and house variants for disputes that refuse to stay tiny."],
-      ].map(([view, number, title, text]) => <button className={`route-card paper-stack interactive-paper ${view === "playtest" ? "route-playtest" : ""}`} key={view} onClick={() => goTo(view as ViewId)}><span>{number}</span><h3>{title}</h3><p>{text}</p><b>Open section →</b></button>)}</div>
+
+    {/* 4. Card of the day + the paperwork pitch. */}
+    <section className="shell home-block cotd" aria-labelledby="cotd-title">
+      <div className="cotd-card"><button type="button" className="cotd-print" key={featuredCard.catalogId} data-card-motion="fold-in" onClick={() => navigate({ page: "cards", cardId: featuredCard.catalogId })} aria-label={`Open ${featuredCard.name} in the Card Library`}><img src={cardImageUrl(featuredCard)} alt="" decoding="async" /></button><span className="cotd-pin" aria-hidden="true" /></div>
+      <div className="cotd-copy">
+        <span className="home-block-tab">03</span>
+        <h2 id="cotd-title">Card of the day: <em>{featuredCard.name}</em></h2>
+        <p>{featuredCard.flavorText || featuredCard.rulesText || "Filed, stamped and ready for the mat."}</p>
+        <dl><div><dt>Type</dt><dd>{featuredCard.cardType}{featuredCard.subtype ? ` · ${featuredCard.subtype}` : ""}</dd></div><div><dt>Filing</dt><dd>{featuredCard.catalogId}</dd></div></dl>
+        <div className="cotd-actions"><button type="button" className="button primary" onClick={() => setCardSeed((seed) => seed + 1)}>Draw another <span aria-hidden="true">↻</span></button><button type="button" className="button ghost" onClick={() => goTo("cards")}>Browse all {cardData.total}</button></div>
+      </div>
     </section>
-    <section className="shell roster-section">
-      <div className="section-title-row"><div><span className="eyebrow">05 / Meet the delegation</span><h2>Twenty-seven fighters. Zero normal entrances.</h2></div><button className="text-link" onClick={() => goTo("cards")}>Inspect the full cabinet →</button></div>
-      <div className="roster-grid home-roster-grid">{AVATAR_OPTIONS.slice(0, 8).map((fighter) => <article className="paper-stack" key={fighter.id}><div className="roster-image"><img src={AVATAR_IMAGES[fighter.id]} alt={fighter.label} loading="lazy" decoding="async" /></div><span>{fighter.quip}</span><h3>{fighter.label}</h3></article>)}</div>
-      <div className="home-roster-foot"><span><b>ROSTER NOTE</b> Eight faces shown. Nineteen more are waiting for their dramatic paperwork.</span><button className="button primary" onClick={() => goTo("cards")}>Browse the card cabinet <span>→</span></button></div>
+
+    {/* 5. The roster wall. */}
+    <section className="roster-wall" aria-labelledby="roster-title">
+      <div className="shell"><header className="home-block-head"><span className="home-block-tab">04</span><div><h2 id="roster-title">The whole delegation.</h2><p>{HOME_FIGHTERS.length} fighters. Zero normal entrances. Pick one to read their card.</p></div></header></div>
+      <ul className="roster-shelf">{HOME_FIGHTERS.map((fighter) => <li key={fighter.card.catalogId}><button type="button" onClick={() => navigate({ page: "cards", cardId: fighter.card.catalogId })} aria-label={`${fighter.card.name}: open fighter card`}><img src={fighter.art} alt="" loading="lazy" decoding="async" /><span>{fighter.card.name}</span></button></li>)}</ul>
+    </section>
+
+    {/* 6. Send them to the mat. */}
+    <section className="home-final" aria-labelledby="final-title">
+      <div className="shell home-final-inner"><h2 id="final-title">The mat is waiting.<em>The clipboard is not.</em></h2><div><button type="button" className="bout-fight" onClick={() => goTo("playtest")}>Play Quick Duel <span aria-hidden="true">→</span></button><button type="button" className="button ghost" onClick={() => goTo("quickstart")}>Learn in 10 minutes</button><button type="button" className="button ghost" onClick={() => goTo("story")}>Read the backstory</button></div></div>
     </section>
   </main>;
 }
