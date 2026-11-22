@@ -1,12 +1,5 @@
 /* Universal Card Inspector
-   Shared inspection surface for the Card Library now and play surfaces later.
-   The legacy CardModal remains mounted as a state/navigation adapter on this branch,
-   but is visually replaced while the universal inspector is active. */
-
-body.ddb-card-inspector-active .modal-backdrop:has(.card-modal) {
-  visibility: hidden;
-  pointer-events: none;
-}
+   Shared inspection surface for the Card Library and Quick Duel. */
 
 .universal-card-inspector-backdrop {
   position: fixed;
@@ -17,7 +10,7 @@ body.ddb-card-inspector-active .modal-backdrop:has(.card-modal) {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(15, 20, 17, .76);
+  background: var(--pf-scrim);
   backdrop-filter: blur(10px);
 }
 

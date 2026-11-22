@@ -79,9 +79,13 @@ export type CardInspectorProps = {
 
 const effectRegistry = cardEffectsJson as unknown as CardEffectRegistry;
 
-function useInspectorDialog(onClose: () => void) {
+type InspectorPaging = { onPrevious?: () => void; onNext?: () => void; previousDisabled?: boolean; nextDisabled?: boolean };
+
+function useInspectorDialog(onClose: () => void, paging: InspectorPaging = {}) {
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
+  const pagingRef = useRef(paging);
+  pagingRef.current = paging;
   onCloseRef.current = onClose;
 
   useEffect(() => {
@@ -101,6 +105,17 @@ function useInspectorDialog(onClose: () => void) {
       if (event.key === "Escape") {
         event.preventDefault();
         onCloseRef.current();
+        return;
+      }
+      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        const target = event.target as HTMLElement | null;
+        if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+        const { onPrevious, onNext, previousDisabled, nextDisabled } = pagingRef.current;
+        const step = event.key === "ArrowLeft" ? (!previousDisabled ? onPrevious : undefined) : (!nextDisabled ? onNext : undefined);
+        if (step) {
+          event.preventDefault();
+          step();
+        }
         return;
       }
       if (event.key !== "Tab") return;
@@ -343,7 +358,7 @@ function CardInspectorContent({
   onNext,
   onClose,
 }: CardInspectorProps) {
-  const dialogRef = useInspectorDialog(onClose);
+  const dialogRef = useInspectorDialog(onClose, { onPrevious, onNext, previousDisabled, nextDisabled });
   const resolvedEffectEntry = effectEntry ?? effectRegistry.cards?.[card.catalogId];
   const resolvedEffectRevision = effectRevision ?? effectRegistry.rulesRevision ?? effectRegistry.rulesVersion;
   const statPairs = Object.entries(card.stats ?? {});

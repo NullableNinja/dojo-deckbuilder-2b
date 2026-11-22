@@ -157,6 +157,7 @@ export type ToastKind = "note" | "success" | "warning" | "stamp" | "critical";
 export type ToastInput = { kind?: ToastKind; eyebrow?: string; title: string; message?: string; duration?: number; variant?: number };
 type PaperToast = ToastInput & { id: number };
 
+let toastSequence = 0;
 const ToastContext = createContext<(toast: ToastInput) => void>(() => undefined);
 const usePaperToast = () => useContext(ToastContext);
 const paperHaptic = (pattern: number | number[] = 8) => {
@@ -393,7 +394,7 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
         <h1>Pick your fight.<br /><em>File your legend.</em></h1>
         <p className="hero-lede">Paper-Fu is a fixed-pack deckbuilder with more than one way to make a mess: duel a rival, trade places with a team, or leave room for the boss that is currently being measured for a bigger chair.</p>
         <div className="hero-actions"><button className="button primary desktop-play-cta" onClick={() => goTo("playtest")}>Play Quick Duel <span>→</span></button><button className="button ghost" onClick={() => goTo("quickstart")}>Open the mode docket</button></div>
-        <div className="hero-note"><span className="hero-agent-greeting"><img src={AVATAR_IMAGES[avatar]} alt="" /> Welcome back, <strong>{displayName || "Paper-Fu Agent"}</strong>.</span><strong>4 official formats</strong> · {cardData.total} filed cards · 27 fighter faces on record</div>
+        <div className="hero-note"><span className="hero-agent-greeting"><img src={AVATAR_IMAGES[avatar]} alt="" /><span>Welcome back, <strong>{displayName || "Paper-Fu Agent"}</strong>.</span></span><strong>4 official formats</strong> · {cardData.total} filed cards · 27 fighter faces on record</div>
       </div>
       <div className="hero-art-new"><div className="hero-paper-card"><span className="paper-shadow shadow-one" /><span className="paper-shadow shadow-two" /><i className="fastener tape-strip hero-tape-one" aria-hidden="true" /><i className="fastener tape-strip hero-tape-two" aria-hidden="true" /><span className="hero-paper-label">FORM 07 · LICENSED CHAOS</span><img src={heroPaperFuUrl} alt="Paper-Fu fighters and a city inspector at the annual licensing tournament" fetchPriority="high" decoding="async" /><div className="hero-paper-caption"><span>PAPER-FU / FIELD EVIDENCE</span><strong>THE MAT IS A DESK</strong></div><div className="impact-word" aria-hidden="true">HIYAH!</div></div><div className="hero-art-note"><b>Cleared for yelling</b><small>Filed by the Department of Competitive Safety. Stamped twice for confidence.</small></div></div>
     </section>
@@ -539,88 +540,6 @@ function CardTile({ card, onOpen, saved = false }: { card: CardEntry; onOpen: ()
     <div className="card-topline"><span>{card.cardType}</span><b>{card.deck}</b></div><div className={`card-art${isCompleteCardArt(card) ? " card-art--complete" : ""}${!hasCardArt(card) ? " card-art--pending" : ""}`}><img src={cardImageUrl(card)} alt={hasCardArt(card) ? card.name : `Artwork pending for ${card.name}`} loading="lazy" decoding="async" /><span>{card.catalogId}</span></div>
     <div className="card-body"><small>{card.cardType}</small><h3>{card.name}</h3><div className="card-costs">{card.fpCost !== null && card.fpCost !== undefined && <span><b>{valueLabel(card.fpCost)}</b> Focus Cost</span>}{card.focusValue !== null && card.focusValue !== undefined && <span><b>{valueLabel(card.focusValue)}</b> Focus</span>}{card.zone && <span>{card.zone}</span>}</div>{statPairs.length > 0 && <div className="mini-stats">{statPairs.map(([key, value]) => <span key={key}><b>{value}</b>{key}</span>)}</div>}<p>{card.rulesText || card.flavorText || "Open for complete card details."}</p><div className="tag-row">{card.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div></div><span className="open-card">View card →</span>
   </button>;
-}
-
-function CardModal({
-  card,
-  previousCard,
-  nextCard,
-  position,
-  total,
-  saved,
-  onToggleSaved,
-  onPrevious,
-  onNext,
-  onClose,
-}: {
-  card: CardEntry;
-  previousCard: CardEntry | null;
-  nextCard: CardEntry | null;
-  position: number;
-  total: number;
-  saved: boolean;
-  onToggleSaved: () => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onClose: () => void;
-}) {
-  const dialogRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const body = document.body;
-    const root = document.documentElement;
-    const previousBodyStyles = {
-      overflow: body.style.overflow,
-      paddingRight: body.style.paddingRight,
-    };
-    const previousScrollBehavior = root.style.scrollBehavior;
-    const scrollbarWidth = window.innerWidth - root.clientWidth;
-
-    body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
-    dialogRef.current?.focus({ preventScroll: true });
-
-    return () => {
-      Object.assign(body.style, previousBodyStyles);
-      root.style.scrollBehavior = "auto";
-      window.scrollTo(scrollX, scrollY);
-      root.style.scrollBehavior = previousScrollBehavior;
-      previouslyFocused?.focus({ preventScroll: true });
-    };
-  }, []);
-
-  useEffect(() => {
-    const navigate = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-      if (event.key === "ArrowLeft" && previousCard) onPrevious();
-      if (event.key === "ArrowRight" && nextCard) onNext();
-    };
-    window.addEventListener("keydown", navigate);
-    return () => window.removeEventListener("keydown", navigate);
-  }, [nextCard, onClose, onNext, onPrevious, previousCard]);
-
-  useEffect(() => {
-    dialogRef.current?.scrollTo({ top: 0 });
-  }, [card.id]);
-
-  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <article ref={dialogRef} className="card-modal paper-stack" role="dialog" aria-modal="true" aria-labelledby="card-modal-title" tabIndex={-1}>
-      <button className="modal-close" onClick={onClose} aria-label="Close card details">×</button>
-      <nav className="card-modal-nav" aria-label="Browse filtered cards">
-        <button type="button" onClick={onPrevious} disabled={!previousCard} aria-label={previousCard ? `Previous card: ${previousCard.name}` : "No previous card"}>
-          <span aria-hidden="true">←</span><span className="card-modal-link-copy"><small>Previous</small><strong>{previousCard?.name ?? "First card"}</strong></span>
-        </button>
-        <span className="card-modal-position" aria-live="polite">{position} of {total}</span>
-        <button type="button" onClick={onNext} disabled={!nextCard} aria-label={nextCard ? `Next card: ${nextCard.name}` : "No next card"}>
-          <span className="card-modal-link-copy"><small>Next</small><strong>{nextCard?.name ?? "Last card"}</strong></span><span aria-hidden="true">→</span>
-        </button>
-      </nav>
-      <div className="modal-heading"><img className={isCompleteCardArt(card) ? "modal-card-art--complete" : undefined} src={cardImageUrl(card)} alt={hasCardArt(card) ? card.name : "Temporary Dojo Deckbuilder card artwork placeholder"} decoding="async" /><div><span className="eyebrow">{card.catalogId} · {card.cardType} · {card.subtype}</span><h2 id="card-modal-title">{card.name}</h2><p>{card.flavorText}</p></div></div><button type="button" className={`binder-toggle binder-toggle--modal${saved ? " is-saved" : ""}`} aria-pressed={saved} onClick={onToggleSaved}>{saved ? "★ In Dojo Binder" : "☆ Save to Dojo Binder"}</button><div className="modal-badges"><span>{card.deck}</span>{card.lineage && <span>{card.lineage}</span>}{card.timing && <span>{card.timing}</span>}{card.zone && <span>{card.zone}</span>}</div>{card.rulesText && <aside className="modal-rule"><span>Rules text</span><p>{card.rulesText}</p></aside>}<dl className="detail-grid">{publicCardDetails(card).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl><footer>Catalog: {card.catalogId} · Source: {card.sourceSheet}</footer>
-    </article>
-  </div>, document.body);
 }
 
 function CardsView({ cardId = "" }: { cardId?: string }) {
@@ -777,7 +696,8 @@ export default function CompanionApp() {
   const internalLabAvailable = import.meta.env.DEV;
 
   const pushToast = useCallback((input: ToastInput) => {
-    const toast = { ...input, duration: input.duration ?? Number(presentationPreferences.toastDuration), id: Date.now() + Math.floor(Math.random() * 1000) };
+    toastSequence += 1;
+    const toast = { ...input, duration: input.duration ?? Number(presentationPreferences.toastDuration), id: toastSequence };
     setToasts((current) => [...current.filter((entry) => entry.title !== toast.title), toast].slice(-4));
   }, [presentationPreferences.toastDuration]);
   const dismissToast = useCallback((id: number) => setToasts((current) => current.filter((toast) => toast.id !== id)), []);
@@ -873,6 +793,10 @@ export default function CompanionApp() {
     root.dataset.displayFace = presentationPreferences.displayFace;
     updateUserPreferences(presentationPreferences);
   }, [menuClosing, menuOpen, presentationPreferences, view]);
+
+  useEffect(() => {
+    document.title = view === "home" ? "Dojo Deckbuilder — Paper. Fists. Filing." : `${VIEW_LABELS[view]} · Dojo Deckbuilder`;
+  }, [view]);
 
   const changePresentationPreferences = useCallback((update: Partial<PresentationPreferences>) => {
     setPresentationPreferences((current) => ({ ...current, ...update }));

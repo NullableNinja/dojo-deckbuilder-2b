@@ -373,12 +373,12 @@ const GAME_MODE_META: Record<GameModeId, { status: string; tone: "action" | "blu
   "boss-blitz": { status: "Boss room pending", tone: "violet", hook: "One oversized problem. A team of certified nuisances. The filing cabinet has requested backup.", live: false },
 };
 
-const cardArtModules = import.meta.glob<string>("./assets/cards/{attacks,defenses,katas,consumables,defense-equipment,gear,combos,characters,starters,locations}/*.webp", { eager: true, query: "?url", import: "default" });
+const cardArtModules = import.meta.glob<string>("./assets/cards/{attacks,defenses,katas,consumables,defense-equipment,gear,weapons,reactions,combos,characters,starters,locations}/*.webp", { eager: true, query: "?url", import: "default" });
 const fighterIllustrationModules = import.meta.glob<string>("./assets/fighters/*.webp", { eager: true, query: "?url", import: "default" });
 const CARD_ART = Object.fromEntries(Object.entries(cardArtModules).map(([path, url]) => [`/cards/${path.split("/cards/")[1]}`, url]));
 const COMPLETE_CARD_ART_BY_CATALOG_ID = Object.fromEntries(
   Object.entries(cardArtModules).flatMap(([path, url]) => {
-    const match = path.match(/\/(ddb-(?:atk|def|kat|con|deq|gea|cmb|sta|loc)-core-\d{3})_/i);
+    const match = path.match(/\/(ddb-(?:atk|def|kat|con|deq|gea|wpn|rit|cmb|sta|loc)-core-\d{3})_/i);
     return match ? [[match[1].toUpperCase(), url]] : [];
   }),
 );
@@ -2943,7 +2943,7 @@ function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mo
   const modeMeta = GAME_MODE_META[mode];
   return <main className="playtest-shell playtest-shell--setup shell paper-fu-game-gateway">
     <section className="playtest-gateway-hero paper-stack">
-      <div><span className="version-pill"><span className="status-dot" /> Paper-Fu game desk / open</span><span className="eyebrow">Play the game / mode dispatch</span><h1>Choose your mat.<br /><em>Make it count.</em></h1><p>Every format starts here. Pick the kind of trouble you want to file, then we’ll hand you the right table, the right rules, and the right amount of dramatic paperwork.</p><div className="playtest-gateway-facts"><span><b>04</b> formats filed</span><span><b>27</b> fighters on record</span><span><b>{starterIds.length}</b> cards to start</span></div></div><div className="playtest-gateway-stamp"><span>FORM 08</span><strong>OPEN<br />MAT</strong><small>Department of Competitive Safety</small></div>
+      <div><span className="version-pill"><span className="status-dot" /> Paper-Fu game desk / open</span><span className="eyebrow">Play the game / mode dispatch</span><h1>Choose your mat.<br /><em>Make it count.</em></h1><p>Every format starts here. Pick the kind of trouble you want to file, then we’ll hand you the right table, the right rules, and the right amount of dramatic paperwork.</p><div className="playtest-gateway-facts"><span><b>04</b> formats filed</span><span><b>{characters.length}</b> fighters on record</span><span><b>{starterIds.length}</b> cards to start</span></div></div><div className="playtest-gateway-stamp"><span>FORM 08</span><strong>OPEN<br />MAT</strong><small>Department of Competitive Safety</small></div>
     </section>
     <section className="play-mode-selector" aria-labelledby="play-mode-title">
       <div className="play-mode-heading"><div><span className="eyebrow">01 / Select a format</span><h2 id="play-mode-title">What kind of trouble today?</h2></div><p>The game is bigger than Quick Duel. The current field test is only one door into the dojo.</p></div>
