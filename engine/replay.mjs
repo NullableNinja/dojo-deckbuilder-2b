@@ -35,7 +35,9 @@ const comparable = (result) => ({
 
 export function replayGame(data, original, { maxSteps = 100000 } = {}) {
   const strategies = (original.players ?? []).map((player) => player.strategy ?? "balanced");
-  const game = new Game(data, { seed: original.seed, strategies });
+  // Non-Quick-Duel results carry their setup (mode, seats, rosters, teams) so the replay matches.
+  const setup = original.setup ?? {};
+  const game = new Game(data, { seed: original.seed, strategies, mode: setup.mode ?? null, players: setup.players ?? null, rosters: setup.rosters ?? [], teams: setup.teams ?? null });
   return game.run({ policy: replayPolicy(original.decisions ?? []), maxSteps });
 }
 

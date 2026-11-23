@@ -51,7 +51,8 @@ test("training stripe recovery obeys the canonical once-per-turn action limit", 
 test("round-limit results report the completed canonical round", async () => {
   const data = await loadGameData();
   const game = new Game(data, { seed: 12025 });
-  game.definition.mode.maxRounds = 1;
+  // The round cap comes from the selected canonical mode (definition.modes).
+  game.mode = { ...game.mode, maxRounds: 1 };
   for (const player of game.players) {
     player.hp = 1000;
     player.maxHp = 1000;

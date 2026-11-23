@@ -60,7 +60,7 @@
       "title": "Standard Clash",
       "rulesSection": "3-game-modes-victory",
       "executable": {
-        "engine": false,
+        "engine": true,
         "playtest": false
       },
       "players": {
@@ -116,7 +116,7 @@
       "rulesSection": "13-tag-team-swap-fu",
       "recommended": true,
       "executable": {
-        "engine": false,
+        "engine": true,
         "playtest": false
       },
       "players": {

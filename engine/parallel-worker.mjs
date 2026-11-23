@@ -32,7 +32,7 @@ for (let index = workerData.workerId; index < workerData.games; index += workerD
   const strategies = strategiesFor(index);
   let game;
   try {
-    game = new Game(data, { seed, strategies });
+    game = new Game(data, { seed, strategies, mode: mode.id });
     const result = game.run({ policy });
     let replay = null;
     if (workerData.replayEvery > 0 && (index === 0 || index % workerData.replayEvery === 0)) {
