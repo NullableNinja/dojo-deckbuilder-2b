@@ -46,6 +46,7 @@ import { canonicalTrainingStripeBelts, canonicalTrainingStripeConfig } from "./t
 import { trainingStripeState } from "./training-stripes.ts";
 import { resolveLocationHostEvent, structuredLocationDefenseForHost, structuredLocationKataFocusForHost } from "./location-playtest-bridge.ts";
 import { createBossRuntimeState, resolveBossCardEvent } from "./boss-runtime.ts";
+import { BOSS_NEXT_ATTACK, BOSS_RULES, ENFORCED_PROFILE_RULES, applyBossStrikeOutcome, bossAttacksAllowed, bossGuardFor, drawBossLadder, isEnraged, isFinalStage, loadBossStage, profileRule, revealBossAttack, spendBossGuard, stageFor, type BossFields } from "./boss-blitz.ts";
 import { botTagChoice, canTag, createRoster, fightersRemaining, isStanding, knockOutActive, liveRoster, tagIn, type RosterFighter } from "./tag-team.ts";
 import { GAME_MODES as CANONICAL_GAME_MODES } from "./canonical-presentation";
 import { readUserPreferences } from "./user-preferences";
@@ -105,7 +106,7 @@ type CardEntry = {
   details: Record<string, string | number>;
 };
 
-type Board = {
+type Board = BossFields & {
   fighterId: string;
   /** Tag Team: three fighters; the active one is mirrored on this board (app/tag-team.ts). */
   roster?: RosterFighter[];
@@ -273,7 +274,11 @@ type Match = {
   schema: 8;
   rulesVersion: string;
   /** Absent on Quick Duel saves from before Tag Team existed. */
-  mode?: "quick-duel" | "tag-team";
+  mode?: "quick-duel" | "tag-team" | "boss-blitz";
+  /** Boss Blitz: the Boss was KO'd this round, so the next Boss waits for Honor (DDB-RUL-001/002). */
+  bossSkipRound?: boolean;
+  bossDefeatedStage?: number | null;
+  styleVictory?: boolean;
   /** Set only when a Black Belt promotion wins Tag Team, so a KO swap never clears it. */
   blackBeltWinner?: "player" | "ai" | null;
   player: Board;
@@ -1897,7 +1902,7 @@ function fighterStat(board: Board, stat: "ATK" | "DEF" | "Speed") {
     if (stat === "Speed") { const value = equipmentSpeedModifier(card); return total + (suppression && value < 0 ? 0 : value); }
     return total;
   }, 0);
-  const challengeBonus = stat === "ATK" || stat === "DEF" ? board.statBoost ?? 0 : 0;
+  const challengeBonus = (stat === "ATK" || stat === "DEF" ? board.statBoost ?? 0 : 0) + (stat === "ATK" ? board.bossAttackBonus ?? 0 : 0) + (stat === "DEF" ? board.bossTempDef ?? 0 : 0);
   if (stat === "Speed" && board.stage3cSpeedOverride !== null && board.stage3cSpeedOverride !== undefined) return board.stage3cSpeedOverride;
   const value = base + beltBonus + equipment + challengeBonus + (stat === "Speed" ? board.tempSpeed : 0) + (stat === "ATK" ? (board.stage3cAttackModifier ?? 0) : 0) + (stat === "DEF" ? (board.stage3cDefenseModifier ?? 0) : 0);
   if (stat !== "Speed") return value;
@@ -2970,7 +2975,8 @@ function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mo
     const next = choices[Math.floor(Math.random() * choices.length)] ?? filteredCharacters[0] ?? characters[0];
     setSelectedId(next.id);
   };
-  const tagMode = mode === "tag-team";
+  const bossMode = mode === "boss-blitz";
+  const tagMode = mode === "tag-team" || bossMode;
   const [team, setTeam] = useState<string[]>([]);
   const chooseCharacter = (id: string) => {
     setSelectedId(id);
@@ -2992,10 +2998,29 @@ function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mo
     </section>
     {mode === "quick-duel" || tagMode ? <section className={`playtest-setup-grid playtest-quick-duel-setup${tagMode ? " playtest-tag-team-setup" : ""}`} aria-labelledby="quick-duel-setup-title">
       <div className="playtest-roster paper-stack"><div className="setup-panel-heading"><div><span className="eyebrow">{tagMode ? "02 / Choose your team of three" : "02 / Choose your fighter"}</span><h2 id="quick-duel-setup-title">{tagMode ? "Who’s on the roster?" : "Who signs the waiver?"}</h2><p>{tagMode ? "Tap three faces. The first one starts on the mat; tap a teammate in the tray to make them the starter." : "Tap a face. The dossier answers back."}</p></div><div className="roster-toolbar-actions"><label><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a fighter" aria-label="Search fighters" /></label><button type="button" onClick={tagMode ? randomTeam : randomize}>{tagMode ? "Random team" : "Random draw"} <span>↻</span></button></div></div><article className="selected-fighter-dossier" key={selected.id}><div className="selected-fighter-art-wrap"><img src={fighterIllustrationUrl(selected) ?? artistUrl(selected) ?? cardPlaceholderUrl} alt={selected.name} /><span className="dossier-selection-mark">FILED</span></div><div className="selected-fighter-copy"><span className="selected-fighter-kicker">Selected delegation · {selected.cardType}</span><h3>{selected.name}</h3><p>{selected.rulesText ?? "Ability pending an inspector with a functioning pen."}</p><div className="selected-fighter-stats"><b>{numberValue(selected.stats.ATK)}<small>ATK</small></b><b>{numberValue(selected.stats.DEF)}<small>DEF</small></b><b>{numberValue(selected.stats.Speed)}<small>SPD</small></b></div><span className="selection-receipt" aria-live="polite">{selected.name} is cleared for the mat.</span></div></article>{tagMode && <div className="team-tray" aria-label="Your Tag Team roster"><div className="team-tray-head"><span>Your roster</span><b aria-live="polite">{team.length} / 3 signed</b></div><ol>{[0, 1, 2].map((slot) => { const id = team[slot]; const card = id ? cardFor(id) : null; return <li key={slot} className={`team-slot${card ? " is-filled" : ""}${slot === 0 && card ? " is-starter" : ""}`}>{card ? <><button type="button" className="team-slot-face" onClick={() => makeStarter(card.id)} aria-label={slot === 0 ? `${card.name} starts on the mat` : `Make ${card.name} the starter`}><img src={fighterIllustrationUrl(card) ?? artistUrl(card) ?? cardPlaceholderUrl} alt="" /><span><b>{card.name}</b><small>{slot === 0 ? "Starts on the mat" : "Bench · tap to start"}</small></span></button><button type="button" className="team-slot-remove" onClick={() => chooseCharacter(card.id)} aria-label={`Remove ${card.name} from the roster`}>×</button></> : <span className="team-slot-empty">{slot === 0 ? "Starter" : `Bench ${slot}`} · empty</span>}</li>; })}</ol></div>}<div className="character-roster-heading"><span>Character cabinet</span><small>{filteredCharacters.length} faces match the current search</small></div><div className="playtest-character-grid">{filteredCharacters.map((character) => <button type="button" key={character.id} className={isPicked(character.id) ? "is-selected" : ""} onClick={() => chooseCharacter(character.id)} aria-pressed={isPicked(character.id)}><span className="character-card-tape" aria-hidden="true" /><span className="character-card-image"><img src={fighterIllustrationUrl(character) ?? artistUrl(character) ?? cardPlaceholderUrl} alt="" loading="lazy" /></span><span className="character-card-name">{character.name}</span><small>{numberValue(character.stats.ATK)} ATK · {numberValue(character.stats.DEF)} DEF · {numberValue(character.stats.Speed)} SPD</small>{isPicked(character.id) && <b className="character-card-check" aria-hidden="true">{tagMode ? team.indexOf(character.id) + 1 : "✓"}</b>}</button>)}</div></div>
-      <aside className="playtest-rules-panel quick-duel-brief paper-stack"><div className="brief-panel-top"><span className="eyebrow">03 / Field test settings</span><span className="brief-panel-seal">LIVE</span></div><h2>{selectedMode.title}</h2><p>{tagMode ? <>Three fighters each, one on the mat at a time. Tag once during Initiate before equipping; Equipment and injuries stay with each fighter. A knockout sends in your next fighter; lose all three and the file closes. Reach Black Belt to win outright.</> : <>One fighter. One tactical opponent. A complete {starterIds.length}-card curriculum, persistent Market, Locations, Reversals, Combos, and Belt progression.</>}</p><div className="brief-panel-callout"><b>{DIFFICULTIES[settings.difficulty].eyebrow}</b><span>{DIFFICULTIES[settings.difficulty].detail}</span></div><div className="playtest-setup-options"><label><span>Opponent filing</span><select value={settings.difficulty} onChange={(event) => setSettings({ ...settings, difficulty: event.target.value as Difficulty })}>{Object.entries(DIFFICULTIES).map(([value, option]) => <option value={value} key={value}>{option.label}</option>)}</select></label><label><span>Combat motion</span><select value={settings.motion} onChange={(event) => setSettings({ ...settings, motion: event.target.value as MotionMode })}><option value="full">Full impact</option><option value="reduced">Reduced impact</option><option value="off">Off</option></select></label><label className="playtest-setup-check"><input type="checkbox" checked={settings.guided} onChange={(event) => setSettings({ ...settings, guided: event.target.checked })} /><span>Start with Decision Coach</span></label></div><fieldset className="playtest-house-rules"><legend>Optional house rules</legend><p>Only variants the current Quick Duel engine can enforce for both sides appear here.</p>{QUICK_DUEL_HOUSE_RULES.map((rule) => <label className="playtest-house-rule-option" key={rule.id}><input type="checkbox" checked={settings.houseRuleIds.includes(rule.id)} onChange={() => toggleHouseRule(rule.id)} /><span><b>{rule.name}</b><small>{rule.summary || rule.rule}</small></span></label>)}</fieldset><ul><li>Playable on desktop and tablet</li><li>{cards.length} approved records in the cabinet</li><li>Progress saved on this device</li></ul><button type="button" className="button primary field-test-launch" disabled={tagMode && team.length !== 3} onClick={() => tagMode ? begin({ mode: "tag-team", team }) : begin()}>{tagMode ? (team.length === 3 ? "Open the Tag Team mat" : `Sign ${3 - team.length} more fighter${3 - team.length === 1 ? "" : "s"}`) : "Open the Quick Duel mat"} <span>→</span></button></aside>
+      <aside className="playtest-rules-panel quick-duel-brief paper-stack"><div className="brief-panel-top"><span className="eyebrow">03 / Field test settings</span><span className="brief-panel-seal">LIVE</span></div><h2>{selectedMode.title}</h2><p>{bossMode ? <>Your three-fighter team climbs a Boss ladder: Rival (30 HP), Mini-Boss (45 HP, +1 Attack) and Final Boss (60 HP, +2 Attack, two Attacks once Enraged at 30 HP). Bosses act from a 32-card Arsenal: Techniques fire, Defenses become Boss Guard, Attacks come at your active fighter. Clear a stage for +5 XP and 8 HP. Lose all three fighters and the file closes.</> : tagMode ? <>Three fighters each, one on the mat at a time. Tag once during Initiate before equipping; Equipment and injuries stay with each fighter. A knockout sends in your next fighter; lose all three and the file closes. Reach Black Belt to win outright.</> : <>One fighter. One tactical opponent. A complete {starterIds.length}-card curriculum, persistent Market, Locations, Reversals, Combos, and Belt progression.</>}</p><div className="brief-panel-callout"><b>{DIFFICULTIES[settings.difficulty].eyebrow}</b><span>{DIFFICULTIES[settings.difficulty].detail}</span></div><div className="playtest-setup-options">{!bossMode && <label><span>Opponent filing</span><select value={settings.difficulty} onChange={(event) => setSettings({ ...settings, difficulty: event.target.value as Difficulty })}>{Object.entries(DIFFICULTIES).map(([value, option]) => <option value={value} key={value}>{option.label}</option>)}</select></label>}<label><span>Combat motion</span><select value={settings.motion} onChange={(event) => setSettings({ ...settings, motion: event.target.value as MotionMode })}><option value="full">Full impact</option><option value="reduced">Reduced impact</option><option value="off">Off</option></select></label><label className="playtest-setup-check"><input type="checkbox" checked={settings.guided} onChange={(event) => setSettings({ ...settings, guided: event.target.checked })} /><span>Start with Decision Coach</span></label></div><fieldset className="playtest-house-rules"><legend>Optional house rules</legend><p>Only variants the current Quick Duel engine can enforce for both sides appear here.</p>{QUICK_DUEL_HOUSE_RULES.map((rule) => <label className="playtest-house-rule-option" key={rule.id}><input type="checkbox" checked={settings.houseRuleIds.includes(rule.id)} onChange={() => toggleHouseRule(rule.id)} /><span><b>{rule.name}</b><small>{rule.summary || rule.rule}</small></span></label>)}</fieldset><ul><li>Playable on desktop and tablet</li><li>{cards.length} approved records in the cabinet</li><li>Progress saved on this device</li></ul><button type="button" className="button primary field-test-launch" disabled={tagMode && team.length !== 3} onClick={() => tagMode ? begin({ mode: bossMode ? "boss-blitz" : "tag-team", team }) : begin()}>{tagMode ? (team.length === 3 ? (bossMode ? "Enter the Boss room" : "Open the Tag Team mat") : `Sign ${3 - team.length} more fighter${3 - team.length === 1 ? "" : "s"}`) : "Open the Quick Duel mat"} <span>→</span></button></aside>
     </section> : <section className="mode-briefing-card paper-stack" aria-live="polite"><div className={`mode-briefing-mark tone-${modeMeta.tone}`}><span>0{CANONICAL_GAME_MODES.findIndex((entry) => entry.id === mode) + 1}</span><b>FILED</b></div><div><span className="eyebrow">02 / Mode briefing</span><h2>{selectedMode.title}</h2><p>{selectedMode.detail || modeMeta.hook}</p><div className="mode-briefing-facts"><span><b>{selectedMode.players}</b> table size</span><span><b>{selectedMode.fighters}</b> roster load</span><span><b>{selectedMode.win}</b> victory condition</span></div><button type="button" className="button ghost" onClick={() => goTo("quickstart")}>Read the full mode brief <span>→</span></button></div><aside><span>Next filing</span><strong>{mode === "boss-blitz" ? "Boss room construction" : "Dedicated table build"}</strong><p>This format is documented and queued for the expanded game surface.</p><button type="button" className="text-link" onClick={() => setMode("quick-duel")}>Play Quick Duel while it’s live →</button></aside></section>}
     <footer className="playtest-gateway-footer"><span><b>Department note:</b> Mode selection is now the front door. The engine underneath remains the canonical Quick Duel implementation.</span><button type="button" className="text-link" onClick={() => goTo("rules")}>Check the rules before entering →</button></footer>
   </main>;
+}
+
+function BossDossier({ board, skipRound }: { board: Board; skipRound: boolean }) {
+  const stageIndex = board.bossStage ?? 0;
+  const profile = cardFor(board.fighterId);
+  const guard = board.bossGuardId ? cardFor(board.bossGuardId) : null;
+  const rule = profileRule(board, cardFor);
+  const ruleText = (profile?.rulesText ?? "").replace(/^Stage Fit:[^.]*\.\s*/i, "");
+  const enraged = isEnraged(board);
+  return <section className={`boss-dossier${enraged ? " is-enraged" : ""}`} aria-label={`Boss ladder: stage ${stageIndex + 1} of ${BOSS_RULES.stages.length}`}>
+    <ol className="boss-ladder">{BOSS_RULES.stages.map((stage, index) => <li key={stage.id} className={index < stageIndex ? "is-cleared" : index === stageIndex ? "is-current" : ""} aria-current={index === stageIndex ? "step" : undefined}><b>{index < stageIndex ? "✓" : index + 1}</b><span>{stage.title}</span></li>)}</ol>
+    <p className="boss-rule"><b>Boss Rule</b>{ruleText || "No printed rule."}{rule && !ENFORCED_PROFILE_RULES.has(rule) && <small> (shown for reference; not yet automated)</small>}</p>
+    <div className="boss-status">
+      {guard ? <span className="boss-guard" title={guard.rulesText ?? ""}>Guard · {guard.name} · {guard.zone} +{numberValue(guard.stats.Guard)}</span> : <span className="boss-guard is-empty">No Boss Guard</span>}
+      {enraged && <span className="boss-enraged">Enraged · 2 Attacks</span>}
+      {skipRound && <span className="boss-waiting">Waiting for the bell</span>}
+      <span className="boss-arsenal">Arsenal {board.bossArsenal?.deck.length ?? 0}</span>
+    </div>
+  </section>;
 }
 
 function RosterRail({ board, side, canTagNow, onTag, onNextIn }: { board: Board; side: "player" | "ai"; canTagNow: boolean; onTag?: (index: number) => void; onNextIn?: (index: number | null) => void }) {
@@ -3073,8 +3098,9 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   });
   const setMatch = (update: SetStateAction<Match | null>) => setRawMatch((previous) => {
     let next = typeof update === "function" ? update(previous) : update;
-    if (next?.mode === "tag-team") {
-      next = settleRoster(next, settings.locations);
+    if (next?.mode === "boss-blitz" && previous) next = applyBossTableRules(previous, next);
+    if (next?.mode === "tag-team" || next?.mode === "boss-blitz") {
+      next = settleBoss(settleRoster(next, settings.locations), settings.locations);
       // Each side may tag once per turn: reset when its turn begins; the computer decides at once.
       if (previous && previous.phase !== "player-initiate" && next.phase === "player-initiate") next = { ...next, player: { ...next.player, taggedThisTurn: false } };
       if (previous && previous.phase !== "ai-ready" && next.phase === "ai-ready" && !next.winner) {
@@ -3083,6 +3109,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         if (choice === null) next = { ...next, ai };
         else { const tagged = tagIn(ai, choice); next = { ...next, ai: tagged, log: [`Computer tags ${cardFor(ai.fighterId)?.name ?? "its fighter"} out; ${cardFor(tagged.fighterId)?.name ?? "a teammate"} takes the mat.`, ...next.log].slice(0, 32) }; }
       }
+      // A Boss KO'd this round: everyone else skips the rest of the round (DDB-RUL-001/002).
+      if (next.mode === "boss-blitz" && next.bossSkipRound && next.phase === "ai-ready" && previous?.phase !== "ai-ready" && !next.winner) next = advanceRound(next, settings.locations, "The new challenger waits for the bell. The round closes.", settings.houseRuleIds);
     }
     if (!previous && next?.phase === "player-initiate") {
       const initiated = withPlayerCharacterChoice(publishQuickDuelPlaytestLifecycleEvent(next, "player", "onInitiate", quickDuelHostOperations, cardFor));
@@ -3280,13 +3308,15 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   const begin = (options: { fighterId?: string; mode?: GameModeId; team?: string[] } = {}) => {
     duelSerial.current += 1;
     const fighterId = options.fighterId ?? selectedId;
-    const tagTeam = options.mode === "tag-team" && (options.team?.length ?? 0) === 3;
+    const bossBlitz = options.mode === "boss-blitz" && (options.team?.length ?? 0) === 3;
+    const tagTeam = (options.mode === "tag-team" || bossBlitz) && (options.team?.length ?? 0) === 3;
     const team = tagTeam ? options.team! : [fighterId];
     const choices = characters.filter((card) => !team.includes(card.id));
     const challenge = DIFFICULTIES[settings.difficulty];
     const aiTeam = shuffle(choices.map((card) => card.id)).slice(0, tagTeam ? 3 : 1);
     const player = tagTeam ? { ...createRoster(emptyBoard(team[0]), team, emptyBoard(team[0]).maxHp), xp: 1 } : { ...emptyBoard(fighterId), xp: 1 };
-    const ai = tagTeam ? { ...createRoster(emptyBoard(aiTeam[0]), aiTeam, challenge.aiHp), xp: 1, statBoost: challenge.statBoost } : { ...emptyBoard(aiTeam[0]), xp: 1, hp: challenge.aiHp, maxHp: challenge.aiHp, statBoost: challenge.statBoost };
+    const bossLadder = bossBlitz ? drawBossLadder(BOSS_PROFILES) : [];
+    const ai = bossBlitz ? loadBossStage({ ...emptyBoard(bossLadder[0]), bossProfiles: bossLadder }, 0, BOSS_ARSENAL_IDS, shuffle) : tagTeam ? { ...createRoster(emptyBoard(aiTeam[0]), aiTeam, challenge.aiHp), xp: 1, statBoost: challenge.statBoost } : { ...emptyBoard(aiTeam[0]), xp: 1, hp: challenge.aiHp, maxHp: challenge.aiHp, statBoost: challenge.statBoost };
     const locations = shuffle(quickDuelLocationPool.map((card) => card.id));
     const shuffledMarket = shuffle(marketPool.filter((card) => settings.openMarket || Boolean(artistUrl(card))).map((card) => card.id));
     const openingMarket = curateOpeningMarket(shuffledMarket, settings.balancedMarket);
@@ -3295,10 +3325,10 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const playerFirst = fighterStat(player, "Speed") >= fighterStat(ai, "Speed");
     const turnOrder: Match["turnOrder"] = playerFirst ? ["player", "ai"] : ["ai", "player"];
     setDeskView(null);
-    setMatch({ schema: 8, rulesVersion: activeRulesRevision, mode: tagTeam ? "tag-team" : "quick-duel", blackBeltWinner: null, player, ai, market: openingMarket.market, marketDeck: openingMarket.marketDeck, marketDiscard: [], marketPurchasedThisRound: false, comboDeck: comboDeck.slice(1), comboOfferId: comboDeck[0] ?? null, locations: locations.slice(1), locationId: currentLocation, round: 1, phase: playerFirst ? "player-initiate" : "ai-ready", turnOrder, turnIndex: 0, selectedAttackId: null, selectedZone: "High", pendingStrike: null, pendingDiscard: null, pendingChoice: null, pendingCombatContinuation: null, reversalRemainingAiAttacks: [], reversalReason: null, reversalIncomingZone: null, attackCostDecisionCardId: null, nonHonorSceneChangedThisRound: false, exchangeSequence: 0, lastExchange: null, winner: null, log: [`${challenge.label} field test opened under rules ${activeRulesRevision}. The waiver is legally adjacent to complete.`, `Honor 1: ${cardFor(currentLocation)?.name ?? "Tournament Mat"} is active. Both fighters gain 1 XP and refresh Tempo.`, `${playerFirst ? "You" : "Computer"} win initiative on current Speed.`] });
+    setMatch({ schema: 8, rulesVersion: activeRulesRevision, mode: bossBlitz ? "boss-blitz" : tagTeam ? "tag-team" : "quick-duel", blackBeltWinner: null, bossSkipRound: false, bossDefeatedStage: null, styleVictory: false, player, ai, market: openingMarket.market, marketDeck: openingMarket.marketDeck, marketDiscard: [], marketPurchasedThisRound: false, comboDeck: comboDeck.slice(1), comboOfferId: comboDeck[0] ?? null, locations: locations.slice(1), locationId: currentLocation, round: 1, phase: playerFirst ? "player-initiate" : "ai-ready", turnOrder, turnIndex: 0, selectedAttackId: null, selectedZone: "High", pendingStrike: null, pendingDiscard: null, pendingChoice: null, pendingCombatContinuation: null, reversalRemainingAiAttacks: [], reversalReason: null, reversalIncomingZone: null, attackCostDecisionCardId: null, nonHonorSceneChangedThisRound: false, exchangeSequence: 0, lastExchange: null, winner: null, log: [`${challenge.label} field test opened under rules ${activeRulesRevision}. The waiver is legally adjacent to complete.`, `Honor 1: ${cardFor(currentLocation)?.name ?? "Tournament Mat"} is active. Both fighters gain 1 XP and refresh Tempo.`, `${playerFirst ? "You" : "Computer"} win initiative on current Speed.`] });
   };
 
-  const write = (current: Match, line: string, changes: Partial<Match> = {}): Match => settleRoster({ ...current, ...changes, log: [line, ...current.log].slice(0, 32) }, settings.locations);
+  const write = (current: Match, line: string, changes: Partial<Match> = {}): Match => settleBoss(settleRoster({ ...current, ...changes, log: [line, ...current.log].slice(0, 32) }, settings.locations), settings.locations);
   const player = match?.player;
   const ai = match?.ai;
   const playerFighter = player ? cardFor(player.fighterId)! : null;
@@ -3576,7 +3606,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const aiDefenseReaction = defenseCard ? autoActivateAiDefenseGuardEquipment(aiConsumableReaction.board) : { board: aiConsumableReaction.board, guard: 0, notes: [] as string[] };
     const defenseModifier = locationDefenseModifier(location, defenseCard, aiDefenseReaction.board, zone);
     const defenseCardModifier = defenseCard ? defenseCardRuleModifier(aiDefenseReaction.board, current.player, defenseCard, card) : { value: 0, notes: [] as string[] };
-    const defensePower = Math.max(0, fighterStat(aiDefenseReaction.board, "DEF") + armorModifier.value + stage3cIncomingAttackDefenseBonus(aiDefenseReaction.board) + (defenseCard ? cardPower(defenseCard) + (aiDefenseReaction.board.nextDefenseCardBonus ?? 0) + stage3cNextDefenseGuardBonus(aiDefenseReaction.board) + aiDefenseReaction.guard : 0) + defenseCardModifier.value + defenseModifier.value);
+    const defensePower = Math.max(0, fighterStat(aiDefenseReaction.board, "DEF") + bossGuardFor(aiDefenseReaction.board, zone, cardFor) + armorModifier.value + stage3cIncomingAttackDefenseBonus(aiDefenseReaction.board) + (defenseCard ? cardPower(defenseCard) + (aiDefenseReaction.board.nextDefenseCardBonus ?? 0) + stage3cNextDefenseGuardBonus(aiDefenseReaction.board) + aiDefenseReaction.guard : 0) + defenseCardModifier.value + defenseModifier.value);
     const hit = attackPower > defensePower;
     const rawDamage = hit && !incomingEquipmentResponse.preventAttackDamage ? Math.max(0, attackPower - defensePower + locationModifier.damage + fighterModifier.damage) : 0;
     const reduced = reduceNonCharacterDamageForFighter(aiDefenseReaction.board, rawDamage);
@@ -3593,7 +3623,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     if (!hit && armedEquipment.blockedFocus) nextPlayer = gainFocus(nextPlayer, armedEquipment.blockedFocus);
     let nextAi: Board = { ...optionalReduced.board, hp: Math.max(0, optionalReduced.board.hp - damage), attacksReceivedThisRound: (optionalReduced.board.attacksReceivedThisRound ?? 0) + 1, combatDamageEventsThisRound: (optionalReduced.board.combatDamageEventsThisRound ?? 0) + (reduced.damage > 0 ? 1 : 0), wasHitSinceLastTurn: optionalReduced.board.wasHitSinceLastTurn || hit, damageTaken: optionalReduced.board.damageTaken + damage };
     const thresholdProtection = applyStructuredEquipmentThresholdProtection(nextAi, damage);
-    nextAi = thresholdProtection.board;
+    nextAi = spendBossGuard(thresholdProtection.board, zone, cardFor);
     nextAi = resolveReactionItemIncomingAttackOutcome(nextAi, hit);
     nextAi = stage3cConsumeIncomingAttackStatuses(nextAi);
     const targetDebuff = hit ? applyTargetHitDebuffs(nextAi, card, { previousCardIsItem }) : { board: nextAi, notes: [] as string[] };
@@ -4451,6 +4481,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
 
   const runAiTurn = () => setMatch((current) => {
     if (!current || current.phase !== "ai-ready" || current.winner || current.pendingChoice) return current;
+    if (current.mode === "boss-blitz") return runBossTurn(current, settings.locations, settings.houseRuleIds);
     const prepared = prepareAiTurn(current);
     if (prepared.pendingChoice) return prepared;
     if (hasUntargetableStatus(prepared.player.stage3cStatuses)) return finishAiTurn(prepared, "Smoke Bomb leaves the computer without a legal target this Yell.", settings.locations, settings.houseRuleIds);
@@ -4755,7 +4786,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const attackPower = Math.max(0, baseAttackPower + postDefensePower.amount);
     const defenseModifier = locationDefenseModifier(location, defenseCard, current.ai, zone);
     const defenseCardModifier = defenseCard ? defenseCardRuleModifier(current.ai, current.player, defenseCard, card) : { value: 0, notes: [] as string[] };
-    const defensePower = Math.max(0, fighterStat(current.ai, "DEF") + armorModifier.value + stage3cIncomingAttackDefenseBonus(current.ai) + (defenseCard ? cardPower(defenseCard) + (current.ai.nextDefenseCardBonus ?? 0) + stage3cNextDefenseGuardBonus(current.ai) : 0) + defenseCardModifier.value + defenseModifier.value);
+    const defensePower = Math.max(0, fighterStat(current.ai, "DEF") + bossGuardFor(current.ai, zone, cardFor) + armorModifier.value + stage3cIncomingAttackDefenseBonus(current.ai) + (defenseCard ? cardPower(defenseCard) + (current.ai.nextDefenseCardBonus ?? 0) + stage3cNextDefenseGuardBonus(current.ai) : 0) + defenseCardModifier.value + defenseModifier.value);
     const hit = attackPower > defensePower;
     const rawDamage = hit && !incomingEquipmentResponse.preventAttackDamage ? Math.max(0, attackPower - defensePower + locationModifier.damage + fighterModifier.damage) : 0;
     const reduced = reduceNonCharacterDamageForFighter(current.ai, rawDamage);
@@ -4767,7 +4798,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     nextPlayer.focus = Math.max(0, nextPlayer.focus - cardFocus(card));
     let nextAi: Board = { ...optionalReduced.board, hp: Math.max(0, optionalReduced.board.hp - damage), attacksReceivedThisRound: (optionalReduced.board.attacksReceivedThisRound ?? 0) + 1, combatDamageEventsThisRound: (optionalReduced.board.combatDamageEventsThisRound ?? 0) + (reduced.damage > 0 ? 1 : 0), damageTaken: optionalReduced.board.damageTaken + damage, wasHitSinceLastTurn: optionalReduced.board.wasHitSinceLastTurn || hit };
     const thresholdProtection = applyStructuredEquipmentThresholdProtection(nextAi, damage);
-    nextAi = thresholdProtection.board;
+    nextAi = spendBossGuard(thresholdProtection.board, zone, cardFor);
     nextAi = stage3cConsumeIncomingAttackStatuses(nextAi);
     const targetDebuff = hit ? applyTargetHitDebuffs(nextAi, card, { previousCardIsItem }) : { board: nextAi, notes: [] as string[] };
     nextAi = targetDebuff.board;
@@ -5056,7 +5087,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
       </div>
       <div className="versus-center" aria-label={`Round ${match.round}`}><span>ROUND</span><b>{match.round}</b></div>
       <div className={`battle-hud-fighter battle-hud-fighter--ai hp-tier-${healthTier(ai.hp, ai.maxHp)}`} style={{ "--hp-progress": `${aiHpPercent}%` } as CSSProperties}>
-        <span><small>COMPUTER · {aiFighter.name}</small></span><b>COMPUTER</b>
+        <span><small>{match.mode === "boss-blitz" ? `BOSS · ${stageFor(ai).title}` : "COMPUTER"} · {aiFighter.name}</small></span><b>{match.mode === "boss-blitz" ? stageFor(ai).title.toUpperCase() : "COMPUTER"}</b>
         <div><strong>{ai.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${aiFighter.name} health`} aria-valuemin={0} aria-valuemax={ai.maxHp} aria-valuenow={ai.hp}><em style={{ width: `${aiHpPercent}%` }} /></i></div>
       </div>
     </header>
@@ -5070,18 +5101,18 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
           <div className="victory-copy"><span className="eyebrow">Department of Questionably Regulated Martial Arts</span><h2>{match.winner === "player" ? `${winnerFighter.name} remains standing!` : `${winnerFighter.name} wins the field test.`}</h2><p>{match.winner === "player" ? "Confetti has been authorized, the clipboard has been impressed against its will, and your victory has been filed in triplicate." : "The result has been stamped, disputed, and filed beneath a suspicious vending-machine receipt. An immediate rematch remains irresponsibly available."}</p><strong>{match.winner === "player" ? "CERTIFICATE OF EXCESSIVE COMPETENCE" : "NOTICE OF TEMPORARY MARTIAL INCONVENIENCE"}</strong></div>
         </div>
         <dl className="match-report"><div><dt>{match.round}</dt><dd>Rounds survived</dd></div><div><dt>{player.damageDealt}</dt><dd>Damage dealt</dd></div><div><dt>{player.cardsBought}</dt><dd>Cards acquired</dd></div><div><dt>{player.learnedCombos.length}</dt><dd>Combos learned</dd></div></dl>
-        <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={() => begin(match.mode === "tag-team" ? { mode: "tag-team", team: liveRoster(player).map((fighter) => fighter.fighterId) } : { fighterId: player.fighterId })}>Instant rematch →</button><button className="button ghost" onClick={() => setMatch(null)}>{match.mode === "tag-team" ? "Choose another team" : "Choose another fighter"}</button></div></div>
+        <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={() => begin(match.mode === "tag-team" || match.mode === "boss-blitz" ? { mode: match.mode, team: liveRoster(player).map((fighter) => fighter.fighterId) } : { fighterId: player.fighterId })}>Instant rematch →</button><button className="button ghost" onClick={() => setMatch(null)}>{match.mode === "tag-team" || match.mode === "boss-blitz" ? "Choose another team" : "Choose another fighter"}</button></div></div>
       </div>
     </section>}
     <section className="playtest-arena"><div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>{settings.houseRuleIds.length > 0 && <div className="playtest-active-variants"><b>House rules active:</b>{QUICK_DUEL_HOUSE_RULES.filter((rule) => settings.houseRuleIds.includes(rule.id)).map((rule) => <span key={rule.id}>{rule.name}</span>)}</div>}
       <section className="playtest-table">
-        <div className="fighter-column fighter-column--player">{match.mode === "tag-team" && <RosterRail board={player} side="player" canTagNow={!match.winner && !match.pendingChoice && match.phase === "player-initiate" && canTag(player, true)} onTag={tagFighter} onNextIn={setNextIn} />}<FighterPanel board={player} label="You" vfxKind={matVfx?.player} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} onOpenCombo={() => setDeskView("combo")} /><LearnedComboRack states={learnedComboStates} onInspect={(card) => setInspectedId(card.id)} /></div>
+        <div className="fighter-column fighter-column--player">{(match.mode === "tag-team" || match.mode === "boss-blitz") && <RosterRail board={player} side="player" canTagNow={!match.winner && !match.pendingChoice && match.phase === "player-initiate" && canTag(player, true)} onTag={tagFighter} onNextIn={setNextIn} />}<FighterPanel board={player} label="You" vfxKind={matVfx?.player} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} onOpenCombo={() => setDeskView("combo")} /><LearnedComboRack states={learnedComboStates} onInspect={(card) => setInspectedId(card.id)} /></div>
         <div className="combat-stage-column">
           <CombatStage match={match} currentLocation={currentLocation} selectedAttack={pendingAttack} turnCoach={turnCoach} guided={settings.guided} playerCards={player.playArea} aiCards={ai.playArea} onInspect={(card) => setInspectedId(card.id)} onDropCard={useHandCard} onOpenCoach={() => setCoachOpen(true)} />
           {match.phase === "ai-ready" && !match.winner && !settings.autoAi && <button className="button primary run-opponent-turn" onClick={runAiTurn}>Run computer turn →</button>}
           {match.phase === "ai-ready" && !match.winner && settings.autoAi && <span className="ai-thinking"><i /><i /><i /> Clipboard thinking</span>}
         </div>
-        <div className="fighter-column fighter-column--enemy">{match.mode === "tag-team" && <RosterRail board={ai} side="ai" canTagNow={false} />}<FighterPanel board={ai} label="Computer" enemy vfxKind={matVfx?.ai} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} /></div>
+        <div className={`fighter-column fighter-column--enemy${match.mode === "boss-blitz" ? " fighter-column--boss" : ""}`}>{match.mode === "tag-team" && <RosterRail board={ai} side="ai" canTagNow={false} />}{match.mode === "boss-blitz" && <BossDossier board={ai} skipRound={Boolean(match.bossSkipRound)} />}<FighterPanel board={ai} label={match.mode === "boss-blitz" ? `Boss · ${stageFor(ai).title}` : "Computer"} enemy vfxKind={matVfx?.ai} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} /></div>
       </section>
     </section>
     <section className="playtest-workspace playtest-workspace--hand">
@@ -5290,6 +5321,14 @@ function applyBeltPromotion(board: Board, beltIndex: number) {
 }
 
 function openAiStrike(current: Match, cardId: string, remainingAiAttacks: string[], useTempo: boolean, sceneChanges: boolean, houseRuleIds: readonly string[]) {
+  if (cardId === BOSS_NEXT_ATTACK) {
+    // Enraged second Boss Attack: reveal it only after the first has fully resolved (Ch. 14 step 6).
+    if (current.bossSkipRound || current.ai.hp <= 0 || current.winner) return finishAiTurn(current, "The Boss turn ends.", sceneChanges, houseRuleIds);
+    const reveal = revealBossAttack(current.ai, current.player, cardFor, shuffle);
+    if (!reveal.attackId) return finishAiTurn({ ...current, ai: reveal.boss, player: reveal.player }, "The Boss Arsenal runs dry this turn.", sceneChanges, houseRuleIds);
+    current = { ...current, ai: { ...reveal.boss, hand: [...reveal.boss.hand, reveal.attackId] }, player: reveal.player, log: [...[...reveal.log].reverse(), `Enraged: ${cardFor(current.ai.fighterId)?.name ?? "the Boss"} attacks again with ${cardFor(reveal.attackId)?.name ?? "a Boss Attack"}.`, ...current.log].slice(0, 32) };
+    cardId = reveal.attackId; useTempo = false;
+  }
   const card = cardFor(cardId);
   if (!card || weaponAttackBlocked(current.ai, card)) {
     const nextIndex = remainingAiAttacks.findIndex((candidateId) => {
@@ -5335,7 +5374,7 @@ function openAiStrike(current: Match, cardId: string, remainingAiAttacks: string
   const stage3cAttackBonus = stage3cAttackPowerBonus(activeEquipment.board, card, zone);
   const attackPower = Math.max(0, cardPower(card) + fighterStat(activeEquipment.board, "ATK") + activeEquipment.board.nextAttackBonus + stage3cAttackBonus + tempoBonus + locationModifier.power + fighterModifier.power + printedModifier.power + incomingModifier.power + activeEquipment.power);
   const consumedAttackBoard = stage3cConsumeAttackStatuses(activeEquipment.board, card, zone);
-  let nextAi = applyCardEffects({ ...consumedAttackBoard, hand: removeOne(current.ai.hand, card.id), playArea: [...current.ai.playArea, card.id], xp: current.ai.xp + 1, attacksThisTurn: current.ai.attacksThisTurn + 1, attackedThisRound: true, zonesPlayed: [...current.ai.zonesPlayed, zone], cardsThisTurn: [...current.ai.cardsThisTurn, card.id], nextAttackBonus: 0, nextAttackHasFlow: false, nextAttackAnyZone: false, nextAttackArmorPenalty: 0, tempo: tempoBonus ? false : current.ai.tempo, wasHitSinceLastTurn: current.ai.attacksThisTurn === 0 ? false : current.ai.wasHitSinceLastTurn, triggeredCombos: current.ai.triggeredCombos, comboTriggered: current.ai.comboTriggered }, card, "ai");
+  let nextAi = applyCardEffects({ ...consumedAttackBoard, hand: removeOne(current.ai.hand, card.id), playArea: [...current.ai.playArea, card.id], xp: current.ai.xp + (current.ai.isBoss ? 0 : 1), attacksThisTurn: current.ai.attacksThisTurn + 1, attackedThisRound: true, zonesPlayed: [...current.ai.zonesPlayed, zone], cardsThisTurn: [...current.ai.cardsThisTurn, card.id], nextAttackBonus: 0, nextAttackHasFlow: false, nextAttackAnyZone: false, nextAttackArmorPenalty: 0, tempo: tempoBonus ? false : current.ai.tempo, wasHitSinceLastTurn: current.ai.attacksThisTurn === 0 ? false : current.ai.wasHitSinceLastTurn, triggeredCombos: current.ai.triggeredCombos, comboTriggered: current.ai.comboTriggered }, card, "ai");
   const flowDraw = hasFlow && !current.ai.flowUsedThisTurn;
   if (flowDraw) nextAi = drawCards({ ...nextAi, flowUsedThisTurn: true }, 1);
   if (current.ai.flowAfterFirstAttack && current.ai.attacksThisTurn === 0) nextAi = { ...nextAi, flowAfterFirstAttack: false, nextAttackHasFlow: true };
@@ -5347,7 +5386,7 @@ function openAiStrike(current: Match, cardId: string, remainingAiAttacks: string
 // owner's chosen conscious benched fighter right after the effect that KO'd it; the side is
 // only defeated when its whole roster is down. One Scene Change follows if the game goes on.
 function settleRoster(match: Match, sceneChanges: boolean): Match {
-  if (match.mode !== "tag-team") return match;
+  if (match.mode !== "tag-team" && match.mode !== "boss-blitz") return match;
   let next = match; const lines: string[] = []; let replaced = false;
   for (const side of ["player", "ai"] as const) {
     const result = knockOutActive(next[side]);
@@ -5371,7 +5410,101 @@ function settleRoster(match: Match, sceneChanges: boolean): Match {
   return { ...next, ...scene, winner, log: [...lines.reverse(), ...next.log].slice(0, 32) };
 }
 
+const BOSS_ARSENAL_IDS = cards.filter((card) => BOSS_RULES.arsenal.subtypes.includes(card.subtype ?? "")).map((card) => card.id);
+const BOSS_PROFILES = cards.filter((card) => card.subtype === "Boss Profile");
+
+function applyBossTableRules(previous: Match, next: Match): Match {
+  let match = next;
+  // Honor: the Boss's temporary DEF, Speed and once-per-round rule usage reset; a waiting Boss steps in.
+  if (match.round !== previous.round) match = { ...match, bossSkipRound: false, ai: { ...match.ai, bossTempDef: 0, tempSpeed: 0, bossRuleUsage: {} } };
+  // A Boss strike just resolved: apply the Boss Attack's printed hit/block effects and Profile rule.
+  const exchange = match.lastExchange;
+  if (exchange && match.exchangeSequence !== previous.exchangeSequence && exchange.actor === "ai") {
+    const attack = cardFor(exchange.attackCardId);
+    if (attack) {
+      const outcome = applyBossStrikeOutcome(match.ai, match.player, attack, exchange.outcome, Boolean(exchange.defenseCardId), cardFor);
+      match = { ...match, ai: outcome.boss, player: outcome.player, log: outcome.note ? [outcome.note, ...match.log].slice(0, 32) : match.log };
+    }
+  }
+  // Profile rules that watch what players do each round.
+  const rule = profileRule(match.ai, cardFor);
+  const fresh = match.player.cardsThisTurn.filter((id, index) => previous.player.cardsThisTurn[index] !== id && !previous.player.cardsThisTurn.includes(id));
+  const usage = { ...(match.ai.bossRuleUsage ?? {}) }; const notes: string[] = []; let ai = match.ai; let player = match.player;
+  for (const id of fresh) {
+    const card = cardFor(id); if (!card) continue;
+    if (rule === "boss.profile.kataDefense" && isKata(card) && !usage.kata) { usage.kata = true; ai = { ...ai, bossTempDef: (ai.bossTempDef ?? 0) + 1 }; notes.push("Boss Rule: your first Kata this round gives the Boss +1 DEF until the next Honor."); }
+    if (rule === "boss.profile.consumableHeal" && card.subtype === "Consumable" && !usage.consumable) { usage.consumable = true; ai = { ...ai, hp: Math.min(ai.maxHp, ai.hp + 2) }; notes.push("Boss Rule: your first Consumable this round heals the Boss 2 HP."); }
+    if (rule === "boss.profile.equipAttackPenalty" && isPermanent(card) && !usage.equip) { usage.equip = true; player = { ...player, nextAttackBonus: player.nextAttackBonus - 1 }; notes.push("Boss Rule: your first Equip this round gives your next Attack −1."); }
+  }
+  if (notes.length) match = { ...match, ai: { ...ai, bossRuleUsage: usage }, player, log: [...notes.reverse(), ...match.log].slice(0, 32) };
+  return match;
+}
+
+function runBossTurn(current: Match, sceneChanges: boolean, houseRuleIds: readonly string[]): Match {
+  if (current.bossSkipRound) return finishAiTurn(current, "The next Boss waits for the bell.", sceneChanges, houseRuleIds);
+  let boss = current.ai; let player = current.player; const lines: string[] = [];
+  const bossName = cardFor(boss.fighterId)?.name ?? "The Boss";
+  // Director Clipwell: the active player may discard 1 card; otherwise the first Boss Attack gets +1.
+  if (profileRule(boss, cardFor) === "boss.profile.startTurnDiscardOrPower") {
+    const junk = player.hand.find((id) => { const card = cardFor(id); return Boolean(card && [card.cardType, card.subtype, card.category].includes("Junk")); });
+    if (junk) { player = { ...player, hand: removeOne(player.hand, junk), discard: [...player.discard, junk] }; lines.push(`Boss Rule: you discard ${cardFor(junk)?.name ?? "a Junk card"} so the first Boss Attack gets no bonus.`); }
+    else { boss = { ...boss, nextAttackBonus: boss.nextAttackBonus + 1 }; lines.push("Boss Rule: you have no Junk to discard, so the first Boss Attack gets +1."); }
+  }
+  const reveal = revealBossAttack(boss, player, cardFor, shuffle);
+  lines.push(...reveal.log);
+  if (!reveal.attackId) return finishAiTurn({ ...current, ai: reveal.boss, player: reveal.player, log: [...lines.reverse(), ...current.log].slice(0, 32) }, `${bossName} reveals no Attack this turn.`, sceneChanges, houseRuleIds);
+  const attacks = bossAttacksAllowed(reveal.boss);
+  lines.push(`${bossName} attacks with ${cardFor(reveal.attackId)?.name ?? "a Boss Attack"}${attacks > 1 ? " (Enraged: two Attacks this turn)" : ""}.`);
+  const prepared: Match = { ...current, ai: { ...reveal.boss, hand: [reveal.attackId], cardsThisTurn: [], attacksThisTurn: 0, tempo: false }, player: reveal.player, log: [...lines.reverse(), ...current.log].slice(0, 32) };
+  return openAiStrike(prepared, reveal.attackId, attacks > 1 ? [BOSS_NEXT_ATTACK] : [], false, sceneChanges, houseRuleIds);
+}
+
+// The Boss never buys, learns, promotes or draws: file its played cards back into the Arsenal.
+function finishBossTurn(current: Match, line: string, sceneChanges: boolean, houseRuleIds: readonly string[]): Match {
+  const arsenal = current.ai.bossArsenal ?? { deck: [], discard: [] };
+  const spent = [...current.ai.playArea, ...current.ai.hand].filter((id) => BOSS_ARSENAL_IDS.includes(id));
+  const ai: Board = { ...current.ai, hand: [], playArea: [], discard: [], cardsThisTurn: [], attacksThisTurn: 0, bossArsenal: { ...arsenal, discard: [...arsenal.discard, ...spent] } };
+  const finished = settleBoss(settleRoster({ ...current, ai, log: [line, ...current.log].slice(0, 32) }, sceneChanges), sceneChanges);
+  if (finished.winner) return finished;
+  if (current.turnIndex === 0) {
+    const hostedFinished = withPlayerCharacterChoice(publishQuickDuelPlaytestLifecycleEvent(finished, "player", "onInitiate", quickDuelHostOperations, cardFor));
+    const player = applyInitiateCarryover(hostedFinished.player);
+    return { ...hostedFinished, player, phase: "player-initiate" as const, turnIndex: 1 as const, log: ["Your turn. Initiate begins now.", ...hostedFinished.log].slice(0, 32) };
+  }
+  return advanceRound(finished, sceneChanges, "The round closes. The Boss cracks its knuckles.", houseRuleIds);
+}
+
+// Stage victory (Ch. 14): +5 XP replacing the +2 KO award, heal the active fighter 8, Scene Change,
+// fresh Market row replacing the end-of-round refresh, next Boss for the next Honor.
+function settleBoss(match: Match, sceneChanges: boolean): Match {
+  if (match.mode !== "boss-blitz" || !match.ai.isBoss || match.ai.hp > 0 || match.bossDefeatedStage === match.ai.bossStage) return match;
+  const stage = stageFor(match.ai); const stageIndex = match.ai.bossStage ?? 0;
+  const bossName = cardFor(match.ai.fighterId)?.name ?? "The Boss";
+  const playerFighter = cardFor(match.player.fighterId)?.name ?? "Your fighter";
+  const heal = BOSS_RULES.stageVictory.healActiveHp;
+  // The strike that caused the KO already filed the normal +2 KO XP; the stage reward replaces it.
+  const player = { ...match.player, xp: match.player.xp + Math.max(0, BOSS_RULES.stageVictory.xp - 2), hp: match.player.hp > 0 ? Math.min(match.player.maxHp, match.player.hp + heal) : match.player.hp };
+  const lines = [`Stage cleared! ${bossName}, the ${stage.title}, is down. +${BOSS_RULES.stageVictory.xp} XP and ${playerFighter} recovers ${heal} HP.`];
+  if (isFinalStage(match.ai)) {
+    lines.push(match.styleVictory ? "Style Victory: you entered the Final Boss stage already at Black Belt." : "Scenario Victory: the Final Boss is defeated.");
+    return { ...match, player, winner: "player", bossDefeatedStage: stageIndex, log: [...lines.reverse(), ...match.log].slice(0, 32) };
+  }
+  const next = stageIndex + 1;
+  const ai = loadBossStage(match.ai, next, BOSS_ARSENAL_IDS, shuffle);
+  const marketState = refreshMarketRow(match.market, match.marketDeck, match.marketDiscard);
+  let scene: Partial<Match> = {};
+  if (sceneChanges) {
+    const pool = match.locations.length ? match.locations : shuffle(quickDuelLocationPool.map((card) => card.id));
+    const locationId = pool.find((id) => id !== match.locationId) ?? match.locationId;
+    scene = { locationId, locations: pool.filter((id) => id !== locationId), nonHonorSceneChangedThisRound: true };
+  }
+  lines.push(`Next up: ${cardFor(ai.fighterId)?.name ?? "a new challenger"}, the ${BOSS_RULES.stages[next].title} (${ai.hp} HP). They step in at the next Honor; the Market row is refreshed.`);
+  const styleVictory = next === BOSS_RULES.stages.length - 1 && player.belt === belts.length - 1;
+  return { ...match, ...marketState, ...scene, marketPurchasedThisRound: true, player, ai, winner: null, bossSkipRound: true, bossDefeatedStage: stageIndex, styleVictory: match.styleVictory || styleVictory, log: [...lines.reverse(), ...match.log].slice(0, 32) };
+}
+
 function finishAiTurn(initial: Match, line: string, sceneChanges: boolean, houseRuleIds: readonly string[]) {
+  if (initial.mode === "boss-blitz") return finishBossTurn(initial, line, sceneChanges, houseRuleIds);
   let current = initial;
   const ascendKataId = current.ai.hand.find((id) => {
     const card = cardFor(id);

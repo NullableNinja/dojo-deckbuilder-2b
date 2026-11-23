@@ -461,7 +461,7 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
 
     {/* 2. Formats. */}
     <section className="shell home-block" aria-labelledby="formats-title">
-      <header className="home-block-head"><span className="home-block-tab">01</span><div><h2 id="formats-title">Four ways to start trouble.</h2><p>Quick Duel and Tag Team are playable right now. Standard Clash and Boss Blitz are fully filed in the rules while their tables get built.</p></div></header>
+      <header className="home-block-head"><span className="home-block-tab">01</span><div><h2 id="formats-title">Four ways to start trouble.</h2><p>Quick Duel, Tag Team and Boss Blitz are playable right now. Standard Clash is fully filed in the rules while its table gets built.</p></div></header>
       <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const isLive = modeMetaFor(mode.id).live; return <ModeCard key={mode.id} mode={mode} action={isLive ? "Play it now" : "Read the brief"} onSelect={() => goTo(isLive ? "playtest" : "quickstart")} />; })}</div>
     </section>
 
