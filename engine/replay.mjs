@@ -1,4 +1,4 @@
-import { Game } from "./core.mjs";
+import { createModeGame } from "./game-factory.mjs";
 
 /**
  * A replay policy feeds the exact action/choice decisions recorded by Game.run
@@ -37,7 +37,7 @@ export function replayGame(data, original, { maxSteps = 100000 } = {}) {
   const strategies = (original.players ?? []).map((player) => player.strategy ?? "balanced");
   // Non-Quick-Duel results carry their setup (mode, seats, rosters, teams) so the replay matches.
   const setup = original.setup ?? {};
-  const game = new Game(data, { seed: original.seed, strategies, mode: setup.mode ?? null, players: setup.players ?? null, rosters: setup.rosters ?? [], teams: setup.teams ?? null });
+  const game = createModeGame(data, { seed: original.seed, strategies, mode: setup.mode ?? null, players: setup.players ?? null, rosters: setup.rosters ?? [], teams: setup.teams ?? null, bossProfiles: setup.bossProfiles ?? null });
   return game.run({ policy: replayPolicy(original.decisions ?? []), maxSteps });
 }
 

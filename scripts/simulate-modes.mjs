@@ -2,7 +2,7 @@
 //   node scripts/simulate-modes.mjs [games=200] [mode=all]
 // Reports completion, winners, reasons, rounds, KOs, tags, invariant failures and stuck games.
 import { loadGameData } from "../engine/rules-loader.mjs";
-import { Game } from "../engine/core.mjs";
+import { createModeGame } from "../engine/game-factory.mjs";
 import { baselinePolicy } from "../engine/policies.mjs";
 import { STRATEGIES } from "../engine/bots.mjs";
 
@@ -25,6 +25,8 @@ const configs = [
   { label: "tag-team 2p", mode: "tag-team", players: 2 },
   { label: "tag-team 3p", mode: "tag-team", players: 3 },
   { label: "tag-team 2v2 dojo war", mode: "tag-team", teams: [[0, 2], [1, 3]] },
+  { label: "dojo-drama solo", mode: "dojo-drama", players: 1 },
+  { label: "dojo-drama co-op", mode: "dojo-drama", players: 2 },
 ].filter((config) => only === "all" || config.mode === only);
 
 let failed = false;
@@ -36,7 +38,7 @@ for (const config of configs) {
     const strategies = Array.from({ length: players }, (_, index) => STRATEGIES[(seed + index * 3) % STRATEGIES.length]);
     try {
       const size = data.definition.modes.find((mode) => mode.id === config.mode).roster.size;
-      const game = new Game(data, { seed, strategies, mode: config.mode, players: config.players, teams: config.teams, rosters: rostersFor(seed, players, size) });
+      const game = createModeGame(data, { seed, strategies, mode: config.mode, players: config.players, teams: config.teams, rosters: rostersFor(seed, players, size) });
       const result = game.run({ policy: baselinePolicy, maxSteps: 200000 });
       tally.complete += result.winner !== null ? 1 : 0;
       tally.reasons[result.reason] = (tally.reasons[result.reason] ?? 0) + 1;

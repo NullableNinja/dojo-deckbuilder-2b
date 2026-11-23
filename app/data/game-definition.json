@@ -228,7 +228,7 @@
       "title": "Dojo Drama: Boss Blitz",
       "rulesSection": "14-dojo-drama-boss-blitz",
       "executable": {
-        "engine": false,
+        "engine": true,
         "playtest": false
       },
       "players": {

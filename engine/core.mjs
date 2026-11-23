@@ -1871,8 +1871,10 @@ export class Game {
   seatTiebreak(player) { return this.legacyQuickDuel ? player.id : (player.id - this.referee + this.playerCount) % this.playerCount; }
 
   // ---- Knockout procedure (Ch. 16) and mode victory ----------------------------------
+  knockoutCandidates() { return this.players.filter((player) => !player.eliminated && player.hp <= 0); }
+
   processKnockouts() {
-    const knocked = this.players.filter((player) => !player.eliminated && player.hp <= 0);
+    const knocked = this.knockoutCandidates();
     if (!knocked.length) return [];
     const eliminated = [];
     for (const victim of knocked) {

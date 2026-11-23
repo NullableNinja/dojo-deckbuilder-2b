@@ -1,5 +1,31 @@
 # Game Modes Design: Standard Clash, Tag Team, Dojo Drama
 
+## Build status (Nov 23, 2026)
+
+| Mode | Headless engine | Browser game |
+| --- | --- | --- |
+| Quick Duel | Unchanged. A 300-seed fingerprint (`npm run engine:fingerprint`) is identical before and after the mode work. | Live. |
+| Standard Clash (2–6) | Executable. 800/800 parallel games, 0 failures, 0 replay mismatches. | Not yet. |
+| Tag Team (individual, 2v2 Dojo War) | Executable. 800/800, 0 failures, 0 replay mismatches. | Not yet. |
+| Dojo Drama (solo, co-op) | Executable (`engine/boss-blitz.mjs`). 600/600, 0 failures, 0 replay mismatches. | Not yet. |
+
+Run `npm run simulate:modes -- 300` for per-mode completion, win distribution, KOs, tags and invariant counts.
+
+### Still open in the engine
+
+- **Two Boss Profile rules are not wired**: Captain Cone and Chief Inspector Buffer trigger when a player *changes an Attack's zone*. The engine does not yet publish a "zone changed" event, so these Bosses currently fight with stats only.
+- **Healing a benched fighter**: healing Consumables always heal the active fighter. The bench option (and Ice Pack's +2 on the bench) needs a target choice.
+- **Reversal and Interfere windows** are not modelled by the headless engine in any mode (Quick Duel included). No current card has the Interfere keyword.
+- **Two Quick Duel behaviours differ from the rulebook** and are kept as-is so duel results do not silently change: Speed ties use seat order instead of the passing referee marker, and the 40-round cap uses HP then random instead of ruling DDB-RUL-102. Switching them is a deliberate one-line change once you approve it.
+
+### Balance findings from bot simulations
+
+These come from the baseline bots, so they measure the rules plus a simple AI, not expert play.
+
+- **Co-op Boss Blitz is too easy**: players won 300 of 300. Solo players win about 85%. Two players deal roughly double damage while co-op Boss HP is only ~40% higher (45/65/85 vs 30/45/60), and the second Boss Attack is split across both players.
+- **Black Belt Victory almost never happens** before a knockout (1 in 450 Tag Team games). The 35 XP race is much slower than the fight.
+- **Standard Clash seat balance is fair** once bots spread their attacks: 3-player wins 33/33/35%, 4-player about 25% each.
+
 Status: design + build plan. Source of truth: `content/rules.json` (v2.3), `content/dojo-game.json` (v2.3-r5), `content/cards.json`, `content/card-effects/*.json`.
 
 Quick Duel is the only executable mode today. This document turns the other three modes into executable designs that stay inside the printed rules, lists every place the rules are silent or contradictory, and files a proposed ruling for each gap so the engine never has to guess.

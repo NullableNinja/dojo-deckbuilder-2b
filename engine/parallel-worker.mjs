@@ -4,6 +4,7 @@ import { Game } from "./core.mjs";
 import { baselinePolicy, randomLegalPolicy } from "./policies.mjs";
 import { STRATEGIES } from "./bots.mjs";
 import { requireExecutableMode } from "./modes.mjs";
+import { createModeGame } from "./game-factory.mjs";
 import { replayGame, replayMatches, replayDiff } from "./replay.mjs";
 
 const policies = { baseline: baselinePolicy, random: randomLegalPolicy };
@@ -32,7 +33,7 @@ for (let index = workerData.workerId; index < workerData.games; index += workerD
   const strategies = strategiesFor(index);
   let game;
   try {
-    game = new Game(data, { seed, strategies, mode: mode.id });
+    game = createModeGame(data, { seed, strategies, mode: mode.id });
     const result = game.run({ policy });
     let replay = null;
     if (workerData.replayEvery > 0 && (index === 0 || index % workerData.replayEvery === 0)) {

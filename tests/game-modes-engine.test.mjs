@@ -19,7 +19,7 @@ test("canonical modes declare which ones the engine can run", () => {
   assert.ok(ids.includes("quick-duel"));
   assert.ok(ids.includes("standard-clash"));
   assert.ok(ids.includes("tag-team"));
-  assert.ok(!ids.includes("dojo-drama"), "Dojo Drama stays unavailable until the Boss engine ships");
+  assert.ok(ids.includes("dojo-drama"));
 });
 
 test("player counts are validated against the mode", () => {
