@@ -6106,3 +6106,265 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 /* Leave room for the Menu tab above the round badge. */
 .playtest-shell.mat-v3 .versus-center { margin-top: 26px !important; }
 @media (max-width: 860px) { .playtest-shell.mat-v3 .versus-center { margin-top: 18px !important; } }
+
+/* ==========================================================================
+   ASCEND v3: THE PRO SHOP
+   The Ascend desk is a backstage pro shop under the same stage lights as the
+   mat: stage-ink walls, cream paper tickets, a brass Focus coin, and a shelf
+   the Market cards stand on. Light uses the navy stage, dark the charcoal one.
+   ========================================================================== */
+.playtest-shell.mat-v3 { z-index: 2; }
+.site-frame:has(.ascend-desk-backdrop, .playtest-inspector-backdrop, .match-result) .gameplay-menu-tab { display: none !important; }
+
+.playtest-shell.mat-v3 .ascend-desk-backdrop {
+  background:
+    radial-gradient(ellipse 60% 45% at 50% -6%, color-mix(in srgb, var(--pf-action) 26%, transparent), transparent 70%),
+    color-mix(in srgb, var(--pf-stage-edge) 84%, transparent) !important;
+  backdrop-filter: blur(8px) saturate(.8) !important;
+}
+.playtest-shell.mat-v3 .ascend-desk-backdrop > .ascend-desk {
+  --shop-cream: #fffaf0;
+  --shop-ink: #18202b;
+  --shop-muted: color-mix(in srgb, #fffaf0 72%, transparent);
+  --shop-on-action: #fff;
+  border: 3px solid var(--pf-stage-edge) !important;
+  border-top: 6px solid var(--pf-action) !important;
+  border-radius: 16px 6px 18px 8px !important;
+  color: var(--shop-cream);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 250, 240, .05) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    linear-gradient(180deg, var(--pf-stage-glow), var(--pf-stage) 38%, var(--pf-stage-deep)) !important;
+  box-shadow: 10px 12px 0 var(--pf-stage-edge), 0 34px 90px rgba(0, 0, 0, .5) !important;
+  animation: pf-shop-in 320ms cubic-bezier(.2, .9, .25, 1.15) both;
+}
+@keyframes pf-shop-in {
+  from { opacity: 0; transform: translateY(-28px) rotate(-.8deg) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Marquee header */
+.playtest-shell.mat-v3 .ascend-desk-header {
+  position: relative;
+  isolation: isolate;
+  border-bottom: 2px dashed rgba(255, 250, 240, .16) !important;
+  background: transparent !important;
+}
+.playtest-shell.mat-v3 .ascend-desk--functional > .ascend-desk-header::before {
+  content: "ASCEND";
+  position: absolute;
+  z-index: -1;
+  right: 270px;
+  top: 50%;
+  translate: 0 -50%;
+  color: rgba(255, 250, 240, .055);
+  font: 400 clamp(64px, 7vw, 104px)/1 var(--pf-impact);
+  letter-spacing: .02em;
+  pointer-events: none;
+}
+.playtest-shell.mat-v3 .ascend-desk-header .eyebrow { color: color-mix(in srgb, var(--pf-action) 70%, #fffaf0) !important; font-size: 11px !important; }
+.playtest-shell.mat-v3 .ascend-desk-header h2 {
+  color: var(--shop-cream) !important;
+  font-family: var(--pf-display) !important;
+  font-size: clamp(26px, 2.1vw, 32px) !important;
+  font-weight: 400 !important;
+  letter-spacing: .01em;
+  text-shadow: 3px 3px 0 var(--pf-stage-edge);
+}
+.playtest-shell.mat-v3 .ascend-desk-header { padding-block: 8px !important; }
+.playtest-shell.mat-v3 .ascend-desk-header .eyebrow { margin-bottom: 1px !important; }
+.playtest-shell.mat-v3 .ascend-desk-header p { margin-top: 3px !important; color: var(--shop-muted) !important; font-size: 12px !important; line-height: 1.3 !important; }
+
+/* Brass Focus coin */
+.playtest-shell.mat-v3 .ascend-desk-balance {
+  border: 2px solid var(--pf-stage-edge) !important;
+  border-radius: 12px 4px 12px 4px !important;
+  color: var(--shop-ink) !important;
+  background: linear-gradient(160deg, #f6e6b8, #e2c682) !important;
+  box-shadow: 4px 5px 0 var(--pf-stage-edge) !important;
+  rotate: -1.5deg;
+}
+.playtest-shell.mat-v3 .ascend-desk-balance span { color: var(--shop-ink) !important; font: 700 11px/1.1 var(--pf-label) !important; letter-spacing: .08em; text-transform: uppercase; }
+.playtest-shell.mat-v3 .ascend-desk-balance small { color: color-mix(in srgb, var(--shop-ink) 72%, transparent) !important; font-size: 10px !important; }
+.playtest-shell.mat-v3 .ascend-desk-balance b { color: var(--shop-ink) !important; font: 400 38px/1 var(--pf-impact) !important; text-shadow: 2px 2px 0 rgba(255, 250, 240, .7); }
+
+.playtest-shell.mat-v3 .ascend-desk .modal-close {
+  width: 46px !important;
+  height: 46px !important;
+  border: 2px solid var(--pf-stage-edge) !important;
+  border-radius: 50% !important;
+  color: var(--shop-ink) !important;
+  background: var(--shop-cream) !important;
+  box-shadow: 3px 3px 0 var(--pf-stage-edge) !important;
+  font-size: 22px !important;
+}
+.playtest-shell.mat-v3 .ascend-desk .modal-close:hover { rotate: 8deg; background: #fff !important; }
+
+/* Step tickets */
+.playtest-shell.mat-v3 .ascend-guide { border-bottom: 0 !important; background: rgba(0, 0, 0, .16) !important; }
+.playtest-shell.mat-v3 .ascend-guide li {
+  border: 2px dashed rgba(255, 250, 240, .2) !important;
+  border-radius: 10px 3px 10px 3px !important;
+  color: var(--shop-muted) !important;
+  background: rgba(255, 250, 240, .04) !important;
+  box-shadow: none !important;
+  transition: transform 160ms ease, background 160ms ease;
+}
+.playtest-shell.mat-v3 .ascend-guide li span { font: 700 13px/1 var(--pf-label) !important; letter-spacing: .06em; text-transform: uppercase; }
+.playtest-shell.mat-v3 .ascend-guide li small { font-size: 10px !important; opacity: .82; }
+.playtest-shell.mat-v3 .ascend-guide li > b {
+  border: 2px solid currentColor !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: 400 13px/1 var(--pf-impact) !important;
+}
+.playtest-shell.mat-v3 .ascend-guide li.is-current {
+  border: 2px solid var(--pf-stage-edge) !important;
+  color: var(--shop-ink) !important;
+  background: var(--shop-cream) !important;
+  box-shadow: 4px 4px 0 var(--pf-action) !important;
+  transform: rotate(-.6deg) translateY(-1px);
+}
+.playtest-shell.mat-v3 .ascend-guide li.is-current > b { border-color: var(--pf-action) !important; color: #fff !important; background: var(--pf-action) !important; }
+.playtest-shell.mat-v3 .ascend-guide li.is-complete { border-style: solid !important; border-color: color-mix(in srgb, #f0dca9 45%, transparent) !important; color: #f0dca9 !important; }
+.playtest-shell.mat-v3 .ascend-guide li.is-complete > b { font-size: 0 !important; }
+.playtest-shell.mat-v3 .ascend-guide li.is-complete > b::before { content: "✓"; font-size: 14px; }
+.playtest-shell.mat-v3 .ascend-guide li::after { display: none !important; }
+
+/* The shop floor */
+.playtest-shell.mat-v3 .ascend-desk-body { background: transparent !important; }
+.playtest-shell.mat-v3 .ascend-market > header .eyebrow,
+.playtest-shell.mat-v3 .ascend-belt > .eyebrow,
+.playtest-shell.mat-v3 .ascend-combo .eyebrow { color: color-mix(in srgb, var(--pf-action) 70%, #fffaf0) !important; }
+.playtest-shell.mat-v3 .ascend-market > header h3,
+.playtest-shell.mat-v3 .ascend-combo > header h3,
+.playtest-shell.mat-v3 .ascend-belt > h3 {
+  color: var(--shop-cream) !important;
+  font-family: var(--pf-display) !important;
+  font-weight: 400 !important;
+  text-shadow: 2px 2px 0 var(--pf-stage-edge);
+}
+.playtest-shell.mat-v3 .ascend-market > header p,
+.playtest-shell.mat-v3 .ascend-belt > p,
+.playtest-shell.mat-v3 .combo-digital-note { color: var(--shop-muted) !important; font-size: 12.5px !important; }
+.playtest-shell.mat-v3 .ascend-belt > p b { color: var(--shop-cream); }
+.playtest-shell.mat-v3 .ascend-belt > p em { color: #f0dca9; }
+
+/* Market cards stand on a shelf; anything you can afford steps forward. */
+.playtest-shell.mat-v3 .ascend-market-grid {
+  padding: 14px 6px 26px !important;
+  background:
+    linear-gradient(to top, var(--pf-stage-edge) 0 8px, color-mix(in srgb, #c8b48c 70%, var(--pf-stage)) 8px 14px, transparent 14px) !important;
+  border-radius: 0 0 8px 8px;
+}
+.playtest-shell.mat-v3 .ascend-market-grid .play-card {
+  border-radius: 10px !important;
+  box-shadow: 5px 6px 0 var(--pf-stage-edge) !important;
+  transition: transform 180ms cubic-bezier(.2, .9, .25, 1.2), box-shadow 180ms ease, filter 180ms ease;
+}
+.playtest-shell.mat-v3 .ascend-market-grid .play-card.is-disabled { filter: saturate(.55) brightness(.86); }
+.playtest-shell.mat-v3 .ascend-market-grid .play-card.is-disabled:is(:hover, :focus-within) { filter: none; }
+.playtest-shell.mat-v3 .ascend-market-grid .play-card.is-selected {
+  transform: translateY(-8px) rotate(-.8deg);
+  box-shadow: 0 0 0 3px var(--pf-action), 7px 10px 0 var(--pf-stage-edge) !important;
+}
+.playtest-shell.mat-v3 .ascend-market-grid .play-card.is-selected:nth-child(even) { transform: translateY(-8px) rotate(.8deg); }
+.playtest-shell.mat-v3 .ascend-market-grid .play-card.is-selected:is(:hover, :focus-within) { transform: translateY(-12px) scale(1.02); }
+
+/* Featured Combo launcher: a taped-up promo poster */
+.playtest-shell.mat-v3 .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) {
+  border: 2px solid var(--pf-stage-edge) !important;
+  border-radius: 10px 3px 10px 3px !important;
+  background: var(--shop-cream) !important;
+  box-shadow: 5px 6px 0 var(--pf-violet) !important;
+  rotate: 1.5deg;
+}
+.playtest-shell.mat-v3 .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open),
+.playtest-shell.mat-v3 .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) * { color: var(--shop-ink) !important; }
+.playtest-shell.mat-v3 .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) > header h3 { font-family: var(--pf-display) !important; font-weight: 400 !important; font-size: 22px !important; }
+
+/* Belt Check: certification slips pinned to the wall */
+.playtest-shell.mat-v3 .ascend-belt.belt-panel {
+  border: 2px solid rgba(255, 250, 240, .12) !important;
+  border-radius: 12px 4px 12px 4px !important;
+  background: rgba(0, 0, 0, .14) !important;
+  box-shadow: none !important;
+}
+.playtest-shell.mat-v3 .ascend-belt .belt-track {
+  border: 2px solid var(--pf-stage-edge) !important;
+  background: rgba(0, 0, 0, .22) !important;
+}
+.playtest-shell.mat-v3 .ascend-belt .belt-ledger-list article {
+  border: 2px solid var(--pf-stage-edge) !important;
+  border-left: 6px solid var(--belt-rank, var(--pf-brass)) !important;
+  border-radius: 8px 3px 8px 3px !important;
+  color: var(--pf-ink) !important;
+  background: var(--pf-surface-raised) !important;
+  box-shadow: 3px 4px 0 var(--pf-stage-edge) !important;
+}
+.playtest-shell.mat-v3 .ascend-belt .belt-ledger-list article.is-earned { opacity: .78; }
+.playtest-shell.mat-v3 .ascend-belt .belt-ledger-list article.is-current {
+  box-shadow: 0 0 0 3px var(--pf-action), 4px 5px 0 var(--pf-stage-edge) !important;
+  rotate: -.5deg;
+}
+.playtest-shell.mat-v3 .ascend-belt .belt-ledger-list article small { color: var(--pf-ink-muted, var(--pf-ink)) !important; }
+.playtest-shell.mat-v3 .ascend-belt .belt-requirements {
+  border: 2px dashed rgba(255, 250, 240, .3) !important;
+  color: var(--shop-cream) !important;
+  background: rgba(0, 0, 0, .18) !important;
+}
+.playtest-shell.mat-v3 .ascend-belt .belt-requirements * { color: inherit; }
+.playtest-shell.mat-v3 .ascend-belt .belt-requirements i { border-color: rgba(255, 250, 240, .55) !important; }
+.playtest-shell.mat-v3 .ascend-belt .belt-requirements li.is-met i { border-color: var(--pf-guard) !important; color: #fff !important; background: var(--pf-guard) !important; }
+.playtest-shell.mat-v3 .ascend-belt > .button.primary { box-shadow: 4px 5px 0 var(--pf-stage-edge) !important; }
+
+/* Footer: the register */
+.playtest-shell.mat-v3 .ascend-desk-footer {
+  border-top: 2px dashed rgba(255, 250, 240, .16) !important;
+  background: rgba(0, 0, 0, .24) !important;
+}
+.playtest-shell.mat-v3 .ascend-guide-actions small { color: var(--shop-muted) !important; font-size: 11.5px !important; }
+:root[data-theme="dark"] .playtest-shell.mat-v3 .ascend-desk { --shop-on-action: #141517; }
+.playtest-shell.mat-v3 .ascend-desk .button.primary { color: var(--shop-on-action) !important; }
+.playtest-shell.mat-v3 .ascend-desk-footer .button.primary {
+  min-height: 46px !important;
+  padding-inline: 20px !important;
+  border: 2px solid var(--pf-stage-edge) !important;
+  font: 400 17px/1 var(--pf-display) !important;
+  letter-spacing: .02em;
+  box-shadow: 4px 5px 0 var(--pf-stage-edge) !important;
+  rotate: -1deg;
+}
+.playtest-shell.mat-v3 .ascend-desk-footer .button.primary:hover { rotate: 0deg; translate: 0 -2px; }
+.playtest-shell.mat-v3 .ascend-desk-footer .button.ghost {
+  min-height: 46px !important;
+  border: 2px solid rgba(255, 250, 240, .5) !important;
+  color: var(--shop-cream) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.playtest-shell.mat-v3 .ascend-desk :focus-visible { outline: 3px solid #f0dca9 !important; outline-offset: 3px !important; }
+
+.playtest-shell.mat-v3 .ascend-belt .training-stripe-rack {
+  border: 2px solid var(--pf-stage-edge) !important;
+  border-left: 6px solid var(--pf-brass) !important;
+  border-radius: 8px 3px 8px 3px !important;
+  color: var(--pf-ink) !important;
+  background: var(--pf-surface-raised) !important;
+  box-shadow: 3px 4px 0 var(--pf-stage-edge) !important;
+}
+@media (max-width: 760px) {
+  .playtest-shell.mat-v3 .ascend-desk--functional > .ascend-desk-header::before { display: none; }
+  .playtest-shell.mat-v3 .ascend-market > header { display: grid !important; gap: 4px !important; align-items: start !important; }
+  .playtest-shell.mat-v3 .ascend-market > header h3 { font-size: 22px !important; }
+  .playtest-shell.mat-v3 .ascend-belt .belt-track { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 2px !important; padding: 8px !important; }
+  .playtest-shell.mat-v3 .ascend-belt .belt-track span { width: 28px !important; min-width: 0 !important; height: 28px !important; flex: 0 0 28px !important; margin: 0 !important; }
+  .playtest-shell.mat-v3 .ascend-featured-combo[data-combo-popout="ready"]:not(.is-open) { rotate: 0deg; box-shadow: 4px 4px 0 var(--pf-violet) !important; }
+  .playtest-shell.mat-v3 .ascend-desk-backdrop > .ascend-desk { box-shadow: 5px 6px 0 var(--pf-stage-edge) !important; }
+  .playtest-shell.mat-v3 .ascend-desk-header h2 { font-size: 26px !important; }
+  .playtest-shell.mat-v3 .ascend-desk-balance { rotate: 0deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .playtest-shell.mat-v3 .ascend-desk-backdrop > .ascend-desk { animation: none; }
+  .playtest-shell.mat-v3 .ascend-market-grid .play-card,
+  .playtest-shell.mat-v3 .ascend-guide li { transition: none; }
+}
