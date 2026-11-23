@@ -1,24 +1,31 @@
 /**
  * Executable mode boundary for every local consumer.
  *
- * The canonical rules projection contains prose for more modes than the
- * headless engine currently implements. Only definitions declared under the
- * canonical game definition are executable. This module deliberately does
- * not infer missing mode rules from prose.
+ * Every mode is declared canonically under `definition.modes`. A declared mode
+ * is executable only when its `executable.engine` flag is set, so a mode whose
+ * rules are filed but whose engine support is still being built stays
+ * explicitly unavailable. This module never infers mode rules from prose.
  */
+export function declaredModes(data) {
+  const definition = data?.definition;
+  const modes = Array.isArray(definition?.modes) ? definition.modes : [];
+  if (modes.length) return modes.map((mode) => structuredClone(mode));
+  // Older generated data only described the single legacy mode.
+  return definition?.mode?.id ? [{ ...structuredClone(definition.mode), executable: { engine: true } }] : [];
+}
+
 export function executableModes(data) {
-  const mode = data?.definition?.mode;
-  if (!mode?.id) return [];
-  return [{ ...structuredClone(mode), executable: true }];
+  return declaredModes(data)
+    .filter((mode) => mode.executable?.engine === true || mode.executable === true)
+    .map((mode) => ({ ...mode, executable: true }));
 }
 
 export function modeSummary(data) {
   const executable = executableModes(data);
-  const described = data?.rules?.chapters?.find((chapter) => chapter.id === "3-game-modes-victory")?.sections ?? [];
   const executableIds = new Set(executable.map((mode) => mode.id));
   return {
     executable,
-    unavailable: described.filter((section) => !executableIds.has(section.id)).map((section) => ({ id: section.id, title: section.title, executable: false })),
+    unavailable: declaredModes(data).filter((mode) => !executableIds.has(mode.id)).map((mode) => ({ id: mode.id, title: mode.title, executable: false })),
   };
 }
 

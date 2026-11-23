@@ -158,6 +158,33 @@ for (const ruling of canonicalRules.officialRulings ?? []) {
   else rulingIds.add(ruling.id);
 }
 
+// Canonical mode definitions: every mode is declared once, cites real rulings and
+// chapters, and any Boss ladder points at real Boss Stage cards.
+const modeIds = new Set();
+const modes = source.definition?.modes ?? [];
+if (!modes.some((mode) => mode.id === source.definition?.mode?.id)) fail("definition.modes must include the legacy definition.mode entry");
+for (const mode of modes) {
+  if (!mode.id) { fail("A mode definition has no id"); continue; }
+  if (modeIds.has(mode.id)) fail(`Duplicate mode id ${mode.id}`);
+  modeIds.add(mode.id);
+  if (!chapterIds.has(mode.rulesSection)) fail(`Mode ${mode.id} cites unknown rules chapter ${mode.rulesSection}`);
+  if (!(mode.players?.min >= 1 && mode.players.max >= mode.players.min)) fail(`Mode ${mode.id} has an invalid player range`);
+  if (!(mode.roster?.size >= 1 && mode.roster.active === 1)) fail(`Mode ${mode.id} has an invalid roster`);
+  if (!(mode.startingHp > 0 && mode.maxRounds > 0)) fail(`Mode ${mode.id} needs startingHp and maxRounds`);
+  for (const id of mode.rulings ?? []) if (!rulingIds.has(id)) fail(`Mode ${mode.id} cites unknown ruling ${id}`);
+  for (const stage of mode.boss?.stages ?? []) {
+    const stageCard = canonicalCards.cards.find((card) => card.catalogId === stage.stageCard);
+    if (stageCard?.subtype !== "Boss Stage") fail(`Mode ${mode.id} stage ${stage.id} does not point at a Boss Stage card`);
+    else if (Number(stageCard.stats?.HP) !== stage.hp) fail(`Mode ${mode.id} stage ${stage.id} HP ${stage.hp} differs from printed ${stageCard.stats?.HP}`);
+  }
+  if (mode.boss) {
+    const arsenal = canonicalCards.cards.filter((card) => mode.boss.arsenal.subtypes.includes(card.subtype)).length;
+    if (arsenal !== mode.boss.arsenal.size) fail(`Mode ${mode.id} Boss Arsenal has ${arsenal} cards, expected ${mode.boss.arsenal.size}`);
+  }
+}
+const legacyMode = modes.find((mode) => mode.id === source.definition?.mode?.id);
+if (legacyMode && (legacyMode.startingHp !== source.definition.mode.startingHp || legacyMode.maxRounds !== source.definition.mode.maxRounds || legacyMode.victory?.blackBelt !== source.definition.mode.blackBeltVictory)) fail("definition.modes Quick Duel entry has drifted from definition.mode");
+
 const houseRuleNames = new Set();
 for (const rule of canonicalRules.houseRules ?? []) {
   const key = normalized(rule.name);

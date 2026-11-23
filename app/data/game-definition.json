@@ -10,6 +10,427 @@
     "blackBeltVictory": false,
     "maxRounds": 40
   },
+  "modes": [
+    {
+      "id": "quick-duel",
+      "title": "Quick Duel — Face-Punch Finals",
+      "rulesSection": "3-game-modes-victory",
+      "executable": {
+        "engine": true,
+        "playtest": true
+      },
+      "players": {
+        "min": 2,
+        "max": 2,
+        "default": 2
+      },
+      "roster": {
+        "size": 1,
+        "active": 1
+      },
+      "startingHp": 25,
+      "victory": {
+        "lastFighterStanding": true,
+        "blackBelt": false
+      },
+      "tagging": {
+        "enabled": false
+      },
+      "knockout": {
+        "xpForResponsiblePlayer": 2,
+        "replacement": "eliminate"
+      },
+      "maxRounds": 40,
+      "tiebreakers": [
+        "consciousFighters",
+        "totalCurrentHp",
+        "belt",
+        "xp",
+        "suddenDeath"
+      ],
+      "trainingStripes": true,
+      "rulings": [
+        "DDB-RUL-102",
+        "DDB-RUL-103",
+        "DDB-RUL-114"
+      ]
+    },
+    {
+      "id": "standard-clash",
+      "title": "Standard Clash",
+      "rulesSection": "3-game-modes-victory",
+      "executable": {
+        "engine": false,
+        "playtest": false
+      },
+      "players": {
+        "min": 2,
+        "max": 6,
+        "default": 3
+      },
+      "roster": {
+        "size": 1,
+        "active": 1
+      },
+      "startingHp": 25,
+      "victory": {
+        "lastFighterStanding": true,
+        "blackBelt": true
+      },
+      "targeting": {
+        "attack": "any-opposing-active-fighter",
+        "unnamedOpponent": "combat-opponent-else-acting-player-chooses"
+      },
+      "tagging": {
+        "enabled": false
+      },
+      "knockout": {
+        "xpForResponsiblePlayer": 2,
+        "replacement": "eliminate"
+      },
+      "reactionWindow": {
+        "order": "affected-player-then-clockwise",
+        "defensesPerAttack": 1,
+        "interferePerBystander": 1
+      },
+      "maxRounds": 60,
+      "tiebreakers": [
+        "consciousFighters",
+        "totalCurrentHp",
+        "belt",
+        "xp",
+        "suddenDeath"
+      ],
+      "trainingStripes": false,
+      "rulings": [
+        "DDB-RUL-101",
+        "DDB-RUL-102",
+        "DDB-RUL-103",
+        "DDB-RUL-112",
+        "DDB-RUL-114"
+      ]
+    },
+    {
+      "id": "tag-team",
+      "title": "Tag Team: Swap-Fu",
+      "rulesSection": "13-tag-team-swap-fu",
+      "recommended": true,
+      "executable": {
+        "engine": false,
+        "playtest": false
+      },
+      "players": {
+        "min": 2,
+        "max": 6,
+        "default": 2
+      },
+      "roster": {
+        "size": 3,
+        "active": 1,
+        "chooseActiveBeforeOpeningHand": true,
+        "benchRecoversHp": false
+      },
+      "startingHp": 25,
+      "victory": {
+        "lastFighterStanding": true,
+        "blackBelt": true
+      },
+      "targeting": {
+        "attack": "any-opposing-active-fighter",
+        "unnamedOpponent": "combat-opponent-else-acting-player-chooses"
+      },
+      "tagging": {
+        "enabled": true,
+        "phase": "Initiate",
+        "usesPerTurn": 1,
+        "beforeEquip": true,
+        "requiresConsciousBenched": true,
+        "refreshesTempo": false,
+        "reordersInitiative": false,
+        "duringAttackOrReaction": false
+      },
+      "knockout": {
+        "xpForResponsiblePlayer": 2,
+        "replacement": "owner-chooses-conscious-benched",
+        "replacementTriggersInitiate": false,
+        "replacementMayEquipThisTurn": false,
+        "turnContinuesAfterOwnKo": true,
+        "eliminateWhenRosterKnockedOut": true
+      },
+      "healing": {
+        "untargetedConsumable": "active-or-conscious-benched",
+        "reviveRequiresExplicitEffect": true
+      },
+      "beltStatRewards": "player-wide-applies-to-active",
+      "locationFirstTimeLimits": "per-player",
+      "maxRounds": 80,
+      "tiebreakers": [
+        "consciousFighters",
+        "totalCurrentHp",
+        "belt",
+        "xp",
+        "suddenDeath"
+      ],
+      "trainingStripes": false,
+      "variants": [
+        {
+          "id": "individual",
+          "title": "Individual Tag Team",
+          "default": true,
+          "summary": "Every player has three Characters and attacks any opponent."
+        },
+        {
+          "id": "dojo-war",
+          "title": "2v2 Dojo War",
+          "players": 4,
+          "teams": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              3
+            ]
+          ],
+          "seating": "teammates-opposite",
+          "friendlyTargeting": false,
+          "sharedVictory": true,
+          "rank": "individual",
+          "summary": "Teammates sit opposite each other, share victory, and may not target one another. XP and Belts stay individual unless Shared Rank is used."
+        },
+        {
+          "id": "shared-rank",
+          "title": "Shared Rank",
+          "appliesTo": [
+            "dojo-war"
+          ],
+          "rank": "shared",
+          "initiative": "individual",
+          "summary": "Teammates share one XP track, Belt, promotion tasks, and rewards. Each player keeps normal individual initiative."
+        }
+      ],
+      "rulings": [
+        "DDB-RUL-101",
+        "DDB-RUL-102",
+        "DDB-RUL-103",
+        "DDB-RUL-104",
+        "DDB-RUL-105",
+        "DDB-RUL-106",
+        "DDB-RUL-112",
+        "DDB-RUL-113",
+        "DDB-RUL-114",
+        "DDB-RUL-115"
+      ]
+    },
+    {
+      "id": "dojo-drama",
+      "title": "Dojo Drama: Boss Blitz",
+      "rulesSection": "14-dojo-drama-boss-blitz",
+      "executable": {
+        "engine": false,
+        "playtest": false
+      },
+      "players": {
+        "min": 1,
+        "max": 2,
+        "default": 1
+      },
+      "roster": {
+        "size": 3,
+        "active": 1,
+        "chooseActiveBeforeOpeningHand": true,
+        "benchRecoversHp": false
+      },
+      "startingHp": 25,
+      "victory": {
+        "lastFighterStanding": false,
+        "blackBelt": false,
+        "scenario": "final-boss-ko",
+        "styleVictory": "enter-final-stage-at-black-belt",
+        "loss": "all-player-fighters-knocked-out",
+        "coopSharedResult": true
+      },
+      "tagging": {
+        "enabled": true,
+        "phase": "Initiate",
+        "usesPerTurn": 1,
+        "beforeEquip": true,
+        "requiresConsciousBenched": true,
+        "refreshesTempo": false,
+        "reordersInitiative": false,
+        "duringAttackOrReaction": false
+      },
+      "knockout": {
+        "xpForResponsiblePlayer": 2,
+        "replacement": "owner-chooses-conscious-benched",
+        "replacementTriggersInitiate": false,
+        "replacementMayEquipThisTurn": false,
+        "turnContinuesAfterOwnKo": true,
+        "eliminateWhenRosterKnockedOut": true
+      },
+      "healing": {
+        "untargetedConsumable": "active-or-conscious-benched",
+        "reviveRequiresExplicitEffect": true
+      },
+      "beltStatRewards": "player-wide-applies-to-active",
+      "locationFirstTimeLimits": "per-player",
+      "maxRounds": 120,
+      "tiebreakers": [],
+      "trainingStripes": false,
+      "boss": {
+        "selection": {
+          "quick": "random-profile-by-stage-fit",
+          "challenge": "chosen-profiles",
+          "distinctProfiles": true
+        },
+        "profileContributes": [
+          "ATK",
+          "DEF",
+          "Speed",
+          "bossRule"
+        ],
+        "stages": [
+          {
+            "id": "rival",
+            "title": "Rival",
+            "stageCard": "DDB-BST-CORE-003",
+            "stageFit": "Rival",
+            "hp": 30,
+            "coopHp": 45,
+            "attackBonus": 0,
+            "attacksPerTurn": 1,
+            "coopAttacksPerTurn": 2,
+            "enrage": null
+          },
+          {
+            "id": "mini-boss",
+            "title": "Mini-Boss",
+            "stageCard": "DDB-BST-CORE-002",
+            "stageFit": "Mini-Boss",
+            "hp": 45,
+            "coopHp": 65,
+            "attackBonus": 1,
+            "attacksPerTurn": 1,
+            "coopAttacksPerTurn": 2,
+            "enrage": null
+          },
+          {
+            "id": "final-boss",
+            "title": "Final Boss",
+            "stageCard": "DDB-BST-CORE-001",
+            "stageFit": "Final Boss",
+            "hp": 60,
+            "coopHp": 85,
+            "attackBonus": 2,
+            "attacksPerTurn": 1,
+            "coopAttacksPerTurn": 2,
+            "enrage": {
+              "hpAtMost": 30,
+              "attacksPerTurn": 2,
+              "solo": true,
+              "coop": false
+            }
+          }
+        ],
+        "arsenal": {
+          "subtypes": [
+            "Boss Attack",
+            "Boss Defense",
+            "Boss Technique"
+          ],
+          "size": 32,
+          "freshShuffleEachStage": true,
+          "reshuffleDiscardWhenEmpty": true
+        },
+        "turn": {
+          "actsPerRound": 1,
+          "initiative": "current-speed",
+          "playerWinsSpeedTies": true,
+          "revealUntil": "Boss Attack",
+          "techniques": "resolve-immediately",
+          "defenses": "replace-boss-guard",
+          "attackPower": [
+            "printedAttackPower",
+            "profileAtk",
+            "stageAttackBonus",
+            "modifiers"
+          ]
+        },
+        "guard": {
+          "slots": 1,
+          "matchesAttackZone": true,
+          "discardAfterMatchedAttack": true,
+          "unmatchedStays": true
+        },
+        "targeting": {
+          "solo": "active-fighter",
+          "coop": "lowest-hp-active-first-then-different-player",
+          "ties": "random"
+        },
+        "restrictions": [
+          "no-hand",
+          "no-deck",
+          "no-focus",
+          "no-xp",
+          "no-market",
+          "no-combos",
+          "no-equipment",
+          "no-tag",
+          "no-tempo",
+          "immune-destroy",
+          "immune-instant-ko",
+          "immune-alternate-win"
+        ],
+        "playersMayUseTempoAgainstBoss": true,
+        "stageVictory": {
+          "xp": 5,
+          "replacesKoXp": true,
+          "healActiveHp": 8,
+          "coopHealsEachActive": true,
+          "sceneChange": true,
+          "marketRefresh": "replace-row-replaces-end-of-round-refresh",
+          "nextBossAt": "next-honor"
+        },
+        "bossKoTiming": {
+          "duringOwnYell": "finish-ascend-and-hide-others-skip-round",
+          "duringOtherPlayerTurn": "that-player-finishes-ascend-and-hide",
+          "outsidePlayerTurn": "transition-immediately"
+        }
+      },
+      "variants": [
+        {
+          "id": "solo",
+          "title": "Solo Boss Blitz",
+          "players": 1,
+          "default": true
+        },
+        {
+          "id": "coop",
+          "title": "Cooperative Dojo Drama",
+          "players": 2,
+          "summary": "Boss HP 45 / 65 / 85, two Boss Attacks per round targeting different players when possible, no Enrage, win or lose together."
+        }
+      ],
+      "rulings": [
+        "DDB-RUL-001",
+        "DDB-RUL-002",
+        "DDB-RUL-005",
+        "DDB-RUL-007",
+        "DDB-RUL-103",
+        "DDB-RUL-104",
+        "DDB-RUL-105",
+        "DDB-RUL-106",
+        "DDB-RUL-107",
+        "DDB-RUL-108",
+        "DDB-RUL-109",
+        "DDB-RUL-110",
+        "DDB-RUL-111",
+        "DDB-RUL-114",
+        "DDB-RUL-115"
+      ]
+    }
+  ],
   "turn": {
     "phases": [
       "Honor",

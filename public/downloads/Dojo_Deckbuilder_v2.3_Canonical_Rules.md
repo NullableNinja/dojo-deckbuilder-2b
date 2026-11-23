@@ -1296,3 +1296,93 @@ After a Boss stage victory in two-player co-op, each player heals their active f
 DDB-RUL-008 · Filed Aug 27, 2026 · Team Variant
 
 Teammates share XP, Belt, promotion tasks, and rewards. Each player keeps normal individual initiative.
+
+### Which opponent does “an opponent” mean?
+
+DDB-RUL-101 · Filed Nov 23, 2026 · Standard Clash
+
+In combat, “opponent,” “that opponent,” or “the target” means the opposing fighter in that combat. Outside combat, the acting player chooses one legal opposing active fighter when the effect resolves. “Each opponent” affects every opposing player.
+
+### Round cap and tiebreakers
+
+DDB-RUL-102 · Filed Nov 23, 2026 · Modes
+
+Digital play uses a round cap per mode. If the cap is reached, or every remaining player is knocked out by one effect, rank the tied players by most conscious fighters, then highest total current HP, then highest Belt, then most XP, then the Sudden-Death Tiebreaker.
+
+### Which modes use Black Belt Victory
+
+DDB-RUL-103 · Filed Nov 23, 2026 · Modes
+
+Standard Clash and Tag Team use Black Belt Victory. Quick Duel does not. In Dojo Drama, promoting to Black Belt never ends the game; only the scenario objective does.
+
+### Belt stat rewards follow the player
+
+DDB-RUL-104 · Filed Nov 23, 2026 · Tag Team
+
+Belt stat rewards such as +1 ATK, +1 Speed, and +1 DEF belong to the player and apply to whichever of that player’s Characters is active.
+
+### First-time Location limits in roster modes
+
+DDB-RUL-105 · Filed Nov 23, 2026 · Tag Team
+
+In Tag Team and Dojo Drama, Location limits worded “the first time each fighter” or “each player” are tracked per player, so tagging does not reset them. A Character’s own once-per-turn or once-per-round abilities are still tracked per Character card.
+
+### Your own fighter is KO’d during your turn
+
+DDB-RUL-106 · Filed Nov 23, 2026 · Tag Team
+
+Make the replacement active immediately after the current effect finishes, then continue your turn from the current step. The replacement cannot Equip until your next turn but may play other cards and attack.
+
+### “Boss Character” on Boss Stage cards
+
+DDB-RUL-107 · Filed Nov 23, 2026 · Boss Blitz
+
+“Boss Character” on a Boss Stage card means the paired Boss Profile. The Profile’s printed Boss Rule still applies; Bosses never have normal Fighter abilities.
+
+### A Boss with no Enrage Threshold
+
+DDB-RUL-108 · Filed Nov 23, 2026 · Boss Blitz
+
+A Boss without an Enrage Threshold—Rival, Mini-Boss, and every co-op Boss—is never at or below it. Effects that check the threshold use their “otherwise” result.
+
+### Co-op Boss target order
+
+DDB-RUL-109 · Filed Nov 23, 2026 · Co-op
+
+Each Boss Turn, the first Boss Attack targets the conscious active fighter with the lowest current HP; break ties randomly. The second targets a different player’s active fighter if one exists; otherwise the lowest-HP active fighter again.
+
+### Global effects and the Boss
+
+DDB-RUL-110 · Filed Nov 23, 2026 · Boss Blitz
+
+Location and other global effects apply to the Boss only for combat values: ATK, DEF, Speed, Attack Power, Guard, damage, and healing. Any part that needs a hand, deck, Focus, XP, Equipment, or a choice does nothing to the Boss.
+
+### XP and Reversals against a Boss
+
+DDB-RUL-111 · Filed Nov 23, 2026 · Boss Blitz
+
+The Boss never earns XP. A player who defends against a Boss Attack gains Defense XP normally and may make a Reversal against the Boss under the normal once-per-round rule. A fighter KO’d by a Boss awards no KO XP.
+
+### Referee marker in digital play
+
+DDB-RUL-112 · Filed Nov 23, 2026 · Timing
+
+In digital play, the first seat holds the referee marker in round one unless the table randomizes it; it passes clockwise each round. Players still act before a Boss with the same current Speed.
+
+### Black Belt in 2v2 Dojo War
+
+DDB-RUL-113 · Filed Nov 23, 2026 · Team Variant
+
+Victory is shared. If any teammate promotes to Black Belt, the whole team wins.
+
+### Training Stripes are a Quick Duel rule
+
+DDB-RUL-114 · Filed Nov 23, 2026 · Modes
+
+Training Stripes and the Belt Check recovery action apply only to Quick Duel until the printed rulebook adopts them. Other modes use the printed Belt rules.
+
+### Who chooses a KO replacement
+
+DDB-RUL-115 · Filed Nov 23, 2026 · Tag Team
+
+The owner of the knocked-out fighter always chooses which conscious benched Character becomes active.
