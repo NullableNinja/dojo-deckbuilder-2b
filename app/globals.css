@@ -2360,3 +2360,39 @@
   /* Standee stand, not a bar: floor shadow + small cardboard foot. */
   .standee-base { position: relative; width: 38%; height: 12px; margin-top: -8px; border: 2px solid var(--pf-stage-edge); border-radius: 2px 2px 6px 6px; background: #c8b48c; box-shadow: 0 10px 14px -6px rgba(0, 0, 0, .5); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); }
 }
+
+/* ========================================================================
+   HEADER v4: roomier. Only Play and Index carry frames; search and the
+   profile are quiet; the accent colour runs along the bottom edge.
+   ======================================================================== */
+@layer responsive {
+  .site-header { border-bottom: 0 !important; box-shadow: inset 0 -3px 0 var(--pf-action), 0 10px 24px rgba(0, 0, 0, .12) !important; }
+  .site-header .header-inner { min-height: 78px; gap: 22px; padding-block: 12px 15px; }
+  .site-header .brand { gap: 12px; }
+  .site-header .brand-mark { width: 48px; height: 48px; }
+  .site-header .brand b { font-size: 24px; letter-spacing: .1em; }
+  .site-header .brand em { font-size: 9px; letter-spacing: .24em; }
+  .page-tab { margin-left: 4px; margin-bottom: -15px; padding: 7px 16px 10px; }
+  .page-tab b { font-size: 18px; }
+  .header-actions { gap: 14px; }
+  /* Quiet controls */
+  .header-tool { min-width: 46px; min-height: 46px; border: 0; border-radius: 50%; padding: 0; background: transparent; font-size: 22px; }
+  .header-tool:hover, .header-tool[aria-expanded="true"] { color: var(--pf-action); background: color-mix(in srgb, var(--pf-action) 12%, transparent); }
+  .header-tool kbd { display: none; }
+  .profile-menu-button { width: 48px !important; min-width: 48px !important; height: 48px !important; min-height: 48px !important; justify-content: center !important; padding: 0 !important; border: 2px solid transparent !important; border-radius: 50% !important; background: transparent !important; box-shadow: none !important; }
+  .profile-menu-button > img { display: block !important; width: 44px !important; height: 44px !important; border: 2px solid var(--pf-line-strong) !important; border-radius: 50% !important; background: var(--pf-surface) !important; }
+  .profile-menu-button span, .profile-menu-button > strong { display: none !important; }
+  .profile-menu-button:hover > img, .profile-menu-button.is-open > img { border-color: var(--pf-action) !important; }
+  /* Framed: Play and Index */
+  .header-play { min-height: 48px; padding: 0 22px; font-size: 19px; transform: rotate(-1deg); }
+  .index-button { min-height: 48px; padding: 0 16px 0 12px; border-width: 2px; border-radius: 8px 4px 8px 5px; }
+  .index-button b { font-size: 18px; }
+  .header-play + .user-menu-wrap { margin-left: 6px; }
+  @media (max-width: 860px) {
+    .site-header .header-inner { min-height: 64px; gap: 10px; padding-block: 8px 11px; }
+    .site-header .brand-mark { width: 40px; height: 40px; }
+    .site-header .brand b { font-size: 19px; }
+    .profile-menu-button { width: 46px !important; min-width: 46px !important; height: 46px !important; min-height: 46px !important; }
+    .profile-menu-button > img { width: 40px !important; height: 40px !important; }
+  }
+}
