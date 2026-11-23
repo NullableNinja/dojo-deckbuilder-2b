@@ -46,6 +46,7 @@ import { canonicalTrainingStripeBelts, canonicalTrainingStripeConfig } from "./t
 import { trainingStripeState } from "./training-stripes.ts";
 import { resolveLocationHostEvent, structuredLocationDefenseForHost, structuredLocationKataFocusForHost } from "./location-playtest-bridge.ts";
 import { createBossRuntimeState, resolveBossCardEvent } from "./boss-runtime.ts";
+import { botTagChoice, canTag, createRoster, fightersRemaining, isStanding, knockOutActive, liveRoster, tagIn, type RosterFighter } from "./tag-team.ts";
 import { GAME_MODES as CANONICAL_GAME_MODES } from "./canonical-presentation";
 import { readUserPreferences } from "./user-preferences";
 
@@ -106,6 +107,11 @@ type CardEntry = {
 
 type Board = {
   fighterId: string;
+  /** Tag Team: three fighters; the active one is mirrored on this board (app/tag-team.ts). */
+  roster?: RosterFighter[];
+  activeIndex?: number;
+  taggedThisTurn?: boolean;
+  nextInIndex?: number | null;
   hp: number;
   maxHp: number;
   xp: number;
@@ -266,6 +272,10 @@ function characterRuntimePendingChoice(
 type Match = {
   schema: 8;
   rulesVersion: string;
+  /** Absent on Quick Duel saves from before Tag Team existed. */
+  mode?: "quick-duel" | "tag-team";
+  /** Set only when a Black Belt promotion wins Tag Team, so a KO swap never clears it. */
+  blackBeltWinner?: "player" | "ai" | null;
   player: Board;
   ai: Board;
   market: string[];
@@ -2951,7 +2961,7 @@ function MatLane({ label, cards: cardIds, activeId, onInspect }: { label: string
   </section>;
 }
 
-function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mode, setMode, goTo }: { selectedId: string; setSelectedId: (id: string) => void; settings: HouseSettings; setSettings: (settings: HouseSettings) => void; begin: () => void; mode: GameModeId; setMode: (mode: GameModeId) => void; goTo: (view: "rules" | "cards" | "quickstart") => void }) {
+function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mode, setMode, goTo }: { selectedId: string; setSelectedId: (id: string) => void; settings: HouseSettings; setSettings: (settings: HouseSettings) => void; begin: (options?: { fighterId?: string; mode?: GameModeId; team?: string[] }) => void; mode: GameModeId; setMode: (mode: GameModeId) => void; goTo: (view: "rules" | "cards" | "quickstart") => void }) {
   const [query, setQuery] = useState("");
   const selected = cardFor(selectedId) ?? characters[0];
   const filteredCharacters = characters.filter((character) => `${character.name} ${character.rulesText ?? ""} ${Object.values(character.stats).join(" ")}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
@@ -2960,7 +2970,15 @@ function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mo
     const next = choices[Math.floor(Math.random() * choices.length)] ?? filteredCharacters[0] ?? characters[0];
     setSelectedId(next.id);
   };
-  const chooseCharacter = (id: string) => setSelectedId(id);
+  const tagMode = mode === "tag-team";
+  const [team, setTeam] = useState<string[]>([]);
+  const chooseCharacter = (id: string) => {
+    setSelectedId(id);
+    if (tagMode) setTeam((current) => current.includes(id) ? current.filter((entry) => entry !== id) : current.length < 3 ? [...current, id] : current);
+  };
+  const randomTeam = () => { const pool = shuffle(characters.map((character) => character.id)).slice(0, 3); setTeam(pool); setSelectedId(pool[0]); };
+  const makeStarter = (id: string) => setTeam((current) => [id, ...current.filter((entry) => entry !== id)]);
+  const isPicked = (id: string) => tagMode ? team.includes(id) : selectedId === id;
   const toggleHouseRule = (id: string) => setSettings({ ...settings, houseRuleIds: settings.houseRuleIds.includes(id) ? settings.houseRuleIds.filter((entry) => entry !== id) : [...settings.houseRuleIds, id] });
   const selectedMode = CANONICAL_GAME_MODES.find((entry) => entry.id === mode) ?? CANONICAL_GAME_MODES[0];
   const modeMeta = GAME_MODE_META[mode];
@@ -2972,12 +2990,36 @@ function SetupView({ selectedId, setSelectedId, settings, setSettings, begin, mo
       <div className="play-mode-heading"><div><span className="eyebrow">01 / Select a format</span><h2 id="play-mode-title">What kind of trouble today?</h2></div><p>The game is bigger than Quick Duel. The current field test is only one door into the dojo.</p></div>
       <div className="play-mode-grid">{CANONICAL_GAME_MODES.map((entry) => { const meta = GAME_MODE_META[entry.id]; const active = mode === entry.id; return <ModeCard key={entry.id} mode={entry} active={active} pressed={active} action={active ? "Selected for setup" : meta.live ? "Open field test" : "Preview the docket"} onSelect={() => setMode(entry.id)} />; })}</div>
     </section>
-    {mode === "quick-duel" ? <section className="playtest-setup-grid playtest-quick-duel-setup" aria-labelledby="quick-duel-setup-title">
-      <div className="playtest-roster paper-stack"><div className="setup-panel-heading"><div><span className="eyebrow">02 / Choose your fighter</span><h2 id="quick-duel-setup-title">Who signs the waiver?</h2><p>Tap a face. The dossier answers back.</p></div><div className="roster-toolbar-actions"><label><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a fighter" aria-label="Search fighters" /></label><button type="button" onClick={randomize}>Random draw <span>↻</span></button></div></div><article className="selected-fighter-dossier" key={selected.id}><div className="selected-fighter-art-wrap"><img src={fighterIllustrationUrl(selected) ?? artistUrl(selected) ?? cardPlaceholderUrl} alt={selected.name} /><span className="dossier-selection-mark">FILED</span></div><div className="selected-fighter-copy"><span className="selected-fighter-kicker">Selected delegation · {selected.cardType}</span><h3>{selected.name}</h3><p>{selected.rulesText ?? "Ability pending an inspector with a functioning pen."}</p><div className="selected-fighter-stats"><b>{numberValue(selected.stats.ATK)}<small>ATK</small></b><b>{numberValue(selected.stats.DEF)}<small>DEF</small></b><b>{numberValue(selected.stats.Speed)}<small>SPD</small></b></div><span className="selection-receipt" aria-live="polite">{selected.name} is cleared for the mat.</span></div></article><div className="character-roster-heading"><span>Character cabinet</span><small>{filteredCharacters.length} faces match the current search</small></div><div className="playtest-character-grid">{filteredCharacters.map((character) => <button type="button" key={character.id} className={selectedId === character.id ? "is-selected" : ""} onClick={() => chooseCharacter(character.id)} aria-pressed={selectedId === character.id}><span className="character-card-tape" aria-hidden="true" /><span className="character-card-image"><img src={fighterIllustrationUrl(character) ?? artistUrl(character) ?? cardPlaceholderUrl} alt="" loading="lazy" /></span><span className="character-card-name">{character.name}</span><small>{numberValue(character.stats.ATK)} ATK · {numberValue(character.stats.DEF)} DEF · {numberValue(character.stats.Speed)} SPD</small>{selectedId === character.id && <b className="character-card-check" aria-hidden="true">✓</b>}</button>)}</div></div>
-      <aside className="playtest-rules-panel quick-duel-brief paper-stack"><div className="brief-panel-top"><span className="eyebrow">03 / Field test settings</span><span className="brief-panel-seal">LIVE</span></div><h2>{selectedMode.title}</h2><p>One fighter. One tactical opponent. A complete {starterIds.length}-card curriculum, persistent Market, Locations, Reversals, Combos, and Belt progression.</p><div className="brief-panel-callout"><b>{DIFFICULTIES[settings.difficulty].eyebrow}</b><span>{DIFFICULTIES[settings.difficulty].detail}</span></div><div className="playtest-setup-options"><label><span>Opponent filing</span><select value={settings.difficulty} onChange={(event) => setSettings({ ...settings, difficulty: event.target.value as Difficulty })}>{Object.entries(DIFFICULTIES).map(([value, option]) => <option value={value} key={value}>{option.label}</option>)}</select></label><label><span>Combat motion</span><select value={settings.motion} onChange={(event) => setSettings({ ...settings, motion: event.target.value as MotionMode })}><option value="full">Full impact</option><option value="reduced">Reduced impact</option><option value="off">Off</option></select></label><label className="playtest-setup-check"><input type="checkbox" checked={settings.guided} onChange={(event) => setSettings({ ...settings, guided: event.target.checked })} /><span>Start with Decision Coach</span></label></div><fieldset className="playtest-house-rules"><legend>Optional house rules</legend><p>Only variants the current Quick Duel engine can enforce for both sides appear here.</p>{QUICK_DUEL_HOUSE_RULES.map((rule) => <label className="playtest-house-rule-option" key={rule.id}><input type="checkbox" checked={settings.houseRuleIds.includes(rule.id)} onChange={() => toggleHouseRule(rule.id)} /><span><b>{rule.name}</b><small>{rule.summary || rule.rule}</small></span></label>)}</fieldset><ul><li>Playable on desktop and tablet</li><li>{cards.length} approved records in the cabinet</li><li>Progress saved on this device</li></ul><button type="button" className="button primary field-test-launch" onClick={() => begin()}>Open the Quick Duel mat <span>→</span></button></aside>
+    {mode === "quick-duel" || tagMode ? <section className={`playtest-setup-grid playtest-quick-duel-setup${tagMode ? " playtest-tag-team-setup" : ""}`} aria-labelledby="quick-duel-setup-title">
+      <div className="playtest-roster paper-stack"><div className="setup-panel-heading"><div><span className="eyebrow">{tagMode ? "02 / Choose your team of three" : "02 / Choose your fighter"}</span><h2 id="quick-duel-setup-title">{tagMode ? "Who’s on the roster?" : "Who signs the waiver?"}</h2><p>{tagMode ? "Tap three faces. The first one starts on the mat; tap a teammate in the tray to make them the starter." : "Tap a face. The dossier answers back."}</p></div><div className="roster-toolbar-actions"><label><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a fighter" aria-label="Search fighters" /></label><button type="button" onClick={tagMode ? randomTeam : randomize}>{tagMode ? "Random team" : "Random draw"} <span>↻</span></button></div></div><article className="selected-fighter-dossier" key={selected.id}><div className="selected-fighter-art-wrap"><img src={fighterIllustrationUrl(selected) ?? artistUrl(selected) ?? cardPlaceholderUrl} alt={selected.name} /><span className="dossier-selection-mark">FILED</span></div><div className="selected-fighter-copy"><span className="selected-fighter-kicker">Selected delegation · {selected.cardType}</span><h3>{selected.name}</h3><p>{selected.rulesText ?? "Ability pending an inspector with a functioning pen."}</p><div className="selected-fighter-stats"><b>{numberValue(selected.stats.ATK)}<small>ATK</small></b><b>{numberValue(selected.stats.DEF)}<small>DEF</small></b><b>{numberValue(selected.stats.Speed)}<small>SPD</small></b></div><span className="selection-receipt" aria-live="polite">{selected.name} is cleared for the mat.</span></div></article>{tagMode && <div className="team-tray" aria-label="Your Tag Team roster"><div className="team-tray-head"><span>Your roster</span><b aria-live="polite">{team.length} / 3 signed</b></div><ol>{[0, 1, 2].map((slot) => { const id = team[slot]; const card = id ? cardFor(id) : null; return <li key={slot} className={`team-slot${card ? " is-filled" : ""}${slot === 0 && card ? " is-starter" : ""}`}>{card ? <><button type="button" className="team-slot-face" onClick={() => makeStarter(card.id)} aria-label={slot === 0 ? `${card.name} starts on the mat` : `Make ${card.name} the starter`}><img src={fighterIllustrationUrl(card) ?? artistUrl(card) ?? cardPlaceholderUrl} alt="" /><span><b>{card.name}</b><small>{slot === 0 ? "Starts on the mat" : "Bench · tap to start"}</small></span></button><button type="button" className="team-slot-remove" onClick={() => chooseCharacter(card.id)} aria-label={`Remove ${card.name} from the roster`}>×</button></> : <span className="team-slot-empty">{slot === 0 ? "Starter" : `Bench ${slot}`} · empty</span>}</li>; })}</ol></div>}<div className="character-roster-heading"><span>Character cabinet</span><small>{filteredCharacters.length} faces match the current search</small></div><div className="playtest-character-grid">{filteredCharacters.map((character) => <button type="button" key={character.id} className={isPicked(character.id) ? "is-selected" : ""} onClick={() => chooseCharacter(character.id)} aria-pressed={isPicked(character.id)}><span className="character-card-tape" aria-hidden="true" /><span className="character-card-image"><img src={fighterIllustrationUrl(character) ?? artistUrl(character) ?? cardPlaceholderUrl} alt="" loading="lazy" /></span><span className="character-card-name">{character.name}</span><small>{numberValue(character.stats.ATK)} ATK · {numberValue(character.stats.DEF)} DEF · {numberValue(character.stats.Speed)} SPD</small>{isPicked(character.id) && <b className="character-card-check" aria-hidden="true">{tagMode ? team.indexOf(character.id) + 1 : "✓"}</b>}</button>)}</div></div>
+      <aside className="playtest-rules-panel quick-duel-brief paper-stack"><div className="brief-panel-top"><span className="eyebrow">03 / Field test settings</span><span className="brief-panel-seal">LIVE</span></div><h2>{selectedMode.title}</h2><p>{tagMode ? <>Three fighters each, one on the mat at a time. Tag once during Initiate before equipping; Equipment and injuries stay with each fighter. A knockout sends in your next fighter; lose all three and the file closes. Reach Black Belt to win outright.</> : <>One fighter. One tactical opponent. A complete {starterIds.length}-card curriculum, persistent Market, Locations, Reversals, Combos, and Belt progression.</>}</p><div className="brief-panel-callout"><b>{DIFFICULTIES[settings.difficulty].eyebrow}</b><span>{DIFFICULTIES[settings.difficulty].detail}</span></div><div className="playtest-setup-options"><label><span>Opponent filing</span><select value={settings.difficulty} onChange={(event) => setSettings({ ...settings, difficulty: event.target.value as Difficulty })}>{Object.entries(DIFFICULTIES).map(([value, option]) => <option value={value} key={value}>{option.label}</option>)}</select></label><label><span>Combat motion</span><select value={settings.motion} onChange={(event) => setSettings({ ...settings, motion: event.target.value as MotionMode })}><option value="full">Full impact</option><option value="reduced">Reduced impact</option><option value="off">Off</option></select></label><label className="playtest-setup-check"><input type="checkbox" checked={settings.guided} onChange={(event) => setSettings({ ...settings, guided: event.target.checked })} /><span>Start with Decision Coach</span></label></div><fieldset className="playtest-house-rules"><legend>Optional house rules</legend><p>Only variants the current Quick Duel engine can enforce for both sides appear here.</p>{QUICK_DUEL_HOUSE_RULES.map((rule) => <label className="playtest-house-rule-option" key={rule.id}><input type="checkbox" checked={settings.houseRuleIds.includes(rule.id)} onChange={() => toggleHouseRule(rule.id)} /><span><b>{rule.name}</b><small>{rule.summary || rule.rule}</small></span></label>)}</fieldset><ul><li>Playable on desktop and tablet</li><li>{cards.length} approved records in the cabinet</li><li>Progress saved on this device</li></ul><button type="button" className="button primary field-test-launch" disabled={tagMode && team.length !== 3} onClick={() => tagMode ? begin({ mode: "tag-team", team }) : begin()}>{tagMode ? (team.length === 3 ? "Open the Tag Team mat" : `Sign ${3 - team.length} more fighter${3 - team.length === 1 ? "" : "s"}`) : "Open the Quick Duel mat"} <span>→</span></button></aside>
     </section> : <section className="mode-briefing-card paper-stack" aria-live="polite"><div className={`mode-briefing-mark tone-${modeMeta.tone}`}><span>0{CANONICAL_GAME_MODES.findIndex((entry) => entry.id === mode) + 1}</span><b>FILED</b></div><div><span className="eyebrow">02 / Mode briefing</span><h2>{selectedMode.title}</h2><p>{selectedMode.detail || modeMeta.hook}</p><div className="mode-briefing-facts"><span><b>{selectedMode.players}</b> table size</span><span><b>{selectedMode.fighters}</b> roster load</span><span><b>{selectedMode.win}</b> victory condition</span></div><button type="button" className="button ghost" onClick={() => goTo("quickstart")}>Read the full mode brief <span>→</span></button></div><aside><span>Next filing</span><strong>{mode === "boss-blitz" ? "Boss room construction" : "Dedicated table build"}</strong><p>This format is documented and queued for the expanded game surface.</p><button type="button" className="text-link" onClick={() => setMode("quick-duel")}>Play Quick Duel while it’s live →</button></aside></section>}
     <footer className="playtest-gateway-footer"><span><b>Department note:</b> Mode selection is now the front door. The engine underneath remains the canonical Quick Duel implementation.</span><button type="button" className="text-link" onClick={() => goTo("rules")}>Check the rules before entering →</button></footer>
   </main>;
+}
+
+function RosterRail({ board, side, canTagNow, onTag, onNextIn }: { board: Board; side: "player" | "ai"; canTagNow: boolean; onTag?: (index: number) => void; onNextIn?: (index: number | null) => void }) {
+  const roster = liveRoster(board);
+  if (!roster.length) return null;
+  const active = board.activeIndex ?? 0;
+  const owner = side === "player" ? "Your team" : "Their team";
+  return <section className={`roster-rail roster-rail--${side}`} aria-label={`${owner}: ${fightersRemaining(board)} of ${roster.length} fighters standing`}>
+    <header><span>{owner}</span><b>{fightersRemaining(board)} / {roster.length} standing</b></header>
+    <ol>{roster.map((fighter, index) => {
+      const card = cardFor(fighter.fighterId);
+      const isActive = index === active; const knockedOut = fighter.knockedOut || fighter.hp <= 0;
+      const percent = Math.max(0, Math.min(100, Math.round(fighter.hp / Math.max(1, fighter.maxHp) * 100)));
+      const nextIn = board.nextInIndex === index;
+      const tagReady = side === "player" && canTagNow && !isActive && !knockedOut;
+      const status = knockedOut ? "K.O." : isActive ? "On the mat" : `${fighter.hp}/${fighter.maxHp} HP${fighter.equipment.length ? ` · ${fighter.equipment.length} gear` : ""}`;
+      return <li key={`${fighter.fighterId}-${index}`} className={`roster-slot${isActive ? " is-active" : ""}${knockedOut ? " is-ko" : ""}${nextIn ? " is-next-in" : ""}`}>
+        <span className="roster-portrait" aria-hidden="true"><img src={card ? fighterIllustrationUrl(card) ?? artistUrl(card) ?? cardPlaceholderUrl : cardPlaceholderUrl} alt="" />{knockedOut && <b>K.O.</b>}</span>
+        <span className="roster-copy"><b>{card?.name ?? fighter.fighterId}</b><span className="roster-hp" role="meter" aria-label={`${card?.name ?? "Fighter"} HP`} aria-valuemin={0} aria-valuemax={fighter.maxHp} aria-valuenow={fighter.hp}><i style={{ width: `${percent}%` }} /></span><small>{status}</small></span>
+        {tagReady && onTag && <button type="button" className="roster-action roster-action--tag" data-label="Tag in" onClick={() => onTag(index)} aria-label={`Tag ${card?.name ?? "this fighter"} in`} />}
+        {side === "player" && !isActive && !knockedOut && !tagReady && onNextIn && <button type="button" className="roster-action roster-action--next" aria-pressed={nextIn} onClick={() => onNextIn(nextIn ? null : index)} data-label={nextIn ? "Next in ✓" : "Next in?"} aria-label={`${nextIn ? "Clear" : "Set"} ${card?.name ?? "this fighter"} as next in after a knockout`} />}
+      </li>;
+    })}</ol>
+  </section>;
 }
 
 function MobilePlaytestNotice() {
@@ -3030,7 +3072,18 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     } catch { return null; }
   });
   const setMatch = (update: SetStateAction<Match | null>) => setRawMatch((previous) => {
-    const next = typeof update === "function" ? update(previous) : update;
+    let next = typeof update === "function" ? update(previous) : update;
+    if (next?.mode === "tag-team") {
+      next = settleRoster(next, settings.locations);
+      // Each side may tag once per turn: reset when its turn begins; the computer decides at once.
+      if (previous && previous.phase !== "player-initiate" && next.phase === "player-initiate") next = { ...next, player: { ...next.player, taggedThisTurn: false } };
+      if (previous && previous.phase !== "ai-ready" && next.phase === "ai-ready" && !next.winner) {
+        const ai = { ...next.ai, taggedThisTurn: false };
+        const choice = botTagChoice(ai);
+        if (choice === null) next = { ...next, ai };
+        else { const tagged = tagIn(ai, choice); next = { ...next, ai: tagged, log: [`Computer tags ${cardFor(ai.fighterId)?.name ?? "its fighter"} out; ${cardFor(tagged.fighterId)?.name ?? "a teammate"} takes the mat.`, ...next.log].slice(0, 32) }; }
+      }
+    }
     if (!previous && next?.phase === "player-initiate") {
       const initiated = withPlayerCharacterChoice(publishQuickDuelPlaytestLifecycleEvent(next, "player", "onInitiate", quickDuelHostOperations, cardFor));
       return { ...initiated, player: applyInitiateCarryover(initiated.player) };
@@ -3224,12 +3277,16 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     return () => { window.cancelAnimationFrame(focusFrame); document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", close); };
   }, [inspectedId, deskView, logOpen, coachOpen]);
 
-  const begin = (fighterId = selectedId) => {
+  const begin = (options: { fighterId?: string; mode?: GameModeId; team?: string[] } = {}) => {
     duelSerial.current += 1;
-    const choices = characters.filter((card) => card.id !== fighterId);
-    const player = { ...emptyBoard(fighterId), xp: 1 };
+    const fighterId = options.fighterId ?? selectedId;
+    const tagTeam = options.mode === "tag-team" && (options.team?.length ?? 0) === 3;
+    const team = tagTeam ? options.team! : [fighterId];
+    const choices = characters.filter((card) => !team.includes(card.id));
     const challenge = DIFFICULTIES[settings.difficulty];
-    const ai = { ...emptyBoard(choices[Math.floor(Math.random() * choices.length)].id), xp: 1, hp: challenge.aiHp, maxHp: challenge.aiHp, statBoost: challenge.statBoost };
+    const aiTeam = shuffle(choices.map((card) => card.id)).slice(0, tagTeam ? 3 : 1);
+    const player = tagTeam ? { ...createRoster(emptyBoard(team[0]), team, emptyBoard(team[0]).maxHp), xp: 1 } : { ...emptyBoard(fighterId), xp: 1 };
+    const ai = tagTeam ? { ...createRoster(emptyBoard(aiTeam[0]), aiTeam, challenge.aiHp), xp: 1, statBoost: challenge.statBoost } : { ...emptyBoard(aiTeam[0]), xp: 1, hp: challenge.aiHp, maxHp: challenge.aiHp, statBoost: challenge.statBoost };
     const locations = shuffle(quickDuelLocationPool.map((card) => card.id));
     const shuffledMarket = shuffle(marketPool.filter((card) => settings.openMarket || Boolean(artistUrl(card))).map((card) => card.id));
     const openingMarket = curateOpeningMarket(shuffledMarket, settings.balancedMarket);
@@ -3238,10 +3295,10 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const playerFirst = fighterStat(player, "Speed") >= fighterStat(ai, "Speed");
     const turnOrder: Match["turnOrder"] = playerFirst ? ["player", "ai"] : ["ai", "player"];
     setDeskView(null);
-    setMatch({ schema: 8, rulesVersion: activeRulesRevision, player, ai, market: openingMarket.market, marketDeck: openingMarket.marketDeck, marketDiscard: [], marketPurchasedThisRound: false, comboDeck: comboDeck.slice(1), comboOfferId: comboDeck[0] ?? null, locations: locations.slice(1), locationId: currentLocation, round: 1, phase: playerFirst ? "player-initiate" : "ai-ready", turnOrder, turnIndex: 0, selectedAttackId: null, selectedZone: "High", pendingStrike: null, pendingDiscard: null, pendingChoice: null, pendingCombatContinuation: null, reversalRemainingAiAttacks: [], reversalReason: null, reversalIncomingZone: null, attackCostDecisionCardId: null, nonHonorSceneChangedThisRound: false, exchangeSequence: 0, lastExchange: null, winner: null, log: [`${challenge.label} field test opened under rules ${activeRulesRevision}. The waiver is legally adjacent to complete.`, `Honor 1: ${cardFor(currentLocation)?.name ?? "Tournament Mat"} is active. Both fighters gain 1 XP and refresh Tempo.`, `${playerFirst ? "You" : "Computer"} win initiative on current Speed.`] });
+    setMatch({ schema: 8, rulesVersion: activeRulesRevision, mode: tagTeam ? "tag-team" : "quick-duel", blackBeltWinner: null, player, ai, market: openingMarket.market, marketDeck: openingMarket.marketDeck, marketDiscard: [], marketPurchasedThisRound: false, comboDeck: comboDeck.slice(1), comboOfferId: comboDeck[0] ?? null, locations: locations.slice(1), locationId: currentLocation, round: 1, phase: playerFirst ? "player-initiate" : "ai-ready", turnOrder, turnIndex: 0, selectedAttackId: null, selectedZone: "High", pendingStrike: null, pendingDiscard: null, pendingChoice: null, pendingCombatContinuation: null, reversalRemainingAiAttacks: [], reversalReason: null, reversalIncomingZone: null, attackCostDecisionCardId: null, nonHonorSceneChangedThisRound: false, exchangeSequence: 0, lastExchange: null, winner: null, log: [`${challenge.label} field test opened under rules ${activeRulesRevision}. The waiver is legally adjacent to complete.`, `Honor 1: ${cardFor(currentLocation)?.name ?? "Tournament Mat"} is active. Both fighters gain 1 XP and refresh Tempo.`, `${playerFirst ? "You" : "Computer"} win initiative on current Speed.`] });
   };
 
-  const write = (current: Match, line: string, changes: Partial<Match> = {}) => ({ ...current, ...changes, log: [line, ...current.log].slice(0, 32) });
+  const write = (current: Match, line: string, changes: Partial<Match> = {}): Match => settleRoster({ ...current, ...changes, log: [line, ...current.log].slice(0, 32) }, settings.locations);
   const player = match?.player;
   const ai = match?.ai;
   const playerFighter = player ? cardFor(player.fighterId)! : null;
@@ -3574,7 +3631,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const armorPenaltyGrant = hit ? nextAttackArmorPenalty(card) : 0;
     if (armorPenaltyGrant) nextPlayer = { ...nextPlayer, nextAttackArmorPenalty: (nextPlayer.nextAttackArmorPenalty ?? 0) + armorPenaltyGrant };
     if (conditionalCycle.draw) nextPlayer = drawCards(nextPlayer, conditionalCycle.draw);
-    const cycleDiscardCount = nextAi.hp ? Math.min(conditionalCycle.discard, nextPlayer.hand.length) : 0;
+    const cycleDiscardCount = isStanding(nextAi) ? Math.min(conditionalCycle.discard, nextPlayer.hand.length) : 0;
     let defenseFollowupNotes: string[] = [];
     let equipmentBlockNotes: string[] = [];
     if (defenseCard) {
@@ -3608,7 +3665,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         ? `${card.name} is blocked by ${defenseCard.name}; that Defense is now discarded.`
         : `${card.name} is blocked by ${aiFighter?.name ?? "the opponent"}'s standing DEF/Equipment; no Defense card was played.`;
     const readyOnHit = hit ? readyEquipmentOnHit(card) : 0;
-    const optionalCycle = !nextAi.hp ? null : optionalDiscardDrawChoice(card);
+    const optionalCycle = !isStanding(nextAi) ? null : optionalDiscardDrawChoice(card);
     const suppression = hit ? finalAttackEquipmentSuppression(card) : 0;
     const suppressionTargets = suppression ? suppressionCandidates(nextAi, zone, nextPlayer) : [];
     const hitChoice = hit ? finalAttackHitChoice(card) : null;
@@ -4352,6 +4409,14 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     return write(current, learn ? `Learned Combo: ${combo.name} for ${cost} Focus${comboDiscount.amount ? ` (Kata discount −${comboDiscount.amount})` : ""}. It remains face up beside your delegation.` : `${combo.name} returned to the bottom of the Combo docket.`, { player, comboOfferId: nextOfferId, comboDeck: nextDeck });
   });
 
+  const tagFighter = (index: number) => setMatch((current) => {
+    if (!current || current.mode !== "tag-team" || current.phase !== "player-initiate" || current.winner || current.pendingChoice || !canTag(current.player, true)) return current;
+    const outgoing = cardFor(current.player.fighterId)?.name ?? "Your fighter";
+    const player = tagIn(current.player, index);
+    return write(current, `Tag! ${outgoing} steps back to the bench; ${cardFor(player.fighterId)?.name ?? "a teammate"} takes the mat. Equipment and statuses stay with each fighter.`, { player });
+  });
+  const setNextIn = (index: number | null) => setMatch((current) => current && current.mode === "tag-team" ? { ...current, player: { ...current.player, nextInIndex: index } } : current);
+
   const promote = () => setMatch((current) => {
     if (!current || current.phase !== "player-ascend" || current.player.belt >= belts.length - 1) return current;
     const next = belts[current.player.belt + 1];
@@ -4360,7 +4425,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     const nextPlayer = applyBeltPromotion(current.player, current.player.belt + 1);
     const vitality = nextPlayer.maxHp > current.player.maxHp ? ` Max HP ${current.player.maxHp} → ${nextPlayer.maxHp}; current HP ${current.player.hp} → ${nextPlayer.hp}.` : "";
     const promoted = markQuickDuelBeltCheckAction({ ...current, player: nextPlayer }, "player", "promote");
-    return write(promoted, `Certification approved: ${next.name} Belt. ${next.reward.summary}${next.reward.onPromotionFocus ? ` +${next.reward.onPromotionFocus} Focus.` : ""}${vitality}`);
+    const blackBelt = current.mode === "tag-team" && current.player.belt + 1 === belts.length - 1;
+    return write(promoted, `Certification approved: ${next.name} Belt. ${next.reward.summary}${next.reward.onPromotionFocus ? ` +${next.reward.onPromotionFocus} Focus.` : ""}${vitality}${blackBelt ? " Black Belt Victory: your team is licensed." : ""}`, blackBelt ? { winner: "player", blackBeltWinner: "player" } : {});
   });
 
   const completeTurn = () => {
@@ -4371,7 +4437,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
       const kataHidePlayer = applyKataHideEffects(hostedHide.player, "player");
       const nextPlayer = playAreaCleanup(kataHidePlayer);
       const hidden = write(hostedHide, "Hide: unspent Focus clears and your next hand is drawn.", { player: nextPlayer, winner: nextPlayer.hp ? hostedHide.winner : "ai" });
-      if (!nextPlayer.hp) return hidden;
+      if (!hidden.player.hp || hidden.winner) return hidden;
       if (current.turnIndex === 0) return write(hidden, "The computer is second in this round's initiative order.", { phase: "ai-ready", turnIndex: 1 });
       return advanceRound(hidden, settings.locations, "Both fighters have completed the round.", settings.houseRuleIds);
     });
@@ -4615,7 +4681,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         ? `${defenseCard.name} blocks ${aiCard.name} and is discarded. Attack ${finalAttackPower} vs Defense ${defensePower}.`
         : `No Defense card was played; your standing DEF/Equipment blocks ${aiCard.name}. Attack ${finalAttackPower} vs Defense ${defensePower}.`;
     const resolved = write(current, `${tempoBonus ? "Tempo +1 Guard. " : ""}${message}${modifiers.length ? ` ${modifiers.join("; ")}.` : ""}`, { player: nextPlayer, ai: nextAi, pendingStrike: null, pendingChoice: null, pendingCombatContinuation: null, exchangeSequence: (current.exchangeSequence ?? 0) + 1, lastExchange, winner: !nextAi.hp ? "player" : nextPlayer.hp ? null : "ai" });
-    if (!nextPlayer.hp || !nextAi.hp) return resolved;
+    if (!resolved.player.hp || !resolved.ai.hp || resolved.winner) return resolved;
     const forcedTargetDiscard = hit ? targetDiscardOnHitCount(aiCard) : 0;
     if (forcedTargetDiscard && nextPlayer.hand.length) {
       const discardCount = Math.min(forcedTargetDiscard, nextPlayer.hand.length);
@@ -4748,7 +4814,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     };
     const result = hit ? `Reversal! ${card.name} hits ${cardFor(current.ai.fighterId)?.name ?? "the computer"} for ${damage}.` : `Reversal! ${card.name} is blocked${defenseCard ? ` by ${defenseCard.name}` : " by base DEF"}.`;
     const resolved = write(current, `${result} Attack ${attackPower} vs Defense ${defensePower}.${modifiers.length ? ` ${modifiers.join("; ")}.` : ""}`, { player: nextPlayer, ai: nextAi, selectedAttackId: null, exchangeSequence: (current.exchangeSequence ?? 0) + 1, lastExchange, winner: nextAi.hp ? null : "player" });
-    if (!nextAi.hp) return resolved;
+    if (!resolved.ai.hp || resolved.winner) return resolved;
     if (current.reversalRemainingAiAttacks.length) return openAiStrike(resolved, current.reversalRemainingAiAttacks[0], current.reversalRemainingAiAttacks.slice(1), settings.tempo, settings.locations, settings.houseRuleIds);
     return finishAiTurn(resolved, "Computer finishes its Yell after surviving the Reversal paperwork.", settings.locations, settings.houseRuleIds);
   };
@@ -5004,18 +5070,18 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
           <div className="victory-copy"><span className="eyebrow">Department of Questionably Regulated Martial Arts</span><h2>{match.winner === "player" ? `${winnerFighter.name} remains standing!` : `${winnerFighter.name} wins the field test.`}</h2><p>{match.winner === "player" ? "Confetti has been authorized, the clipboard has been impressed against its will, and your victory has been filed in triplicate." : "The result has been stamped, disputed, and filed beneath a suspicious vending-machine receipt. An immediate rematch remains irresponsibly available."}</p><strong>{match.winner === "player" ? "CERTIFICATE OF EXCESSIVE COMPETENCE" : "NOTICE OF TEMPORARY MARTIAL INCONVENIENCE"}</strong></div>
         </div>
         <dl className="match-report"><div><dt>{match.round}</dt><dd>Rounds survived</dd></div><div><dt>{player.damageDealt}</dt><dd>Damage dealt</dd></div><div><dt>{player.cardsBought}</dt><dd>Cards acquired</dd></div><div><dt>{player.learnedCombos.length}</dt><dd>Combos learned</dd></div></dl>
-        <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={() => begin(player.fighterId)}>Instant rematch →</button><button className="button ghost" onClick={() => setMatch(null)}>Choose another fighter</button></div></div>
+        <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={() => begin(match.mode === "tag-team" ? { mode: "tag-team", team: liveRoster(player).map((fighter) => fighter.fighterId) } : { fighterId: player.fighterId })}>Instant rematch →</button><button className="button ghost" onClick={() => setMatch(null)}>{match.mode === "tag-team" ? "Choose another team" : "Choose another fighter"}</button></div></div>
       </div>
     </section>}
     <section className="playtest-arena"><div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>{settings.houseRuleIds.length > 0 && <div className="playtest-active-variants"><b>House rules active:</b>{QUICK_DUEL_HOUSE_RULES.filter((rule) => settings.houseRuleIds.includes(rule.id)).map((rule) => <span key={rule.id}>{rule.name}</span>)}</div>}
       <section className="playtest-table">
-        <div className="fighter-column fighter-column--player"><FighterPanel board={player} label="You" vfxKind={matVfx?.player} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} onOpenCombo={() => setDeskView("combo")} /><LearnedComboRack states={learnedComboStates} onInspect={(card) => setInspectedId(card.id)} /></div>
+        <div className="fighter-column fighter-column--player">{match.mode === "tag-team" && <RosterRail board={player} side="player" canTagNow={!match.winner && !match.pendingChoice && match.phase === "player-initiate" && canTag(player, true)} onTag={tagFighter} onNextIn={setNextIn} />}<FighterPanel board={player} label="You" vfxKind={matVfx?.player} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} onOpenCombo={() => setDeskView("combo")} /><LearnedComboRack states={learnedComboStates} onInspect={(card) => setInspectedId(card.id)} /></div>
         <div className="combat-stage-column">
           <CombatStage match={match} currentLocation={currentLocation} selectedAttack={pendingAttack} turnCoach={turnCoach} guided={settings.guided} playerCards={player.playArea} aiCards={ai.playArea} onInspect={(card) => setInspectedId(card.id)} onDropCard={useHandCard} onOpenCoach={() => setCoachOpen(true)} />
           {match.phase === "ai-ready" && !match.winner && !settings.autoAi && <button className="button primary run-opponent-turn" onClick={runAiTurn}>Run computer turn →</button>}
           {match.phase === "ai-ready" && !match.winner && settings.autoAi && <span className="ai-thinking"><i /><i /><i /> Clipboard thinking</span>}
         </div>
-        <div className="fighter-column fighter-column--enemy"><FighterPanel board={ai} label="Computer" enemy vfxKind={matVfx?.ai} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} /></div>
+        <div className="fighter-column fighter-column--enemy">{match.mode === "tag-team" && <RosterRail board={ai} side="ai" canTagNow={false} />}<FighterPanel board={ai} label="Computer" enemy vfxKind={matVfx?.ai} vfxVariant={matVfx ? matVfx.id % 5 : undefined} beltThresholds={beltThresholds} onInspect={(card) => setInspectedId(card.id)} /></div>
       </section>
     </section>
     <section className="playtest-workspace playtest-workspace--hand">
@@ -5277,6 +5343,34 @@ function openAiStrike(current: Match, cardId: string, remainingAiAttacks: string
   return { ...current, player: { ...current.player, attacksReceivedThisRound: (current.player.attacksReceivedThisRound ?? 0) + 1, offTurnConsumablePlayed: false }, ai: nextAi, phase: "defense-window" as const, pendingChoice: pendingEquipmentResponse, pendingStrike: { cardId, zone, attackPower, damageModifier: locationModifier.damage + fighterModifier.damage, piercing: piercingModifier.value, blockedFocus: activeEquipment.blockedFocus, armorPenalty, conditionalCycle: conditionalCycle.draw || conditionalCycle.discard ? { draw: conditionalCycle.draw, discard: conditionalCycle.discard } : undefined, previousCardWasItem, damagePreventedAtDeclaration: incomingEquipmentResponse.preventAttackDamage, targetExhaustedAtDeclaration: Boolean(current.player.exhaustedEquipment?.length), modifierNotes: modifiers, remainingAiAttacks }, log: [`Computer declares ${card.name} to ${zone}. ${tempoBonus ? "Tempo adds +1. " : ""}${flowDraw ? "Flow draws 1 card. " : ""}${modifiers.length ? `${modifiers.join("; ")}. ` : ""}${pendingEquipmentResponse ? "Discard one card before Defense. " : ""}Choose one matching Defense or pass.`, ...current.log].slice(0, 32) };
 }
 
+// Tag Team knockout settle (Ch. 13, Ch. 16): a knocked-out active fighter is replaced by the
+// owner's chosen conscious benched fighter right after the effect that KO'd it; the side is
+// only defeated when its whole roster is down. One Scene Change follows if the game goes on.
+function settleRoster(match: Match, sceneChanges: boolean): Match {
+  if (match.mode !== "tag-team") return match;
+  let next = match; const lines: string[] = []; let replaced = false;
+  for (const side of ["player", "ai"] as const) {
+    const result = knockOutActive(next[side]);
+    if (!result) continue;
+    next = { ...next, [side]: result.board };
+    const owner = side === "player" ? "Your" : "The computer's";
+    const fallen = cardFor(result.knockedOutId)?.name ?? "fighter";
+    if (result.replacementId) { replaced = true; lines.push(`K.O.! ${owner} ${fallen} is out and their Equipment is discarded. ${cardFor(result.replacementId)?.name ?? "A teammate"} tags in.`); }
+    else lines.push(`K.O.! ${owner} last fighter, ${fallen}, is out.`);
+  }
+  if (!lines.length) return match;
+  const playerStanding = isStanding(next.player); const aiStanding = isStanding(next.ai);
+  const winner: Match["winner"] = !aiStanding ? "player" : !playerStanding ? "ai" : next.blackBeltWinner ?? null;
+  let scene: Partial<Match> = {};
+  if (replaced && !winner && sceneChanges) {
+    const pool = next.locations.length ? next.locations : shuffle(quickDuelLocationPool.map((card) => card.id));
+    const locationId = pool.find((id) => id !== next.locationId) ?? next.locationId;
+    scene = { locationId, locations: pool.filter((id) => id !== locationId), nonHonorSceneChangedThisRound: true };
+    lines.push(`Scene Change: the fight spills into ${cardFor(locationId)?.name ?? "a new Location"}.`);
+  }
+  return { ...next, ...scene, winner, log: [...lines.reverse(), ...next.log].slice(0, 32) };
+}
+
 function finishAiTurn(initial: Match, line: string, sceneChanges: boolean, houseRuleIds: readonly string[]) {
   let current = initial;
   const ascendKataId = current.ai.hand.find((id) => {
@@ -5330,8 +5424,10 @@ function finishAiTurn(initial: Match, line: string, sceneChanges: boolean, house
   const kataHideAi = applyKataHideEffects(hostedHide.ai, "ai");
   const nextAi = playAreaCleanup(kataHideAi);
   const purchaseLog = `${ascendKata ? `Computer plays ${ascendKata.name} during Ascend. ` : ""}${purchasedCard ? `Computer buys ${purchasedCard.name}.` : "Computer buys nothing."}`;
-  const finished = { ...hostedHide, ai: nextAi, market, marketDeck, marketDiscard, marketPurchasedThisRound: current.marketPurchasedThisRound || Boolean(purchasedCard), winner: nextAi.hp ? current.winner : "player" as const, log: [purchaseLog, ...(promotionLog ? [promotionLog] : []), line, ...hostedHide.log].slice(0, 32) };
-  if (!nextAi.hp) return finished;
+  const blackBeltAi = current.mode === "tag-team" && aiAfterPurchase.belt === belts.length - 1 && current.ai.belt < belts.length - 1;
+  const finishedRaw = { ...hostedHide, ai: nextAi, market, marketDeck, marketDiscard, marketPurchasedThisRound: current.marketPurchasedThisRound || Boolean(purchasedCard), winner: blackBeltAi ? "ai" as const : nextAi.hp ? current.winner : "player" as const, ...(blackBeltAi ? { blackBeltWinner: "ai" as const } : {}), log: [purchaseLog, ...(promotionLog ? [promotionLog] : []), line, ...hostedHide.log].slice(0, 32) };
+  const finished = settleRoster(finishedRaw, sceneChanges);
+  if (!finished.ai.hp || finished.winner) return finished;
   if (current.turnIndex === 0) {
     const hostedFinished = withPlayerCharacterChoice(publishQuickDuelPlaytestLifecycleEvent(finished, "player", "onInitiate", quickDuelHostOperations, cardFor));
     const player = applyInitiateCarryover(hostedFinished.player);
