@@ -5271,12 +5271,12 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   line-height: .9;
   letter-spacing: .02em;
   transform: rotate(-7deg) skewX(-6deg);
-  text-shadow: 6px 6px 0 #fffaf0, 13px 13px 0 #0e2943, 20px 22px 34px rgba(0, 0, 0, .35);
+  text-shadow: 6px 6px 0 #fffaf0, 13px 13px 0 var(--pf-stage), 20px 22px 34px rgba(0, 0, 0, .35);
 }
 .match-result .ko-slam span {
-  border: 3px solid #0e2943;
+  border: 3px solid var(--pf-stage);
   padding: 8px 16px 6px;
-  color: #0e2943;
+  color: var(--pf-stage);
   background: #f0dca9;
   font-family: var(--pf-label);
   font-size: clamp(14px, 2vw, 20px);
@@ -5286,7 +5286,7 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
   transform: rotate(3deg);
   box-shadow: 5px 6px 0 rgba(0, 0, 0, .3);
 }
-.match-result.is-defeat .ko-slam b { color: #fffaf0; text-shadow: 6px 6px 0 var(--pf-action-deep), 13px 13px 0 #0e2943, 20px 22px 34px rgba(0, 0, 0, .35); }
+.match-result.is-defeat .ko-slam b { color: #fffaf0; text-shadow: 6px 6px 0 var(--pf-action-deep), 13px 13px 0 var(--pf-stage), 20px 22px 34px rgba(0, 0, 0, .35); }
 .match-result .victory-certificate { animation: pf-ko-certificate .55s cubic-bezier(.2, .9, .3, 1) 1.15s both; }
 @keyframes pf-ko-slam {
   0% { opacity: 0; transform: scale(2.6) rotate(-14deg); }
@@ -5457,16 +5457,16 @@ body:has(.playtest-shell--live .match-result) > .playtest-vfx-layer--runtime { d
 .scene-reveal-card-fallback b { font-family: var(--pf-display); font-size: 28px; font-weight: 400; text-transform: uppercase; }
 .scene-reveal-copy { display: grid; gap: 14px; justify-items: start; color: #fffaf0; animation: pf-scene-copy-in .45s cubic-bezier(.2, .9, .3, 1) .35s both; }
 .scene-reveal-stamp { border: 3px solid var(--pf-action); border-radius: 4px; padding: 5px 12px 4px; color: #fffaf0; background: var(--pf-action); font-family: var(--pf-impact); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; transform: rotate(-3deg); box-shadow: 4px 5px 0 rgba(5, 13, 23, .6); animation: pf-scene-stamp .4s cubic-bezier(.2, 1.6, .4, 1) .55s both; }
-.scene-reveal-copy h2 { display: grid; gap: 4px; margin: 0; font-family: var(--pf-display); font-size: clamp(36px, 5vw, 60px); font-weight: 400; line-height: .92; text-transform: uppercase; text-shadow: 4px 5px 0 #050d17; }
+.scene-reveal-copy h2 { display: grid; gap: 4px; margin: 0; font-family: var(--pf-display); font-size: clamp(36px, 5vw, 60px); font-weight: 400; line-height: .92; text-transform: uppercase; text-shadow: 4px 5px 0 var(--pf-stage-edge); }
 .scene-reveal-copy h2 small { color: #f0dca9; font-family: var(--pf-label); font-size: 15px; font-weight: 700; letter-spacing: .16em; text-shadow: none; }
 .scene-reveal-previous { margin: -4px 0 0; color: rgba(255, 250, 240, .75); font-family: var(--pf-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 .scene-reveal-previous s { text-decoration-color: var(--pf-action); text-decoration-thickness: 2px; }
-.scene-reveal-rule { width: 100%; border: 2px solid #050d17; border-radius: 6px; padding: 14px 16px; color: #17263a; background: #fffaf0; box-shadow: 6px 7px 0 rgba(5, 13, 23, .6); transform: rotate(.6deg); }
+.scene-reveal-rule { width: 100%; border: 2px solid var(--pf-stage-edge); border-radius: 6px; padding: 14px 16px; color: #17263a; background: #fffaf0; box-shadow: 6px 7px 0 rgba(5, 13, 23, .6); transform: rotate(.6deg); }
 .scene-reveal-rule span { display: block; margin-bottom: 6px; color: #8e2f24; font-family: var(--pf-mono); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .scene-reveal-rule p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; }
 .scene-reveal-flavor { margin: 0; color: rgba(255, 250, 240, .82); font-size: 14px; font-style: italic; }
-.scene-reveal-dismiss { min-height: 52px; display: inline-flex; align-items: center; gap: 10px; border: 3px solid #050d17; border-radius: 8px 4px 8px 5px; padding: 0 22px; color: #fffaf0; background: var(--pf-action); box-shadow: 5px 6px 0 #050d17; font-family: var(--pf-display); font-size: 20px; text-transform: uppercase; cursor: pointer; transform: rotate(-1deg); }
-.scene-reveal-dismiss:hover { transform: translate(-1px, -2px) rotate(-2deg); box-shadow: 7px 8px 0 #050d17; }
+.scene-reveal-dismiss { min-height: 52px; display: inline-flex; align-items: center; gap: 10px; border: 3px solid var(--pf-stage-edge); border-radius: 8px 4px 8px 5px; padding: 0 22px; color: #fffaf0; background: var(--pf-action); box-shadow: 5px 6px 0 var(--pf-stage-edge); font-family: var(--pf-display); font-size: 20px; text-transform: uppercase; cursor: pointer; transform: rotate(-1deg); }
+.scene-reveal-dismiss:hover { transform: translate(-1px, -2px) rotate(-2deg); box-shadow: 7px 8px 0 var(--pf-stage-edge); }
 .scene-reveal-dismiss:focus-visible { outline: 3px solid #f0dca9; outline-offset: 4px; }
 .scene-reveal-hint { color: rgba(255, 250, 240, .65); font-size: 12px; }
 .scene-reveal.is-leaving { pointer-events: none; }
@@ -5515,13 +5515,13 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
    standees, the HUD reads like a fighting game. Paper slips carry the numbers.
    Scoped to .mat-v3 so it settles the older mat layers above.
    ======================================================================== */
-.playtest-shell.playtest-shell--live.mat-v3 { --stage-ink: #0e2943; --stage-ink-deep: #050d17; --stage-cream: #fffaf0; --stage-gold: #f0dca9; }
+.playtest-shell.playtest-shell--live.mat-v3 { --stage-ink: var(--pf-stage); --stage-ink-deep: var(--pf-stage-edge); --stage-cream: #fffaf0; --stage-gold: #f0dca9; }
 
 /* ---------- HUD ---------- */
 .playtest-shell.mat-v3 > .playtest-topbar.battle-versus-hud {
   display: grid !important; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; align-items: center !important; gap: 0 !important;
   height: auto !important; max-height: none !important; min-height: 74px !important; padding: 8px 14px !important; border: 3px solid var(--stage-ink-deep) !important; border-radius: 10px 10px 0 0 !important;
-  background: linear-gradient(180deg, #13355a, var(--stage-ink)) !important; box-shadow: none !important;
+  background: linear-gradient(180deg, var(--pf-stage-glow), var(--stage-ink)) !important; box-shadow: none !important;
 }
 .playtest-shell.mat-v3 .battle-hud-fighter {
   position: relative !important; display: grid !important; grid-template-columns: 1fr auto !important; grid-template-rows: auto auto auto !important; height: auto !important; max-height: none !important; overflow: visible !important; align-items: end !important; gap: 2px 10px !important;
@@ -5563,7 +5563,7 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 .phase-ribbon-letters { display: flex; gap: 3px; }
 .phase-ribbon-letters i { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid rgba(240, 220, 169, .45); border-radius: 4px; color: rgba(240, 220, 169, .6); font-family: var(--pf-impact); font-size: 11px; font-style: normal; }
 .phase-ribbon-letters i.is-done { border-color: rgba(240, 220, 169, .7); color: var(--stage-gold, #f0dca9); background: rgba(240, 220, 169, .12); }
-.phase-ribbon-letters i.is-active { border-color: #050d17; color: #fffaf0; background: var(--pf-action); transform: translateY(-2px) scale(1.18) rotate(-4deg); box-shadow: 2px 3px 0 #050d17; }
+.phase-ribbon-letters i.is-active { border-color: var(--pf-stage-edge); color: #fffaf0; background: var(--pf-action); transform: translateY(-2px) scale(1.18) rotate(-4deg); box-shadow: 2px 3px 0 var(--pf-stage-edge); }
 .phase-ribbon small { color: var(--stage-gold, #f0dca9); font-family: var(--pf-label); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .phase-ribbon.is-opponent .phase-ribbon-letters i { opacity: .45; }
 .phase-ribbon.is-opponent small { color: #ffb4a6; }
@@ -5571,7 +5571,7 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 /* ---------- STAGE ---------- */
 .playtest-shell.mat-v3 > .playtest-arena {
   position: relative !important; isolation: isolate; overflow: hidden !important; margin-top: 0 !important; border: 3px solid var(--stage-ink-deep) !important; border-top: 0 !important; border-radius: 0 0 10px 10px !important;
-  background: radial-gradient(ellipse at 50% 30%, #24476d 0%, var(--stage-ink) 58%, #081a2c 100%) !important; box-shadow: 0 8px 0 rgba(5, 13, 23, .3) !important;
+  background: radial-gradient(ellipse at 50% 30%, var(--pf-stage-glow) 0%, var(--stage-ink) 58%, var(--pf-stage-deep) 100%) !important; box-shadow: 0 8px 0 rgba(5, 13, 23, .3) !important;
 }
 .mat-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .mat-stage > img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; object-position: center 38%; filter: blur(14px) saturate(1.25) brightness(.55); opacity: .9; }
@@ -5579,7 +5579,7 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 .mat-stage-curtain { position: absolute; top: 0; bottom: 20%; width: 22px; background: repeating-linear-gradient(90deg, #8e2f24 0 8px, #a63a2c 8px 15px); box-shadow: 6px 0 0 rgba(0, 0, 0, .25); }
 .mat-stage-curtain--left { left: 0; }
 .mat-stage-curtain--right { right: 0; transform: scaleX(-1); }
-.mat-stage-floor { position: absolute; left: -4%; right: -4%; bottom: 0; height: 24%; border-top: 3px solid var(--stage-ink-deep, #050d17); background: linear-gradient(#e9dcc2, #cdbb98); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
+.mat-stage-floor { position: absolute; left: -4%; right: -4%; bottom: 0; height: 24%; border-top: 3px solid var(--stage-ink-deep, var(--pf-stage-edge)); background: linear-gradient(#e9dcc2, #cdbb98); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
 .mat-stage-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(23, 38, 58, .13) calc(10% - 1px) 10%); }
 .playtest-shell.mat-v3 > .playtest-arena > .playtest-table,
 .playtest-shell.mat-v3 > .playtest-arena > .playtest-active-variants { position: relative; z-index: 1; }
@@ -6057,3 +6057,52 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
   .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card:focus-within { transform: translateY(calc(var(--hand-arc, 0) * 2px)) rotate(0deg) scale(1.2) !important; }
   .playtest-shell.mat-v3 .playtest-workspace--hand .play-card-row .play-card.is-selected { transform: translateY(calc(var(--hand-arc, 0) * 2px - 10px)) rotate(0deg) scale(1.24) !important; }
 }
+
+/* ---------- v3.1: standee stands, phase ribbon on the stage ---------- */
+/* The base under each standee: a soft floor shadow and a small cardboard stand, not a bar. */
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration::after {
+  left: 18% !important; right: 18% !important; bottom: -4px !important; height: 16px !important; border: 0 !important; border-radius: 50% !important;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, .45), transparent 70%) !important; box-shadow: none !important;
+}
+.playtest-shell.mat-v3 .fighter-panel-art.fighter-card-illustration::before {
+  content: ""; position: absolute; left: 50%; bottom: -2px; z-index: 0; width: 34%; height: 10px; translate: -50% 0;
+  border: 2px solid var(--stage-ink-deep); border-radius: 2px 2px 6px 6px; background: #c8b48c; clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+}
+/* H.I.Y.A.H. now lives beside the Now playing sign. */
+.playtest-shell.mat-v3 .combat-stage-heading { display: flex !important; align-items: center !important; gap: 10px !important; }
+.playtest-shell.mat-v3 .combat-stage-heading > button { flex: 1 1 auto; min-width: 0; }
+.playtest-shell.mat-v3 .combat-stage-heading > .phase-ribbon { flex: 0 0 auto; display: flex !important; align-items: center; gap: 8px; margin: 0; padding: 4px 10px; border: 3px solid var(--stage-ink-deep); border-radius: 6px; background: var(--stage-ink); box-shadow: 3px 4px 0 var(--stage-ink-deep); }
+.playtest-shell.mat-v3 .combat-stage-heading .phase-ribbon-letters i { width: 24px; height: 24px; font-size: 12px; }
+.playtest-shell.mat-v3 .combat-stage-heading .phase-ribbon small { white-space: nowrap; }
+@media (max-width: 860px) {
+  .playtest-shell.mat-v3 .combat-stage-heading { flex-wrap: wrap; }
+  .playtest-shell.mat-v3 .combat-stage-heading > .phase-ribbon { flex: 1 1 100%; justify-content: center; }
+  .playtest-shell.mat-v3 .combat-stage-heading .phase-ribbon-letters { display: flex !important; }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell.mat-v3 .combat-stage-heading > .phase-ribbon { padding: 2px 8px; }
+  .playtest-shell.mat-v3 .combat-stage-heading .phase-ribbon-letters i { width: 20px; height: 20px; font-size: 10px; }
+}
+/* The round badge has the header to itself now. */
+.playtest-shell.mat-v3 .versus-center { grid-template-columns: auto !important; justify-items: center !important; }
+.playtest-shell.mat-v3 .versus-center > b { grid-column: 1 !important; grid-row: 2 !important; }
+
+/* Game-screen header: a real "Menu" pull tab (opens the Dojo Index; hover still slides the header down). */
+.site-frame:has(.playtest-shell--live) .site-header--gameplay .reading-progress { background: var(--pf-stage) !important; border-top: 0 !important; height: 10px !important; }
+.site-frame:has(.playtest-shell--live) .site-header--gameplay .reading-progress::after { content: none !important; }
+.gameplay-menu-tab { display: none; }
+.site-frame:has(.playtest-shell--live) .site-header--gameplay .gameplay-menu-tab {
+  position: absolute; top: 8px; left: 50%; z-index: 4; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 18px; translate: -50% 0;
+  border: 2px solid var(--pf-stage-edge); border-top: 0; border-radius: 0 0 12px 12px; color: #fffaf0; background: var(--pf-stage); box-shadow: 0 4px 0 var(--pf-stage-edge);
+  font-family: var(--pf-display); font-size: 15px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: translate .18s ease, opacity .18s ease;
+  animation: pf-menu-tab-hint 2.6s ease-in-out 1.2s 2 both;
+}
+.site-frame:has(.playtest-shell--live) .site-header--gameplay .gameplay-menu-tab:hover { background: var(--pf-action); }
+.site-frame:has(.playtest-shell--live) .site-header--gameplay .gameplay-menu-tab:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 2px; }
+.site-frame:has(.playtest-shell--live) .site-header--gameplay:hover .gameplay-menu-tab,
+.site-frame:has(.playtest-shell--live) .site-header--gameplay:focus-within .gameplay-menu-tab { top: 76px; transition: top 180ms cubic-bezier(.2, .8, .2, 1); }
+@keyframes pf-menu-tab-hint { 0%, 100% { translate: -50% 0; } 50% { translate: -50% 5px; } }
+@media (prefers-reduced-motion: reduce) { .site-frame:has(.playtest-shell--live) .site-header--gameplay .gameplay-menu-tab { animation: none !important; } }
+/* Leave room for the Menu tab above the round badge. */
+.playtest-shell.mat-v3 .versus-center { margin-top: 26px !important; }
+@media (max-width: 860px) { .playtest-shell.mat-v3 .versus-center { margin-top: 18px !important; } }

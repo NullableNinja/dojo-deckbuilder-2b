@@ -2890,7 +2890,7 @@ function CombatStage({ match, currentLocation, selectedAttack, turnCoach, guided
   };
 
   return <section className={`playtest-combat-desk combat-stage paper-stack state-${match.phase}`}>
-    <header className="combat-stage-heading"><button type="button" onClick={() => currentLocation && onInspect(currentLocation)}><span>Current Scene</span><b>{currentLocation?.name ?? "Tournament Mat"}</b><small><i>SCENE RULE</i>{currentLocation?.rulesText ?? "The Department finds no reason to intervene."}</small></button><div><span>ROUND</span><b>{match.round}</b><small>{phaseLabel}</small></div></header>
+    <header className="combat-stage-heading"><button type="button" onClick={() => currentLocation && onInspect(currentLocation)}><span>Current Scene</span><b>{currentLocation?.name ?? "Tournament Mat"}</b><small><i>SCENE RULE</i>{currentLocation?.rulesText ?? "The Department finds no reason to intervene."}</small></button><div><span>ROUND</span><b>{match.round}</b><small>{phaseLabel}</small></div><PhaseRibbon phase={match.phase} /></header>
     <div className="clash-field" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop} aria-label="Combat stage. Drag a playable card here or use its button.">
       <StageCard cardId={playerStageCard} side="player" label={pendingAiAttack ? "Your response" : "Your declaration"} onInspect={onInspect} />
       <div className="clash-seal" aria-label={`${hotZone ?? "No"} combat zone`}><span>{exchange?.outcome === "hit" && !pendingAiAttack && !selectedAttack ? "HIT" : exchange?.outcome === "block" && !pendingAiAttack && !selectedAttack ? "BLOCK" : phaseLabel}</span><b>{(hotZone ?? "—").slice(0, 1)}</b><small>{hotZone ?? "Choose a card"}</small></div>
@@ -4988,7 +4988,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
         <span><small>YOU · {playerFighter.name}</small></span><b>{agentName}</b>
         <div><strong>{player.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${playerFighter.name} health`} aria-valuemin={0} aria-valuemax={player.maxHp} aria-valuenow={player.hp}><em style={{ width: `${playerHpPercent}%` }} /></i></div>
       </div>
-      <div className="versus-center" aria-label={`Round ${match.round}`}><span>ROUND</span><b>{match.round}</b><PhaseRibbon phase={match.phase} /></div>
+      <div className="versus-center" aria-label={`Round ${match.round}`}><span>ROUND</span><b>{match.round}</b></div>
       <div className={`battle-hud-fighter battle-hud-fighter--ai hp-tier-${healthTier(ai.hp, ai.maxHp)}`} style={{ "--hp-progress": `${aiHpPercent}%` } as CSSProperties}>
         <span><small>COMPUTER · {aiFighter.name}</small></span><b>COMPUTER</b>
         <div><strong>{ai.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${aiFighter.name} health`} aria-valuemin={0} aria-valuemax={ai.maxHp} aria-valuenow={ai.hp}><em style={{ width: `${aiHpPercent}%` }} /></i></div>
