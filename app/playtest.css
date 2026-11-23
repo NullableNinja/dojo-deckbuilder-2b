@@ -6368,3 +6368,55 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
   .playtest-shell.mat-v3 .ascend-market-grid .play-card,
   .playtest-shell.mat-v3 .ascend-guide li { transition: none; }
 }
+
+/* ==========================================================================
+   PLAY GATEWAY POSTER: matches the site-wide fight posters in globals.css.
+   ========================================================================== */
+.paper-fu-game-gateway .playtest-gateway-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 3px solid var(--pf-stage-edge);
+  border-top: 6px solid var(--pf-action);
+  border-radius: 16px 6px 18px 8px;
+  color: #fffaf0;
+  background:
+    radial-gradient(ellipse 55% 70% at 18% 0%, color-mix(in srgb, var(--pf-action) 22%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(255, 250, 240, .055) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    linear-gradient(160deg, var(--pf-stage-glow), var(--pf-stage) 44%, var(--pf-stage-deep));
+  box-shadow: 10px 12px 0 var(--pf-stage-edge);
+  animation: pf-gateway-in 420ms cubic-bezier(.2, .9, .25, 1.15) both;
+}
+.paper-fu-game-gateway .playtest-gateway-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -40%;
+  background: repeating-conic-gradient(from 0deg at 30% 40%, rgba(255, 250, 240, .035) 0 6deg, transparent 6deg 18deg);
+  pointer-events: none;
+}
+.paper-fu-game-gateway .playtest-gateway-hero .eyebrow { color: color-mix(in srgb, var(--pf-action) 62%, #fffaf0); }
+.paper-fu-game-gateway .playtest-gateway-hero .version-pill { border-color: rgba(255, 250, 240, .3); color: #fffaf0; background: rgba(0, 0, 0, .2); }
+.paper-fu-game-gateway .playtest-gateway-hero h1 { color: #fffaf0; text-shadow: 4px 4px 0 var(--pf-stage-edge); }
+.paper-fu-game-gateway .playtest-gateway-hero h1 em { color: color-mix(in srgb, var(--pf-action) 78%, #fffaf0); }
+.paper-fu-game-gateway .playtest-gateway-hero p { color: color-mix(in srgb, #fffaf0 76%, transparent); }
+.paper-fu-game-gateway .playtest-gateway-facts { color: color-mix(in srgb, #fffaf0 60%, transparent); }
+.paper-fu-game-gateway .playtest-gateway-facts b { color: #fffaf0; }
+.paper-fu-game-gateway .playtest-gateway-stamp {
+  border: 3px solid var(--pf-stage-edge);
+  color: var(--pf-action);
+  background: #fffaf0;
+  box-shadow: 7px 8px 0 var(--pf-action);
+}
+.paper-fu-game-gateway .playtest-gateway-stamp small { color: #18202b; }
+.paper-fu-game-gateway .playtest-gateway-stamp strong { text-shadow: 2px 2px 0 color-mix(in srgb, var(--pf-action) 25%, transparent); }
+@keyframes pf-gateway-in {
+  from { opacity: 0; transform: translateY(-16px) rotate(-.6deg); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 600px) {
+  .paper-fu-game-gateway .playtest-gateway-hero { border-radius: 12px 4px 14px 6px; box-shadow: 6px 7px 0 var(--pf-stage-edge); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paper-fu-game-gateway .playtest-gateway-hero { animation: none; }
+}
