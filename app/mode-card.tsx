@@ -7,7 +7,7 @@ type ModeSummary = { id: string; title: string; players: string; fighters: strin
 
 export const MODE_META: Record<string, ModeMeta> = {
   "tag-team": { number: "01", status: "Recommended · Live", tone: "brass", hook: "Trade places, share the paperwork, and discover that teamwork is mostly a louder kind of arguing.", live: true },
-  "standard-clash": { number: "02", status: "Rules filed", tone: "blue", hook: "The classic Paper-Fu appointment: two fighters, three zones, and no excuse for losing the receipt.", live: false },
+  "standard-clash": { number: "02", status: "Free-for-all · Live", tone: "blue", hook: "The classic Paper-Fu appointment: up to six fighters, three zones, and no excuse for losing the receipt.", live: true },
   "quick-duel": { number: "03", status: "Playable now", tone: "action", hook: "A brisk, complete fight for proving the deck, the stance, and the exact volume of your HIYAH.", live: true },
   "boss-blitz": { number: "04", status: "Boss room · Live", tone: "violet", hook: "One oversized problem. A team of certified nuisances. The filing cabinet has requested backup.", live: true },
 };

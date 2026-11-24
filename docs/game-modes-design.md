@@ -5,7 +5,7 @@
 | Mode | Headless engine | Browser game |
 | --- | --- | --- |
 | Quick Duel | Unchanged. A 300-seed fingerprint (`npm run engine:fingerprint`) is identical before and after the mode work. | Live. |
-| Standard Clash (2–6) | Executable. 800/800 parallel games, 0 failures, 0 replay mismatches. | Not yet. |
+| Standard Clash (2–6) | Executable. 800/800 parallel games, 0 failures, 0 replay mismatches. | **Live (you + 2–5 bots)**: an engine-driven Clash table (`app/clash-table.tsx`) with seat targeting, the engine's legal actions and choices, bots fighting each other, eliminations and Black Belt Victory. |
 | Tag Team (individual, 2v2 Dojo War) | Executable. 800/800, 0 failures, 0 replay mismatches. | **Live (1v1 vs the computer)**: team setup, roster rails, tag during Initiate, owner's "Next in" pick, KO replacement with Equipment discard and Scene Change, Black Belt Victory. 2v2 not yet. |
 | Dojo Drama (solo, co-op) | Executable (`engine/boss-blitz.mjs`). 600/600, 0 failures, 0 replay mismatches. | **Live (solo)**: three-fighter team vs the Rival → Mini-Boss → Final Boss ladder, Arsenal reveals, Boss Guard, Enraged double Attacks, stage clears, Scenario Victory. Co-op not yet. |
 
@@ -16,6 +16,11 @@ Run `npm run simulate:modes -- 300` for per-mode completion, win distribution, K
 - Roster rules live in `app/tag-team.ts`; the active fighter is mirrored on the existing board so every Quick Duel rule applies unchanged. `settleRoster` runs inside `write()` and `setMatch`, so a knockout from any source swaps in the next fighter immediately and the game ends only when a whole roster is down.
 - The computer tags out a fighter at 8 HP or less when a benched teammate has at least 6 more HP, and picks its healthiest fighter after a KO.
 - The browser game cannot yet tell when a Location (rather than the opponent) causes a KO; the existing +2 KO XP from combat still applies only to combat KOs.
+
+### Browser Standard Clash notes
+
+- The Clash table runs the canonical headless engine directly in the browser (`app/clash-engine.ts` builds the engine data from the generated JSON), so every rule, including bot-versus-bot strikes with full card effects, matches the simulator exactly.
+- It is a simpler surface than the Quick Duel mat: seat cards, your hand with the engine's legal actions, the Market at Ascend, a decision dialog for Defenses and other choices, and a fight log. It does not yet have the mat's stage, animations or Decision Coach, and a refresh ends the game (it is not saved).
 
 ### Browser Boss Blitz notes
 
