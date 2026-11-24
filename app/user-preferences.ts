@@ -34,7 +34,7 @@ export const THEME_STORAGE_KEY = "paper-fu-theme";
 
 const THEME_COLORS: Record<Theme, string> = {
   light: "#d7dbe1",
-  dark: "#0d0e0f",
+  dark: "#181a1e",
 };
 
 export const readInitialTheme = (): Theme => {

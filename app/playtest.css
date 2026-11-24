@@ -5576,11 +5576,11 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
 .mat-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .mat-stage > img { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; object-position: center 38%; filter: blur(14px) saturate(1.25) brightness(.55); opacity: .9; }
 .mat-stage-burst { position: absolute; left: 50%; top: 55%; width: 1600px; height: 1600px; translate: -50% -50%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(240, 220, 169, .06) 0deg 7deg, transparent 7deg 18deg); }
-.mat-stage-curtain { position: absolute; top: 0; bottom: 20%; width: 22px; background: repeating-linear-gradient(90deg, #8e2f24 0 8px, #a63a2c 8px 15px); box-shadow: 6px 0 0 rgba(0, 0, 0, .25); }
+.mat-stage-curtain { position: absolute; top: 0; bottom: 20%; width: 22px; background: repeating-linear-gradient(90deg, var(--pf-curtain-a) 0 8px, var(--pf-curtain-b) 8px 15px); box-shadow: 6px 0 0 rgba(0, 0, 0, .25); }
 .mat-stage-curtain--left { left: 0; }
 .mat-stage-curtain--right { right: 0; transform: scaleX(-1); }
-.mat-stage-floor { position: absolute; left: -4%; right: -4%; bottom: 0; height: 24%; border-top: 3px solid var(--stage-ink-deep, var(--pf-stage-edge)); background: linear-gradient(#e9dcc2, #cdbb98); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
-.mat-stage-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(23, 38, 58, .13) calc(10% - 1px) 10%); }
+.mat-stage-floor { position: absolute; left: -4%; right: -4%; bottom: 0; height: 24%; border-top: 3px solid var(--stage-ink-deep, var(--pf-stage-edge)); background: linear-gradient(var(--pf-floor-top), var(--pf-floor-bottom)); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
+.mat-stage-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--pf-floor-seam) calc(10% - 1px) 10%); }
 .playtest-shell.mat-v3 > .playtest-arena > .playtest-table,
 .playtest-shell.mat-v3 > .playtest-arena > .playtest-active-variants { position: relative; z-index: 1; }
 .playtest-shell.mat-v3 .playtest-table { padding: 12px 30px 14px !important; background: transparent !important; }
@@ -6381,7 +6381,7 @@ body:has(> .scene-reveal) .playtest-shell--live > .playtest-vfx-layer { display:
   border-radius: 16px 6px 18px 8px;
   color: #fffaf0;
   background:
-    radial-gradient(ellipse 55% 70% at 18% 0%, color-mix(in srgb, var(--pf-action) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 55% 70% at 18% 0%, color-mix(in srgb, var(--pf-action) var(--pf-spot-strength, 22%), transparent), transparent 70%),
     radial-gradient(circle at 1px 1px, rgba(255, 250, 240, .055) 1px, transparent 1.5px) 0 0 / 14px 14px,
     linear-gradient(160deg, var(--pf-stage-glow), var(--pf-stage) 44%, var(--pf-stage-deep));
   box-shadow: 10px 12px 0 var(--pf-stage-edge);

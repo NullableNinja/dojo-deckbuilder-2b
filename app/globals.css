@@ -57,6 +57,7 @@
     --pf-on-blue: #fffaf0;
     /* Stage: the fight-night house (Home bout, game stage, scene reveal, header). Ink-navy in light mode. */
     --pf-stage: #0e2943; --pf-stage-deep: #081a2c; --pf-stage-glow: #24476d; --pf-stage-edge: #050d17;
+    --pf-curtain-a: #8e2f24; --pf-curtain-b: #a63a2c; --pf-floor-top: #e9dcc2; --pf-floor-bottom: #d8c7a6; --pf-floor-seam: rgba(23, 38, 58, .14);
     /* Modal scrim. Built from a fixed ink value, never from --pf-ink (a text color that turns cream in dark). */
     --pf-scrim: rgba(7, 16, 27, .75);
     /* The featured "ink" card surface (live mode, featured filings). Must read as ink in both themes. */
@@ -98,17 +99,20 @@
   }
   /* After-hours dojo: the same paper desk under a lamp. Surfaces carry an ink-navy hue so the blue
      structure survives in dark mode; ember action and brass certification stay warm against it. */
-  /* After-hours dojo: charcoal and ash, warmed by the reader's accent colour. */
+  /* After-hours dojo, Graphite: cool neutral greys with real value steps so paper layers and
+     offset shadows read; the accent is used for action and highlights, never mixed into surfaces. */
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --pf-canvas: #141517; --pf-canvas-deep: #0d0e0f; --pf-surface: #1c1d20; --pf-surface-raised: #25272a; --pf-surface-dim: #18191b;
-    --pf-ink: #f1ede6; --pf-ink-soft: #d0cdc7; --pf-muted: #a5a39f; --pf-faint: #7d7c79; --pf-line: rgba(241, 237, 230, .14); --pf-line-strong: rgba(241, 237, 230, .36);
-    --pf-blue: #c9ccce; --pf-blue-deep: #0f1011; --pf-action: #f07a5f; --pf-action-deep: #b84535; --pf-brass: #e3b457; --pf-brass-soft: #5a4522; --pf-guard: #8fc6c4; --pf-guard-soft: #1e4046; --pf-violet: #c9adde; --pf-danger: #f0786d;
-    --pf-brass-on-ink: #ecd59c; --pf-brass-text: #e8bd62; --pf-on-blue: #111213; --pf-scrim: rgba(6, 6, 7, .82);
-    --pf-ink-panel: color-mix(in srgb, var(--pf-action) 16%, #26282b);
-    --pf-stage: #1d1e21; --pf-stage-deep: #0f1011; --pf-stage-glow: color-mix(in srgb, var(--pf-action) 24%, #2e3033); --pf-stage-edge: #08090a;
-    --pf-board-canvas: #121314; --pf-board-surface: #1b1c1e; --pf-board-raised: #232528; --pf-board-recess: #17181a; --pf-board-ink: #f1ede6; --pf-board-ink-soft: #c6c3bd; --pf-board-line: rgba(241, 237, 230, .16); --pf-board-line-strong: rgba(241, 237, 230, .4); --pf-board-charcoal: #0c0d0e; --pf-board-charcoal-deep: #08090a; --pf-health-high: #6db393; --pf-health-warning: #e1b55a; --pf-health-critical: #ee7869;
-    --pf-shadow-paper: 0 5px 0 rgba(0, 0, 0, .45), 0 18px 34px rgba(0, 0, 0, .42); --pf-shadow-lifted: 0 8px 0 rgba(0, 0, 0, .5), 0 26px 54px rgba(0, 0, 0, .55); --pf-shadow-ink: 0 10px 0 rgba(0, 0, 0, .55), 0 28px 58px rgba(0, 0, 0, .6);
+    --pf-canvas: #202328; --pf-canvas-deep: #181a1e; --pf-surface: #2a2e34; --pf-surface-raised: #343941; --pf-surface-dim: #25292e;
+    --pf-ink: #f3f1ec; --pf-ink-soft: #d5d3ce; --pf-muted: #a9adb3; --pf-faint: #81868d; --pf-line: rgba(243, 241, 236, .14); --pf-line-strong: rgba(243, 241, 236, .38);
+    --pf-blue: #cfd3d8; --pf-blue-deep: #15171a; --pf-action: #f07a5f; --pf-action-deep: #b84535; --pf-brass: #e3b457; --pf-brass-soft: #5a4522; --pf-guard: #8fc6c4; --pf-guard-soft: #1e4046; --pf-violet: #c9adde; --pf-danger: #f0786d;
+    --pf-brass-on-ink: #ecd59c; --pf-brass-text: #e8bd62; --pf-on-blue: #16181b; --pf-scrim: rgba(8, 9, 11, .8);
+    --pf-ink-panel: #2d3239;
+    --pf-spot-strength: 9%;
+    --pf-stage: #191b1f; --pf-stage-deep: #111316; --pf-stage-glow: #2c3038; --pf-stage-edge: #0a0b0d;
+    --pf-curtain-a: #2f2a2c; --pf-curtain-b: #3a3234; --pf-floor-top: #3b3f46; --pf-floor-bottom: #2e3238; --pf-floor-seam: rgba(255, 250, 240, .07);
+    --pf-board-canvas: #1d2024; --pf-board-surface: #262a30; --pf-board-raised: #30353c; --pf-board-recess: #22262b; --pf-board-ink: #f3f1ec; --pf-board-ink-soft: #c9ccd0; --pf-board-line: rgba(243, 241, 236, .16); --pf-board-line-strong: rgba(243, 241, 236, .4); --pf-board-charcoal: #101214; --pf-board-charcoal-deep: #0a0b0d; --pf-health-high: #6db393; --pf-health-warning: #e1b55a; --pf-health-critical: #ee7869;
+    --pf-shadow-paper: 0 5px 0 rgba(0, 0, 0, .55), 0 18px 34px rgba(0, 0, 0, .45); --pf-shadow-lifted: 0 8px 0 rgba(0, 0, 0, .6), 0 26px 54px rgba(0, 0, 0, .55); --pf-shadow-ink: 0 10px 0 rgba(0, 0, 0, .6), 0 28px 58px rgba(0, 0, 0, .6);
   }
   :root[data-accent="cobalt"] { --pf-action: #3f65a6; --pf-action-deep: #243f7a; --pf-brass-soft: #d6e0f1; }
   :root[data-accent="brass"] { --pf-action: #b57d18; --pf-action-deep: #7a520d; --pf-brass-soft: #f1dfab; }
@@ -2206,11 +2210,11 @@
   .bout { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 10px; padding-block: 44px 34px; color: #fffaf0; background: radial-gradient(ellipse at 50% 38%, var(--pf-stage-glow) 0%, var(--pf-stage) 55%, var(--pf-stage-deep) 100%); border-bottom: 4px solid var(--pf-stage-edge); }
   .bout-stage { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
   .bout-burst { position: absolute; left: 50%; top: 52%; width: 1400px; height: 1400px; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, rgba(240, 220, 169, .09) 0deg 7deg, transparent 7deg 18deg); border-radius: 50%; animation: pf-burst-spin 90s linear infinite; }
-  .bout-curtain { position: absolute; top: 0; bottom: 18%; width: clamp(60px, 9vw, 150px); background: repeating-linear-gradient(90deg, #8e2f24 0 18px, #a63a2c 18px 34px); box-shadow: 10px 0 0 rgba(0, 0, 0, .22); clip-path: polygon(0 0, 100% 0, 100% 86%, 84% 92%, 66% 86%, 50% 95%, 33% 87%, 16% 94%, 0 88%); }
+  .bout-curtain { position: absolute; top: 0; bottom: 18%; width: clamp(60px, 9vw, 150px); background: repeating-linear-gradient(90deg, var(--pf-curtain-a) 0 18px, var(--pf-curtain-b) 18px 34px); box-shadow: 10px 0 0 rgba(0, 0, 0, .22); clip-path: polygon(0 0, 100% 0, 100% 86%, 84% 92%, 66% 86%, 50% 95%, 33% 87%, 16% 94%, 0 88%); }
   .bout-curtain--left { left: 0; }
   .bout-curtain--right { right: 0; transform: scaleX(-1); }
-  .bout-floor { position: absolute; left: -5%; right: -5%; bottom: 0; height: 30%; background: linear-gradient(#e9dcc2, #d8c7a6); border-top: 4px solid var(--pf-stage-edge); clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%); }
-  .bout-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 1px), rgba(23, 38, 58, .14) calc(12.5% - 1px) 12.5%); }
+  .bout-floor { position: absolute; left: -5%; right: -5%; bottom: 0; height: 30%; background: linear-gradient(var(--pf-floor-top), var(--pf-floor-bottom)); border-top: 4px solid var(--pf-stage-edge); clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%); }
+  .bout-floor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 1px), var(--pf-floor-seam) calc(12.5% - 1px) 12.5%); }
   .bout-copy { text-align: center; }
   .bout-eyebrow { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(240, 220, 169, .5); border-radius: 999px; padding: 4px 12px 4px 4px; color: #f0dca9; background: rgba(5, 13, 23, .4); font-family: var(--pf-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
   .bout-eyebrow img { width: 26px; height: 26px; border-radius: 50%; background: #fffaf0; object-fit: contain; }
@@ -2416,7 +2420,7 @@
     border-radius: 16px 6px 18px 8px;
     color: #fffaf0;
     background:
-      radial-gradient(ellipse 55% 70% at 18% 0%, color-mix(in srgb, var(--pf-action) 22%, transparent), transparent 70%),
+      radial-gradient(ellipse 55% 70% at 18% 0%, color-mix(in srgb, var(--pf-action) var(--pf-spot-strength, 22%), transparent), transparent 70%),
       radial-gradient(circle at 1px 1px, rgba(255, 250, 240, .055) 1px, transparent 1.5px) 0 0 / 14px 14px,
       linear-gradient(160deg, var(--pf-stage-glow), var(--pf-stage) 44%, var(--pf-stage-deep));
     box-shadow: 10px 12px 0 var(--pf-stage-edge);
