@@ -2,7 +2,7 @@
 //
 // The single place the website asks "where does this card come from?" and "does this player own it?".
 // Cards are unlocked by playing, never bought. There are two kinds of unlock source:
-//   - packs from content/packs.json (status "proposal"): starter kits and themed booster series whose
+//   - packs from content/packs.json: starter kits and themed booster series whose
 //     5-card packs only ever hold cards you do not own yet;
 //   - rosters: every Character and every Boss Profile, which will also unlock over time.
 // Real career progress does not exist yet, so ownership is one of two clearly labelled views:
@@ -34,8 +34,10 @@ export type CollectionSnapshot = {
 };
 export type SourceProgress = { source: UnlockSource; owned: number; total: number; locked: boolean };
 
+type RawRoster = { deck: string; starting: { catalogId: string }[] };
 type RawPacks = {
   status: string;
+  unlockables: { characters: RawRoster; bosses: RawRoster };
   levelTrack: { levels: { level: number; rewards: { kind: string; pack?: string }[] }[] };
   packs: { id: string; kind: "starter" | "booster"; name: string; tagline: string; grant?: string; cards: { catalogId: string }[] }[];
 };
@@ -44,7 +46,7 @@ type RawCard = { catalogId: string; deck: string; catalogOrder: number };
 const raw = packsJson as unknown as RawPacks;
 const cards = (cardsJson as unknown as { cards: RawCard[] }).cards;
 
-/** "proposal" until the owner approves pack membership. Pages show it so nothing reads as final. */
+/** "proposal" until the owner approves pack membership; the ledger says "draft packs" while it is. */
 export const COLLECTION_STATUS = raw.status;
 
 const unlockLevelByPack = new Map<string, number>();
@@ -54,9 +56,10 @@ raw.levelTrack.levels.forEach(({ level, rewards }) => rewards.forEach((reward) =
 
 const rosterIds = (deck: string) => cards.filter((card) => card.deck === deck).sort((a, b) => a.catalogOrder - b.catalogOrder).map((card) => card.catalogId);
 
+const { characters, bosses } = raw.unlockables;
 const ROSTERS: UnlockSource[] = [
-  { id: "roster-fighters", kind: "roster", name: "Fighter roster", tagline: "More fighters report for duty as you play.", catalogIds: rosterIds("Character Deck") },
-  { id: "roster-bosses", kind: "roster", name: "Boss profiles", tagline: "Oversized problems, cleared for your table as you play.", catalogIds: rosterIds("Boss Profile Deck") },
+  { id: "roster-fighters", kind: "roster", name: "Fighter roster", tagline: "More fighters report for duty as you play.", catalogIds: rosterIds(characters.deck) },
+  { id: "roster-bosses", kind: "roster", name: "Boss profiles", tagline: "Oversized problems, cleared for your table as you play.", catalogIds: rosterIds(bosses.deck) },
 ];
 
 export const UNLOCK_SOURCES: UnlockSource[] = [
@@ -79,14 +82,11 @@ UNLOCK_SOURCES.forEach((source) => source.catalogIds.forEach((catalogId) => SOUR
 export const sourceFor = (catalogId: string): UnlockSource | undefined => SOURCE_BY_CARD.get(catalogId);
 export const isUnlockable = (catalogId: string) => SOURCE_BY_CARD.has(catalogId);
 
-/**
- * Placeholder for the preview only: a new profile needs fighters to play with (Tag Team needs three), and
- * no starting roster has been decided yet, so the preview issues the first three in catalog order.
- */
-const PREVIEW_STARTING_FIGHTERS = 3;
+/** A new profile holds every day-one pack plus the starting fighters and bosses named in packs.json. */
 const RECRUIT_OWNED = new Set([
   ...UNLOCK_SOURCES.filter((source) => source.grant === "every-profile").flatMap((source) => source.catalogIds),
-  ...ROSTERS[0].catalogIds.slice(0, PREVIEW_STARTING_FIGHTERS),
+  ...characters.starting.map((entry) => entry.catalogId),
+  ...bosses.starting.map((entry) => entry.catalogId),
 ]);
 
 const SNAPSHOTS: Record<CollectionView, CollectionSnapshot> = {
@@ -99,7 +99,7 @@ const SNAPSHOTS: Record<CollectionView, CollectionSnapshot> = {
   "recruit-preview": {
     view: "recruit-preview",
     label: "New recruit preview",
-    summary: "A preview of a brand-new profile: the Starter Deck, the Orientation Kit and three fighters. Everything else unlocks by playing. Nothing is saved and nothing is locked.",
+    summary: `A preview of a brand-new profile: the Starter Deck, the Orientation Kit, ${characters.starting.length} fighters and ${bosses.starting.length} bosses. Everything else unlocks by playing. Nothing is saved and nothing is locked.`,
     owns: (catalogId) => !SOURCE_BY_CARD.has(catalogId) || RECRUIT_OWNED.has(catalogId),
   },
 };

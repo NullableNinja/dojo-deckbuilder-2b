@@ -127,10 +127,8 @@ Home VS card for the chosen fighters.
 
 ## Decisions for the owner
 
-Small design calls were made directly (the owner gave creative blessing). The genuinely open ones:
+Small design calls were made directly (the owner gave creative blessing). The new-recruit preview reads
+its starting fighters and bosses from `unlockables` in `content/packs.json`. The genuinely open one:
 
-1. **Who a new profile starts with.** The recruit preview issues the first three fighters in catalog
-   order as a placeholder, because no starting roster exists yet. The career plan should name the real
-   starting fighters (and whether any Boss Profile starts unlocked).
-2. **Preview toggle visibility.** "Preview new recruit" is public today as a teaser of unlocks. Keep it,
+1. **Preview toggle visibility.** "Preview new recruit" is public today as a teaser of unlocks. Keep it,
    or hide it until unlocks ship.
