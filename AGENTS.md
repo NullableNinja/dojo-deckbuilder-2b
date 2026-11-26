@@ -14,6 +14,13 @@ Light mode and dark mode are co-equal deliverables. Every route, component, toke
 - Personal Settings belong behind the Field Agent menu. Do not add a second standalone Settings button to the public shell.
 - When the full game-mat / gameplay UI phase begins, revisit the Design Lab hand treatment: one selected card standing upright with the remaining hand fanned behind it. Treat it as a candidate interaction pattern, not a decorative flourish, and test it for touch, keyboard, focus, and reduced-motion behavior.
 
+## Architecture direction: one engine
+
+- `engine/` is becoming the single rules runtime for the browser, the simulator and online play. See `docs/one-engine-plan.md` for the phases.
+- New rules go into canonical JSON plus a generic engine resolver. Do not add rules to `app/playtest.tsx` or the `app/*` runtime modules, and never branch on a card ID or name.
+- The repository is meant to be open and forkable. Keep the engine framework-free, deterministic (seeded RNG only) and readable.
+- Use the `martin-clean-code` skill (`.claude/skills/clean-code-skill/`) when refactoring or reviewing code.
+
 ## Paper-Fu visual language
 
 - Use the authoritative token system in `app/globals.css`.

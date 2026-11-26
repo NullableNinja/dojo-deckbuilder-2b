@@ -1,0 +1,103 @@
+# One Engine: rules from JSON, the mat as a view, then online PvP
+
+Status: plan, started Nov 26, 2026. Owner decisions are marked **Decision**.
+
+## Goal
+
+Every rule the game enforces comes from the canonical JSON (`content/*.json`) and is executed by one
+engine. The browser, the simulator, the CLI and online play all drive that same engine. Anyone can
+download the repository, read the engine, change a JSON file and get a different game, with no rules
+hidden in UI code.
+
+## Where things stand
+
+There are two rules engines today.
+
+| | `engine/core.mjs` (+ `boss-blitz.mjs`) | The Quick Duel mat (`app/playtest.tsx` + ~40 `app/*` runtime modules) |
+| --- | --- | --- |
+| Size | ~2,300 lines | `playtest.tsx` is 5,805 lines (about 2,600 of rule helpers, 2,000 of rules inside React event handlers); the runtime modules add ~11,000 more |
+| Shape | Pure, framework-free. Seats `0..n`, a legal-action list, a pending-choice queue, seeded RNG, an event log. Replays move-for-move. | Rules live in React state updates on a two-sided `player`/`ai` match. Shuffles use `Math.random`. |
+| Data | Generic resolvers keyed on the structured effects in `card-effects.json` | Mostly generic resolver modules, but with card-specific flows (Air Horn, Fire Drill, Trail Mix, Raffle, Sparring Dummy, Lucky reveal, Courtesy Notice, Discount Dim Mak, Tornado Crescent, a hard-coded `DDB-CON-CORE-033`), and `stage3c*` names left over from development stages |
+| Modes | Quick Duel, Standard Clash 2–6, Tag Team (incl. 2v2), Dojo Drama solo and co-op | Quick Duel, plus Tag Team and Boss Blitz bolted on via `app/tag-team.ts` and `app/boss-blitz.ts` |
+| Fidelity | All 907 structured effects certified, but some are approximations and some core rules were missing (below) | The richer rules implementation, iterated in live play |
+
+**Decision (made): `engine/` becomes the one engine.** Its shape (seats, actions, choices, seeded
+RNG, replayable move log) is exactly what the mat, the simulator and peer-to-peer play all need, and its
+effects are already data-driven. The mat's extra fidelity is ported into the engine as generic,
+JSON-described behaviour, not copied as card-specific code. The mat's runtime is then deleted.
+
+## Gaps found so far
+
+Fixed on Nov 26 (tests in `tests/core-rules-engine.test.mjs`):
+
+- **Defenses ignored zones.** Any Defense blocked any attack. The rulebook (glossary: Zone) says a
+  Defense must match the declared zone. The engine now offers only Defenses that cover the zone
+  (`Any` covers all three), and its bots pick only from what is offered.
+- **Defense Equipment and Reaction Items could be played from hand as Defenses** because the engine
+  treated "has Guard" as "is a Defense". Now only printed Defenses (Techniques and Starters) are.
+- **A knockout left a stale choice behind**: an "opponent discards a card" choice could outlive the
+  opponent's elimination and stall the game. A knockout now voids choices about that fighter.
+
+These change simulation results. The Quick Duel fingerprint moved from `332033cbde805616ccff17b0` to
+`340f87ee9f34a97de97560d1`, and solo Boss Blitz dropped from ~85% to ~62% player wins.
+
+Still open (the parity work in Phase 1 will find the rest):
+
+- **Reversal window**: after a successful block the defender may counter with a Reversal. The mat has
+  it; the engine does not.
+- **Weapon two-Hand limit**: enforced by the mat (`equipment-hand-limit.ts`), absent in the engine.
+- **House rules**: tempo, locations, open market, balanced opening market and the belt-threshold house
+  rules are mat settings. They belong in `content/dojo-game.json` as named variants the engine reads.
+- **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
+- **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
+- **Rich combat records**: the mat's stage, impact readout and VFX need the attack breakdown and
+  modifier notes per exchange. The engine's `attack` event needs to carry them.
+- **Interfere** is not modelled (no current card uses it).
+
+## Phases
+
+Each phase ends green on `npm run verify` and is pushed on its own.
+
+1. **Parity spec.** Turn the mat's certification scenarios (`runPlaytestRuntimeCertification`, 907
+   card routes) and the `quick-duel-*` host tests into engine-level scenario tests. Every behaviour the
+   mat has and the engine lacks becomes a failing test, then a generic engine fix driven by JSON
+   parameters (never a card ID). Exit: the engine passes every mat scenario.
+2. **Engine features the mat needs.** House-rule variants from JSON, difficulty policies, rich
+   exchange events, and save/resume as `setup + decisions` (the replay already proves this works).
+3. **The mat on the engine.** Build the mat against a view model derived from engine state, with
+   handlers that dispatch engine actions. It runs side by side with the current mat until it matches
+   in the browser, then replaces it. Tag Team, Boss Blitz and the Clash table become modes of the same
+   mat, which needs to handle more than two seats.
+4. **Delete and document.** Remove the old match model and the browser runtime modules, rename what
+   is left in domain terms, keep one data loader, and write an engine README for people who fork it.
+5. **Online PvP** (below).
+
+## Online PvP without a server
+
+The site stays static on GitHub Pages. Nobody runs a game server.
+
+- **Lockstep.** Both browsers run the same engine from the same seed and exchange only moves (a few
+  hundred bytes each). The engine is deterministic, so both tables stay identical. A small hash of the
+  state travels with each move; if the two tables ever disagree, both players get a stamped
+  **"Paperwork Discrepancy"** notice instead of a silent desync.
+- **Pairing codes.** The host taps *Open a table* and gets an invite code (a trimmed WebRTC offer,
+  roughly 100–200 characters), shown as a link, a QR code and a copy button. The guest opens it, and their
+  browser shows a reply code to send back. After that the two browsers talk directly. Any messenger
+  works for the swap.
+- **Postcard mode.** Some networks block direct connections, and the only general fix (a relay
+  server) costs money. As a fallback, each turn produces a short "postcard" link holding the moves
+  since the last one. Paste it to your opponent in any chat and their browser plays the turn. It also
+  covers play spread over days, and needs nothing but the static site.
+- **Open table.** Each browser knows the full game, hands and deck order included. No anti-cheat:
+  anyone can peek or mod their copy, which suits an open, hackable game. The discrepancy stamp only
+  shows when the two tables no longer agree, which is also how a modded rule gets noticed.
+- **Saves, rematches, spectators** all fall out of the move log: setup + moves is the whole game.
+- **Network note.** Direct connections usually need a public STUN server to discover addresses
+  (free, no account; e.g. Google's). That is the only third-party contact. Postcard mode has none.
+
+## Open source
+
+**Decision needed:** the repository has no license, and `package.json` is `"private": true`, so
+legally nobody may reuse it yet. A common split is MIT for the code and CC BY 4.0 for the rules text
+and card content. The card art needs its own call depending on where it came from. Forkers also get a
+README covering `npm run dev`, the offline build, and how to change a card or a rule in JSON.

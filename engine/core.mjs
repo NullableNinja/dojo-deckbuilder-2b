@@ -11,7 +11,11 @@ export class Rng {
 const num = (value) => Number.parseInt(String(value ?? 0), 10) || 0;
 const remove = (array, value) => { const index = array.indexOf(value); if (index >= 0) array.splice(index, 1); };
 const isAttack = (card) => attackPower(card) > 0;
-const isDefense = (card) => guard(card) > 0;
+// A Defense card is a Technique (or Starter) printed as a Defense; Defense Equipment and
+// Reaction Items carry Guard too but are equipped or played through their own windows.
+const isDefense = (card) => guard(card) > 0 && (card.subtype === "Defense" || card.details?.Type === "Defense");
+// "A Defense or Armor must match that declared zone unless text says otherwise" (rules glossary: Zone).
+const coversZone = (card, zone) => { const printed = String(card.zone ?? "").toLowerCase(); return printed.includes("any") || printed.split(",").map((entry) => entry.trim()).includes(String(zone ?? "").toLowerCase()); };
 const cardType = (card) => card.subtype === "Kata" ? "Kata" : isAttack(card) ? "Attack" : card.subtype;
 const zones = ["High", "Mid", "Low"];
 
@@ -1549,7 +1553,7 @@ export class Game {
     this.removeStatus(this.players[playerId], "untargetable");
     if (card.zone === "Any" && !action.zone) { this.pendingChoice = { kind: "attack-zone", playerId, cardId: card.instanceId, targetId: defenderId, options: zones.map((zone) => ({ id: zone, label: zone })) }; return true; }
     const defender = this.players[defenderId]; const reactionCards = defender.hand.filter((candidate) => candidate.subtype === "Reaction Item" && this.cardEffects(candidate, "onAttackDeclared").length);
-    const defense = { playerId: defenderId, attackerId: playerId, cardId: card.instanceId, zone: action.zone ?? card.zone, options: [{ id: "pass", label: "Take the hit" }, ...defender.hand.filter(isDefense).map((candidate) => ({ id: candidate.instanceId, label: candidate.name }))] };
+    const defense = { playerId: defenderId, attackerId: playerId, cardId: card.instanceId, zone: action.zone ?? card.zone, options: [{ id: "pass", label: "Take the hit" }, ...defender.hand.filter((candidate) => isDefense(candidate) && coversZone(candidate, action.zone ?? card.zone)).map((candidate) => ({ id: candidate.instanceId, label: candidate.name }))] };
     const suppressReaction = this.hasStatus(defender, "restrictReaction");
     if (suppressReaction) this.removeStatus(defender, "restrictReaction");
     if (reactionCards.length && !suppressReaction) this.pendingChoice = { kind: "reaction", ...defense, options: [{ id: "pass", label: "Do not play a Reaction" }, ...reactionCards.map((candidate) => ({ id: candidate.instanceId, label: candidate.name }))], defenseOptions: defense.options };
@@ -1713,7 +1717,7 @@ export class Game {
     if (["attack-zone", "card-movement", "cycle-discard-draw", "deck-look", "zone-choice", "hit-choice", "incoming-attack-choice", "equipment-toggle", "discard-or-destroy"].includes(this.pendingChoice?.kind)) return { optionId: this.pendingChoice.options[0].id };
     if (this.pendingChoice?.kind === "reaction") return { optionId: "pass" };
     if (this.pendingChoice?.kind === "structured") return { optionId: this.pendingChoice.options[0].id };
-    const defender = this.players[this.pendingChoice.playerId]; const defense = chooseDefense(defender.hand); return { optionId: defense?.instanceId ?? "pass" };
+    const defender = this.players[this.pendingChoice.playerId]; const offered = new Set(this.pendingChoice.options.map((option) => option.id)); const defense = chooseDefense(defender.hand.filter((card) => offered.has(card.instanceId))); return { optionId: defense?.instanceId ?? "pass" };
   }
 
   assertInvariants(step) {
@@ -1886,6 +1890,8 @@ export class Game {
       }
       for (const card of [...victim.equipment]) { remove(victim.played, card); victim.discard.push(card); }
       victim.equipment = []; victim.exhaustedEquipment = []; victim.statuses = []; victim.tempSpeed = 0;
+      // The knocked-out fighter's cards leave the table, so a pending choice about them is void.
+      if (this.pendingChoice && [this.pendingChoice.playerId, this.pendingChoice.targetPlayerId].includes(victim.id)) this.pendingChoice = null;
       if (victim.roster) victim.roster[victim.activeIndex].knockedOut = true;
       this.emit({ type: "knockout", player: victim.id, character: victim.character?.catalogId, by: responsible?.id ?? null });
       const bench = this.consciousBench(victim);

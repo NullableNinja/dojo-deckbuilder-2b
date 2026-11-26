@@ -4,7 +4,7 @@
 
 | Mode | Headless engine | Browser game |
 | --- | --- | --- |
-| Quick Duel | Unchanged. A 300-seed fingerprint (`npm run engine:fingerprint`) is identical before and after the mode work. | Live. |
+| Quick Duel | The mode work left it unchanged. On Nov 26 the engine started enforcing Defense zones (see `docs/one-engine-plan.md`), so the fingerprint (`npm run engine:fingerprint`) is now `340f87ee9f34a97de97560d1`. | Live. |
 | Standard Clash (2–6) | Executable. 800/800 parallel games, 0 failures, 0 replay mismatches. | **Live (you + 2–5 bots)**: an engine-driven Clash table (`app/clash-table.tsx`) with seat targeting, the engine's legal actions and choices, bots fighting each other, eliminations and Black Belt Victory. |
 | Tag Team (individual, 2v2 Dojo War) | Executable. 800/800, 0 failures, 0 replay mismatches. | **Live (1v1 vs the computer)**: team setup, roster rails, tag during Initiate, owner's "Next in" pick, KO replacement with Equipment discard and Scene Change, Black Belt Victory. 2v2 not yet. |
 | Dojo Drama (solo, co-op) | Executable (`engine/boss-blitz.mjs`). 600/600, 0 failures, 0 replay mismatches. | **Live (solo)**: three-fighter team vs the Rival → Mini-Boss → Final Boss ladder, Arsenal reveals, Boss Guard, Enraged double Attacks, stage clears, Scenario Victory. Co-op not yet. |
@@ -40,7 +40,7 @@ Run `npm run simulate:modes -- 300` for per-mode completion, win distribution, K
 
 These come from the baseline bots, so they measure the rules plus a simple AI, not expert play.
 
-- **Co-op Boss Blitz is too easy**: players won 300 of 300. Solo players win about 85%. Two players deal roughly double damage while co-op Boss HP is only ~40% higher (45/65/85 vs 30/45/60), and the second Boss Attack is split across both players.
+- **Co-op Boss Blitz is too easy**: players won 199 of 200. Solo players win about 62% (85% before Defenses had to match the attack's zone). Two players deal roughly double damage while co-op Boss HP is only ~40% higher (45/65/85 vs 30/45/60), and the second Boss Attack is split across both players.
 - **Black Belt Victory almost never happens** before a knockout (1 in 450 Tag Team games). The 35 XP race is much slower than the fight.
 - **Standard Clash seat balance is fair** once bots spread their attacks: 3-player wins 33/33/35%, 4-player about 25% each.
 
