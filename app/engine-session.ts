@@ -6,7 +6,7 @@ import { clashData, type EngineCard } from "./clash-engine.ts";
 
 export type EngineOption = { id: string; label: string };
 export type EnginePending = { kind: string; playerId: number; attackerId?: number; targetPlayerId?: number; cardId?: string; zone?: string; options: EngineOption[]; [key: string]: unknown };
-export type EngineAction = { type: string; playerId: number; cardId?: string; targetId?: number; zone?: string; fighterIndex?: number };
+export type EngineAction = { type: string; playerId: number; cardId?: string; targetId?: number; zone?: string; fighterIndex?: number; replaceCardIds?: string[] };
 export type EngineEvent = { type: string; [key: string]: unknown };
 export type EngineStatus = { id?: string; action: string; amount?: number; value?: unknown; duration?: string; sourceId?: string };
 export type EngineSeat = {
@@ -35,7 +35,10 @@ export type SessionSetup = {
   fighters: string[];
   humanSeats: number[];
   rulesVersion: string;
+  /** Table options from content/dojo-game.json `tableOptions` (tempo, locations, market, house rules). */
+  table?: TableOptions;
 };
+export type TableOptions = { tempo?: boolean; locations?: boolean; openMarket?: boolean; balancedMarket?: boolean; houseRules?: string[] };
 export type Decision = { kind: "action"; action: EngineAction } | { kind: "choice"; optionId: string };
 export type SavedSession = { format: 1; setup: SessionSetup; decisions: Decision[] };
 export type BotPolicy = { chooseAction(game: EngineGame, legal: EngineAction[]): EngineAction; chooseChoice(game: EngineGame, pending: EnginePending): { optionId: string } };
@@ -69,6 +72,7 @@ export class EngineSession {
       players: setup.fighters.length,
       characters: setup.fighters.map(characterFor),
       strategies: setup.fighters.map(() => "balanced"),
+      ...(setup.table ? { table: setup.table } : {}),
     }) as unknown as EngineGame;
     this.game.advanceAutomaticEvents();
   }

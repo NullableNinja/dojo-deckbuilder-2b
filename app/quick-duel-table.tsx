@@ -7,7 +7,7 @@ import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
 import { useCardMotion } from "./use-card-motion";
 import type { EngineCard } from "./clash-engine.ts";
-import { EngineSession, newSeed, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
+import { EngineSession, newSeed, type TableOptions, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 
@@ -31,20 +31,20 @@ type TableProps = {
 
 export const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
 export type QuickDuelStart = { fighterId: string; opponentId: string } | "resume";
-export type QuickDuelMatProps = Omit<TableProps, "session" | "sessionKey" | "onSave"> & { start: QuickDuelStart; startKey: number; rulesVersion: string };
+export type QuickDuelMatProps = Omit<TableProps, "session" | "sessionKey" | "onSave"> & { start: QuickDuelStart; startKey: number; rulesVersion: string; table: TableOptions };
 
 function readSaved(): SavedSession | null {
   try { return JSON.parse(window.localStorage.getItem(ENGINE_DUEL_STORAGE_KEY) ?? "null") as SavedSession | null; } catch { return null; }
 }
 
 /** Starts (or resumes) a Quick Duel session and keeps its save up to date. */
-export default function QuickDuelMat({ start, startKey, rulesVersion, onExit, ...props }: QuickDuelMatProps) {
+export default function QuickDuelMat({ start, startKey, rulesVersion, table, onExit, ...props }: QuickDuelMatProps) {
   const [session] = useState<EngineSession | null>(() => {
     if (start === "resume") {
       const saved = readSaved();
       return saved && saved.setup.rulesVersion === rulesVersion ? EngineSession.restore(saved) : null;
     }
-    return new EngineSession({ mode: "quick-duel", seed: newSeed(), fighters: [start.fighterId, start.opponentId], humanSeats: [HUMAN], rulesVersion });
+    return new EngineSession({ mode: "quick-duel", seed: newSeed(), fighters: [start.fighterId, start.opponentId], humanSeats: [HUMAN], rulesVersion, table });
   });
   useEffect(() => {
     if (!session) { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); onExit(); }
@@ -82,6 +82,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
   const [deskView, setDeskView] = useState<DeskView | null>(null);
   const [inspected, setInspected] = useState<MatCard | null>(null);
   const [logOpen, setLogOpen] = useState(false);
+  const [equipChoices, setEquipChoices] = useState<EngineAction[] | null>(null);
   const [vfx, setVfx] = useState<Vfx | null>(null);
   const [sceneReveal, setSceneReveal] = useState<{ key: number; card: MatCard; previous: string | null; opening: boolean } | null>(null);
   const shellRef = useRef<HTMLElement>(null);
@@ -156,6 +157,8 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     if (handChoice) { if (handChoice.options.some((option) => option.id === card.instanceId)) choose(card.instanceId!); return; }
     const action = primaryAction(legal, card);
     if (!action) return;
+    const variants = legal.filter((candidate) => candidate.type === action.type && candidate.cardId === card.instanceId);
+    if (variants.length > 1) { setEquipChoices(variants); return; }
     if (action.type === "play-attack") setSelectedId((current) => current === card.instanceId ? null : card.instanceId!);
     else act(action);
   };
@@ -213,6 +216,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     </footer>
 
     {deskView && <AscendDesk game={game} view={deskView} legal={legal} onView={setDeskView} onAct={act} onInspect={setInspected} onClose={() => setDeskView(null)} onFinish={pass && phase === "player-ascend" ? () => act(pass) : null} />}
+    {equipChoices && <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="equip-choice-title"><span className="eyebrow">Two Hands, no more</span><h2 id="equip-choice-title">Make room for {findInstance(game, equipChoices[0].cardId!)?.name}</h2><p>Your Hands are full. Choose which equipped Weapon to discard first.</p><div className="effect-choice-options">{equipChoices.map((action, index) => <button type="button" autoFocus={index === 0} key={(action.replaceCardIds ?? []).join("+") || index} onClick={() => { setEquipChoices(null); act(action); }}><span>REPLACE</span><b>{(action.replaceCardIds ?? []).map((id) => findInstance(game, id)?.name ?? "Weapon").join(" + ")}</b><small>Discarded to free its Hands</small></button>)}<button type="button" onClick={() => setEquipChoices(null)}><span>CANCEL</span><b>Keep my Weapons</b><small>Do not equip</small></button></div></section></div>}
     {dialogChoice && <ChoiceDialog game={game} pending={dialogChoice} onChoose={choose} />}
     {logOpen && <div className="playtest-inspector-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setLogOpen(false)}><section className="fight-log-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="fight-log-title"><button className="modal-close" onClick={() => setLogOpen(false)} aria-label="Close fight log">×</button><span className="eyebrow">Department receipt</span><h2 id="fight-log-title">Fight log</h2><ol>{log.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ol></section></div>}
     {inspected && <Suspense fallback={null}><CardInspector card={inspected as never} imageUrl={artistUrl(inspected) ?? cardPlaceholderUrl} saved={false} positionLabel="Quick Duel card" onToggleSaved={() => undefined} onClose={() => setInspected(null)} /></Suspense>}
