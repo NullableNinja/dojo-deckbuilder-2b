@@ -231,10 +231,9 @@ export class Game {
   }
 
   // ---- Table setup (definition.tableOptions) -------------------------------------------
-  /** Market cards for this table: the Market decks, minus any cards the Open Market option holds back. */
+  /** Market cards for this table: every card in the Market decks. */
   marketPool() {
-    const excluded = new Set(this.tableOptions.openMarket ? [] : tableOption(this.definition, "openMarket")?.whenOff?.excludeFromMarketDeck ?? []);
-    return this.data.cards.filter((card) => this.definition.economy.market.decks.includes(card.deck) && !excluded.has(card.catalogId));
+    return this.data.cards.filter((card) => this.definition.economy.market.decks.includes(card.deck));
   }
 
   /** The opening row. A balanced Market first pulls one affordable card of each guaranteed kind, in draw order. */
@@ -251,13 +250,10 @@ export class Game {
     this.refillMarket(false);
   }
 
-  /** Locations off: the declared fixed Location stays in play all game, with no Scene Changes. */
+  /** Locations off: no Location is in play all game, and there are no Scene Changes (owner decision 5). */
   fixLocation() {
-    const fixed = this.data.byId.get(tableOption(this.definition, "locations")?.whenOff?.fixedLocation);
-    const instance = fixed ? this.locationDeck.find((card) => card.catalogId === fixed.catalogId) ?? this.cardInstance(fixed) : null;
     this.locationDeck = [];
-    this.currentLocation = instance;
-    if (instance) this.emit({ type: "location-fixed", location: instance.catalogId });
+    this.currentLocation = null;
   }
 
   marketRefreshesAtRoundEnd() {
@@ -897,7 +893,7 @@ export class Game {
   cardEffects(card, trigger) { return (this.effects.get(card.catalogId)?.effects ?? []).filter((effect) => effect.trigger === trigger); }
 
   revealLocation() {
-    if (!this.tableOptions.locations) return false; // a fixed Location never changes
+    if (!this.tableOptions.locations) return false; // Locations off: no scene ever appears
     if (!this.locationDeck.length && this.locationDiscard.length) this.locationDeck = this.rng.shuffle(this.locationDiscard.splice(0));
     const next = this.locationDeck.pop();
     if (!next) return false;

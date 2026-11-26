@@ -49,7 +49,7 @@ test("fixtures exist", () => {
 // ---- Options and defaults -------------------------------------------------------------
 
 test("every table option is declared canonically with a label, default and description", () => {
-  for (const id of ["tempo", "locations", "openMarket", "balancedMarket", "houseRules"]) {
+  for (const id of ["tempo", "locations", "balancedMarket", "houseRules"]) {
     const option = tableOption(definition, id);
     assert.ok(option?.label && option.description && option.default !== undefined, `${id} is declared`);
   }
@@ -59,7 +59,7 @@ test("defaults reproduce the canonical declaration and are exposed and recorded"
   const game = new Game(data, { seed: 3 });
   const declared = Object.fromEntries(definition.tableOptions.map((option) => [option.id, option.default]));
   assert.deepEqual(game.tableOptions, declared);
-  assert.deepEqual(game.tableOptions, { tempo: true, locations: true, openMarket: true, balancedMarket: false, houseRules: [] });
+  assert.deepEqual(game.tableOptions, { tempo: true, locations: true, balancedMarket: false, houseRules: [] });
   assert.deepEqual(game.setup.table, game.tableOptions);
   assert.equal(game.definition, data.definition, "without house rules the canonical definition is used as is");
 });
@@ -103,12 +103,11 @@ test("Tempo off: no fighter has Tempo, and the first Attack gets no Tempo bonus"
 
 // ---- Locations ------------------------------------------------------------------------------
 
-test("Locations off: the declared Location stays in play and the scene never changes", () => {
-  const fixed = tableOption(definition, "locations").whenOff.fixedLocation;
+test("Locations off: no Location is in play and the scene never changes", () => {
   const game = new Game(data, { seed: 11, table: { locations: false } });
-  assert.equal(game.currentLocation.catalogId, fixed);
+  assert.equal(game.currentLocation, null);
   const result = game.run({ maxSteps: 200000 });
-  assert.equal(result.state.location, fixed);
+  assert.equal(result.state.location, null);
   assert.equal(result.events.filter((event) => event.type === "scene-change").length, 0);
   assert.equal(result.invariantFailures.length, 0);
   const normal = new Game(data, { seed: 11 }).run({ maxSteps: 200000 });
@@ -116,16 +115,6 @@ test("Locations off: the declared Location stays in play and the scene never cha
 });
 
 // ---- Market -----------------------------------------------------------------------------------
-
-test("Open Market off holds the listed cards out of the Market Deck", () => {
-  const excluded = new Set(tableOption(definition, "openMarket").whenOff.excludeFromMarketDeck);
-  const marketCards = (game) => [...game.market, ...game.marketDeck].map((card) => card.catalogId);
-  const open = marketCards(new Game(data, { seed: 2 }));
-  const closed = marketCards(new Game(data, { seed: 2, table: { openMarket: false } }));
-  assert.ok(open.some((id) => excluded.has(id)));
-  assert.ok(!closed.some((id) => excluded.has(id)));
-  assert.equal(open.length - closed.length, excluded.size);
-});
 
 test("a balanced opening Market guarantees an affordable card of each declared kind", () => {
   const guarantees = tableOption(definition, "balancedMarket").whenOn.openingRowGuarantees;
@@ -182,7 +171,7 @@ test("Fast Belts lowers later Belt thresholds from canonical data without touchi
 test("Quick Duel results carry table options only when they differ, and replays reproduce them", () => {
   const plain = new Game(data, { seed: 7 }).run({ maxSteps: 200000 });
   assert.equal(plain.setup, undefined, "default Quick Duel output is unchanged");
-  const table = { tempo: false, locations: false, openMarket: false, balancedMarket: true, houseRules: ["market-scramble", "fast-belts"] };
+  const table = { tempo: false, locations: false, balancedMarket: true, houseRules: ["market-scramble", "fast-belts"] };
   const original = new Game(data, { seed: 7, table }).run({ maxSteps: 200000 });
   assert.deepEqual(original.setup.table, table);
   assert.ok(replayMatches(original, replayGame(data, original)));
