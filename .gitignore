@@ -48,3 +48,6 @@ next-env.d.ts
 /reports/*
 /docs/production/starter-experiment/.build/
 /offline-package/
+
+# agent worktrees
+/.claude/worktrees/

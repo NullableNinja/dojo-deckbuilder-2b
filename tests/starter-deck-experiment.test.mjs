@@ -24,7 +24,8 @@ test("starter experiment is an isolated 15-card scenario with matched canonical 
   game.activePlayer = 0;
   const badHabit = game.cardInstance(variant.byId.get("DDB-STA-CORE-001"));
   player.hand.push(badHabit);
-  assert.equal(game.getLegalActions(0).some((action) => action.cardId === badHabit.instanceId), false);
+  // Bad Habit is never played as a card; its only use is the canonical cash-in for Focus.
+  assert.deepEqual(game.getLegalActions(0).filter((action) => action.cardId === badHabit.instanceId).map((action) => action.type), ["bad-habit-focus"]);
   assert.equal(game.applyAction({ type: "play-card", playerId: 0, cardId: badHabit.instanceId }), false);
   player.hand = player.hand.filter((card) => card !== badHabit);
   const resetStance = game.cardInstance(variant.byId.get("DDB-STA-EXP-001"));

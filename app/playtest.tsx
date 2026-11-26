@@ -4,9 +4,11 @@ import { useCardMotion } from "./use-card-motion";
 import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
 const ClashTable = lazy(() => import("./clash-table.tsx"));
+const QuickDuelMat = lazy(() => import("./quick-duel-table.tsx"));
+/** Saved engine-driven Quick Duel (setup + decisions); see app/quick-duel-table.tsx. */
+const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
-import starterJabArtUrl from "./assets/starter/starter-jab-art-v2.webp";
-import highGuardArtUrl from "./assets/starter/high-guard-art-v2.webp";
+import { artistUrl, fighterIllustrationUrl, locationTheme, presentationSlug } from "./card-art";
 import cardsJson from "./data/cards.json";
 import gameDefinitionJson from "./data/game-definition.json";
 import { describeEffectPlan, effectPlanForCard, structuredEffectsForCard } from "./card-effects";
@@ -388,18 +390,6 @@ const DIFFICULTIES: Record<Difficulty, { label: string; eyebrow: string; detail:
 };
 const GAME_MODE_META = MODE_META as Record<GameModeId, ModeMeta>;
 
-const cardArtModules = import.meta.glob<string>("./assets/cards/{attacks,defenses,katas,consumables,defense-equipment,gear,weapons,reactions,combos,characters,starters,locations}/*.webp", { eager: true, query: "?url", import: "default" });
-const fighterIllustrationModules = import.meta.glob<string>("./assets/fighters/*.webp", { eager: true, query: "?url", import: "default" });
-const CARD_ART = Object.fromEntries(Object.entries(cardArtModules).map(([path, url]) => [`/cards/${path.split("/cards/")[1]}`, url]));
-const COMPLETE_CARD_ART_BY_CATALOG_ID = Object.fromEntries(
-  Object.entries(cardArtModules).flatMap(([path, url]) => {
-    const match = path.match(/\/(ddb-(?:atk|def|kat|con|deq|gea|wpn|rit|cmb|sta|loc)-core-\d{3})_/i);
-    return match ? [[match[1].toUpperCase(), url]] : [];
-  }),
-);
-const FIGHTER_ILLUSTRATION_BY_SLUG = Object.fromEntries(
-  Object.entries(fighterIllustrationModules).map(([path, url]) => [path.split("/").at(-1)?.replace(/\.webp$/i, ""), url]),
-);
 
 function shuffle<T>(items: T[]) {
   const result = [...items];
@@ -2000,32 +1990,6 @@ function emptyBoard(fighterId: string): Board {
   }, gameDefinition.turn.handSize);
 }
 
-function artistUrl(card: CardEntry) {
-  if (card.image && CARD_ART[card.image]) return CARD_ART[card.image];
-  if (COMPLETE_CARD_ART_BY_CATALOG_ID[card.catalogId]) return COMPLETE_CARD_ART_BY_CATALOG_ID[card.catalogId];
-  if (card.name === "Basic Jab") return starterJabArtUrl;
-  if (card.name === "High Guard") return highGuardArtUrl;
-  return undefined;
-}
-
-function presentationSlug(value: string) {
-  return value.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function fighterIllustrationUrl(card: CardEntry) {
-  const slug = presentationSlug(card.name);
-  return FIGHTER_ILLUSTRATION_BY_SLUG[slug];
-}
-
-function locationTheme(card: CardEntry | undefined) {
-  const name = card?.name.toLocaleLowerCase() ?? "";
-  if (/rink|rain|river/.test(name)) return "cool";
-  if (/garage|stairwell|bus/.test(name)) return "concrete";
-  if (/library|school|studio/.test(name)) return "civic";
-  if (/strip-mall/.test(name)) return "retail";
-  return "dojo";
-}
-
 function exchangeId(current: Match, actor: "player" | "ai", cardId: string) {
   return `${current.round}:${current.turnIndex}:${actor}:${cardId}:${(current.exchangeSequence ?? 0) + 1}`;
 }
@@ -3081,6 +3045,9 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   });
   const beltThresholds = useMemo(() => effectiveBeltThresholds(belts, settings.houseRuleIds), [settings.houseRuleIds]);
   const [clash, setClash] = useState<{ fighterId: string; opponents: number; key: number } | null>(null);
+  const [engineDuel, setEngineDuel] = useState<{ start: { fighterId: string; opponentId: string } | "resume"; key: number } | null>(() => {
+    try { return window.localStorage.getItem(ENGINE_DUEL_STORAGE_KEY) ? { start: "resume", key: 0 } : null; } catch { return null; }
+  });
   const [match, setRawMatch] = useState<Match | null>(() => {
     try {
       const saved = JSON.parse(window.localStorage.getItem("ddb-field-match") ?? "null") as Match | null;
@@ -3311,6 +3278,13 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
 
   const begin = (options: { fighterId?: string; mode?: GameModeId; team?: string[]; opponents?: number } = {}) => {
     duelSerial.current += 1;
+    if (!options.mode || options.mode === "quick-duel") {
+      const fighterId = options.fighterId ?? selectedId;
+      const opponent = shuffle(characters.filter((card) => card.id !== fighterId))[0];
+      setRawMatch(null);
+      setEngineDuel({ start: { fighterId: cardFor(fighterId)?.catalogId ?? fighterId, opponentId: opponent.catalogId }, key: duelSerial.current });
+      return;
+    }
     if (options.mode === "standard-clash") { setClash({ fighterId: options.fighterId ?? selectedId, opponents: Math.max(2, Math.min(5, options.opponents ?? 3)), key: duelSerial.current }); return; }
     const fighterId = options.fighterId ?? selectedId;
     const bossBlitz = options.mode === "boss-blitz" && (options.team?.length ?? 0) === 3;
@@ -4906,6 +4880,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   const revealedScene = sceneReveal ? cardFor(sceneReveal.locationId) : null;
   const sceneRevealElement = sceneReveal && revealedScene && !match?.winner ? <SceneReveal key={sceneReveal.key} card={revealedScene} art={artistUrl(revealedScene)} previousName={sceneReveal.previousId ? cardFor(sceneReveal.previousId)?.name : null} round={sceneReveal.round} opening={sceneReveal.opening} targetSelector=".playtest-shell--live .combat-stage-heading > button" reducedMotion={cardMotionDisabled(settings.motion)} onDone={() => setSceneReveal(null)} /> : null;
   useCardMotion(liveShellRef, match && player ? { deck: player.deck, hand: player.hand, discard: player.discard, playArea: player.playArea, market: match.market } : null, settings.motion, duelSerial.current);
+  if (engineDuel) return <Suspense fallback={<section className="mat-loading paper-stack" aria-live="polite">Setting up the mat…</section>}><QuickDuelMat key={engineDuel.key} start={engineDuel.start} startKey={engineDuel.key} rulesVersion={activeRulesRevision} agentName={agentName} guided={settings.guided} motion={settings.motion} onExit={() => setEngineDuel(null)} onRematch={() => begin({ fighterId: engineDuel.start === "resume" ? selectedId : engineDuel.start.fighterId })} /></Suspense>;
   if (clash) return <Suspense fallback={<section className="mat-loading paper-stack" aria-live="polite">Setting up the Clash table…</section>}><ClashTable key={clash.key} fighterId={clash.fighterId} opponents={clash.opponents} onExit={() => setClash(null)} onRematch={() => setClash({ ...clash, key: clash.key + 1 })} artFor={(card) => artistUrl(card as unknown as CardEntry)} fighterArtFor={(card) => fighterIllustrationUrl(card as unknown as CardEntry)} placeholder={cardPlaceholderUrl} reducedMotion={cardMotionDisabled(settings.motion)} /></Suspense>;
   if (!match || !player || !ai || !playerFighter || !aiFighter) return <SetupView selectedId={selectedId} setSelectedId={setSelectedId} settings={settings} setSettings={setSettings} begin={begin} mode={mode} setMode={setMode} goTo={goTo} />;
   const pendingAttack = match.selectedAttackId ? cardFor(match.selectedAttackId) : null;

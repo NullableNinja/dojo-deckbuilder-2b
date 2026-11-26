@@ -1467,6 +1467,13 @@ export class Game {
     remove(player.hand, card); player.played.push(card); player.focus += focus(card); this.telemetry.focusGenerated += focus(card); this.telemetry.defensePractice += 1; player.practiceUsed = true; player.turnStats.playedDefenseSinceLastTurn = true; player.turnStats.defenseCount = (player.turnStats.defenseCount ?? 0) + 1; this.track(card, "played", player); this.emit({ type: "defense-practice", player: player.id, card: card.catalogId, focus: focus(card) }); return true;
   }
 
+  badHabitActions(player) {
+    const rule = this.definition.economy.badHabitFocus;
+    if (!rule || rule.usesPerTurn < 1 || player.badHabitFocusUsed) return [];
+    const card = player.hand.find((candidate) => candidate?.catalogId === rule.catalogId);
+    return card ? [{ type: "bad-habit-focus", playerId: player.id, cardId: card.instanceId }] : [];
+  }
+
   cashBadHabit(player) {
     const rule = this.definition.economy.badHabitFocus; if (!rule || rule.usesPerTurn < 1 || player.badHabitFocusUsed) return false;
     const card = player.hand.find((candidate) => candidate?.catalogId === rule.catalogId); if (!card) return false; remove(player.hand, card); player.discard.push(card); player.focus += Number(rule.focusGain) || 0; this.telemetry.focusGenerated += Number(rule.focusGain) || 0; player.badHabitFocusUsed = true; this.emit({ type: "bad-habit-focus", player: player.id, card: card.catalogId, focus: Number(rule.focusGain) || 0 }); return true;
@@ -1531,7 +1538,7 @@ export class Game {
     const player = this.players[playerId];
     if (this.phase === "Honor") return [{ type: "pass", playerId }];
     if (this.phase === "Initiate") return [{ type: "pass", playerId }, ...this.tagActions(player), ...player.hand.filter((card) => ["Weapon", "Gear", "Defense Equipment"].includes(card.subtype) && this.canPlayCard(player, card) && !player.noEquipThisTurn).map((card) => ({ type: "play-card", playerId, cardId: card.instanceId })), ...player.equipment.filter((card) => !this.equipmentIsExhausted(player, card) && this.equipmentHasManualActivation(card)).map((card) => ({ type: "activate-equipment", playerId, cardId: card.instanceId }))];
-    if (this.phase === "Yell") return [...(this.hasStatus(player, "restrictAttack") || !this.legalTargets(player).length ? [] : player.hand.filter((card) => isAttack(card) && this.canPlayCard(player, card)).map((card) => ({ type: "play-attack", playerId, cardId: card.instanceId }))), ...player.hand.filter((card) => this.canPlayYellCard(card) && this.canPlayCard(player, card)).map((card) => ({ type: "play-card", playerId, cardId: card.instanceId })), ...(this.definition.economy.defensePractice.usesPerTurn > 0 && !player.practiceUsed ? player.hand.filter(isDefense).map((card) => ({ type: "practice", playerId, cardId: card.instanceId })) : []), { type: "pass", playerId }];
+    if (this.phase === "Yell") return [...(this.hasStatus(player, "restrictAttack") || !this.legalTargets(player).length ? [] : player.hand.filter((card) => isAttack(card) && this.canPlayCard(player, card)).map((card) => ({ type: "play-attack", playerId, cardId: card.instanceId }))), ...player.hand.filter((card) => this.canPlayYellCard(card) && this.canPlayCard(player, card)).map((card) => ({ type: "play-card", playerId, cardId: card.instanceId })), ...(this.definition.economy.defensePractice.usesPerTurn > 0 && !player.practiceUsed ? player.hand.filter(isDefense).map((card) => ({ type: "practice", playerId, cardId: card.instanceId })) : []), ...this.badHabitActions(player), { type: "pass", playerId }];
     if (this.phase === "Ascend") return [
       ...(player.comboOffered ? [{ type: "decline-combo", playerId }, ...(cost(player.comboOffered) <= player.focus && !player.comboAttemptedThisTurn ? [{ type: "learn-combo", playerId, cardId: player.comboOffered.instanceId }] : [])] : []),
       ...(this.canPromote(player) ? [{ type: "promote", playerId }] : []),
@@ -1678,6 +1685,7 @@ export class Game {
     if (action.type === "pass") { if (this.phase === "Honor") this.phase = "Initiate"; else if (this.phase === "Initiate") { this.beginComboTurn(player); for (const card of player.equipment) this.applyCardEffects(player, card, "onInitiate", { opponent: this.opponentOf(player) }); this.applyCharacterEffects(player, "onInitiate", { opponent: this.opponentOf(player) }); this.phase = "Yell"; } else if (this.phase === "Yell") { this.beginAscend(player); this.phase = "Ascend"; } else if (this.phase === "Ascend") { if (player.marketPurchasesThisAscend === 0) this.recordMarketDecision(player); this.returnComboOffer(player); player.trainingStripes.provisional = false; for (const card of player.equipment) this.applyCardEffects(player, card, "passive", { opponent: this.opponentOf(player), sourceCard: card, ascendCompleted: true }); this.phase = "Hide"; } else if (this.phase === "Hide") { this.hide(player); this.finishTurn(); } return true; }
     if (action.type === "hide" && this.phase === "Hide") { this.hide(player); this.finishTurn(); return true; }
     if (action.type === "tag" && this.phase === "Initiate") return this.tag(player, action.fighterIndex);
+    if (action.type === "bad-habit-focus" && this.phase === "Yell") return this.cashBadHabit(player);
     if (action.type === "practice" && this.phase === "Yell") return this.practice(player, player.hand.find((card) => card.instanceId === action.cardId));
     if (action.type === "activate-equipment" && this.phase === "Initiate") return this.activateEquipment(player, player.equipment.find((card) => card.instanceId === action.cardId));
     if (action.type === "play-card" && this.phase === "Yell") { const card = player.hand.find((candidate) => candidate.instanceId === action.cardId); return this.canPlayYellCard(card) && this.playCard(player, card); }

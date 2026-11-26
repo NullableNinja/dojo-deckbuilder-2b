@@ -6641,3 +6641,7 @@ button.clash-seat:hover { transform: translateY(-2px); }
 @media (max-width: 1100px) { .clash-table { grid-template-columns: 1fr; grid-template-areas: "head" "seats" "desk" "log"; } .clash-log { position: static; } }
 @media (max-width: 600px) { .clash-hand, .clash-market-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .clash-seats { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .clash-waiting i { animation: none; } button.clash-seat { transition: none; } }
+
+/* Engine mat: station switcher inside the Ascend desk. */
+.playtest-shell--engine .ascend-desk-stations { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; border-bottom: 1px dashed var(--pf-line, rgba(230,212,164,.28)); }
+.playtest-shell--engine .ascend-desk-stations .button { min-height: 44px; }
