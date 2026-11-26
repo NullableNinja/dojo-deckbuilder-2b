@@ -23,6 +23,7 @@ import { CardLibrary } from "./card-library";
 import { RulesReader } from "./rules-reader";
 import { DetailModal } from "./detail-modal";
 import { GlossaryPage } from "./glossary-page";
+import { QuickstartSetup } from "./quickstart-setup";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
@@ -462,7 +463,7 @@ function QuickStartView({ goTo }: { goTo: (view: ViewId) => void }) {
 
     <section className="golden-rule-card quick-golden paper-stack"><div><span className="eyebrow">The table agreement</span><h2>The card wins.</h2></div><p>{GOLDEN_RULE}</p><span className="golden-stamp" aria-hidden="true">!</span></section>
 
-    <section className="paper-panel setup-panel paper-stack quickstart-step-block" id="quickstart-setup"><div className="quickstart-step-heading"><span className="step-stamp">01</span><div><span className="eyebrow">Set the table</span><h2>{setup.length} things before the first HIYAH</h2><p>Put the right paper on the mat, then let the table get delightfully unreasonable.</p></div><span className="quickstart-step-status">READY<br />TO FILE</span></div><ol className="setup-list">{setup.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></li>)}</ol><StarterDeckLesson jabArt={starterJabArtUrl} guardArt={highGuardArtUrl} /></section>
+    <QuickstartSetup steps={setup} onPlay={() => goTo("playtest")}><StarterDeckLesson jabArt={starterJabArtUrl} guardArt={highGuardArtUrl} /></QuickstartSetup>
 
     <section className="quick-section interactive-round quickstart-step-block" id="quickstart-round"><div className="quickstart-step-heading"><span className="step-stamp">02</span><div><span className="eyebrow">Play the round</span><h2>Honor once. Then each player completes I.Y.A.H.</h2><p className="round-clarifier">{ROUND_STRUCTURE_SUMMARY}</p></div><span className="quickstart-step-status">ONE LOOP<br />FIVE BEATS</span></div><div className="quick-phases">{CANONICAL_PHASES.map((phase, index) => <button className={selectedPhase === index ? "active" : ""} onClick={() => setSelectedPhase(index)} key={phase.name}><span>{phase.letter}</span><div><small>{index === 0 ? "Once per round" : "Each player"}</small><h3>{phase.name}</h3><p>{phase.text}</p></div></button>)}</div><article className="phase-explainer paper-stack"><div><span className="phase-explainer-letter">{CANONICAL_PHASES[selectedPhase].letter}</span><div><span className="eyebrow">{CANONICAL_PHASE_DETAILS[selectedPhase].when}</span><h3>{CANONICAL_PHASE_DETAILS[selectedPhase].name}</h3><p>{CANONICAL_PHASE_DETAILS[selectedPhase].who}</p></div></div><ol>{CANONICAL_PHASE_DETAILS[selectedPhase].steps.map((step) => <li key={step}>{step}</li>)}</ol><blockquote>{CANONICAL_PHASE_DETAILS[selectedPhase].quip}</blockquote></article></section>
 
