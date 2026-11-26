@@ -3040,7 +3040,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
       const saved = JSON.parse(window.localStorage.getItem("ddb-field-settings") ?? "null") as Partial<HouseSettings> | null;
       const storedMotion = window.localStorage.getItem("ddb-vfx-mode");
       const motion = saved?.motion ?? (storedMotion === "reduced" || storedMotion === "off" ? storedMotion : "full");
-      return { tempo: saved?.tempo ?? true, locations: saved?.locations ?? true, openMarket: saved?.openMarket ?? true, guided: saved?.guided ?? true, autoAi: saved?.autoAi ?? true, balancedMarket: saved?.balancedMarket ?? true, difficulty: saved?.difficulty && DIFFICULTIES[saved.difficulty] ? saved.difficulty : "certified", motion, houseRuleIds: sanitizeQuickDuelHouseRuleIds(saved?.houseRuleIds) };
+      return { tempo: saved?.tempo ?? true, locations: saved?.locations ?? true, openMarket: saved?.openMarket ?? true, guided: saved?.guided ?? true, autoAi: saved?.autoAi ?? true, balancedMarket: saved?.balancedMarket ?? true, difficulty: saved?.difficulty && DIFFICULTIES[saved.difficulty] ? saved.difficulty : "certified", motion, houseRuleIds: sanitizeQuickDuelHouseRuleIds(saved?.houseRuleIds), rulesEngine: saved?.rulesEngine === "shared" ? "shared" : "classic" };
     } catch { return { tempo: true, locations: true, openMarket: true, guided: true, autoAi: true, balancedMarket: true, difficulty: "certified", motion: "full", houseRuleIds: [] }; }
   });
   const beltThresholds = useMemo(() => effectiveBeltThresholds(belts, settings.houseRuleIds), [settings.houseRuleIds]);

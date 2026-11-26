@@ -71,3 +71,39 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 34. Storage: this browser only, with backup and export/import codes (no accounts). *Approve?*
 35. The pack membership lists are a first pass by script. *Please review them, especially the
     Orientation Kit and each series' Black Ink cards, before they go live.*
+
+## E. Rules questions from the parity audit (`docs/engine-parity-audit.md` §18–19)
+
+36. **Prevented damage.** If prevention reduces a strike to 0, is it a Hit (old mat) or a Block
+    (engine)? This decides on-Hit effects, exam and Combo Hit counts, and whether a Reversal can follow.
+37. **Off-turn Focus.** The rulebook says a Defense played on the opponent's turn generates no Focus;
+    both runtimes currently grant it. *Follow the rulebook?*
+38. **Attack and Defense XP** are awarded whether you Hit or Block (rulebook, old mat). The engine's
+    data names (`attackXpOnHit`, `defenseXpOnBlock`) say otherwise. *Confirm "always".*
+39. **Starter Attacks** (Basic Jab, Basic Body Kick, Basic Shin Kick, Wild Swing) don't count as
+    Attacks for Combos in either runtime. *Should they?*
+40. **Equipment readies** at its controller's Initiate (rulebook) or at Honor (old mat)?
+41. **Optional Tempo.** The rulebook says using Tempo is optional; both runtimes apply it
+    automatically. *Offer it as a choice?*
+42. **Quick Duel Speed ties and round cap.** Adopt the referee rotation (DDB-RUL-112) and full
+    tiebreak list (DDB-RUL-102) for Quick Duel too?
+43. **Combo limits.** Can a Combo with no printed limit fire more than once a round?
+44. **"If the first … Hit" Combos** (e.g. Swan Song) have no Hit requirement in the data. *Add them?*
+45. **Reaction Items**: destroyed or discarded after use? (Card text says "Destroy this".)
+46. **Damage bonuses after a Hit.** Can a Location or Character damage bonus turn a 0-damage strike
+    into a Hit?
+47. **Combo offer.** The old mat showed one shared Combo offer; the rulebook (and engine) reveal the
+    top Combo for each player during their own Ascend. *Engine follows the rulebook; OK?*
+
+## F. Computer opponents (`engine/difficulty.mjs`)
+
+48. Certified and Master **read your hand** when choosing attacks and zones, as the old mat's
+    computer did. *Keep, or make them play blind for fairness?*
+49. **Difficulty and handicaps** (see item 1): skill only, or also HP/stat handicaps?
+
+## G. Switching over
+
+50. **When should Quick Duel default to the shared engine?** It's playable now as "Shared engine
+    (beta)" in Quick Duel setup. The audit's high-priority gaps are being fixed. My recommendation is
+    to switch the default once those land and a few full games feel right to you, then delete the old
+    mat's rules code.
