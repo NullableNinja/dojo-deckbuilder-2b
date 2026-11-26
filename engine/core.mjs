@@ -1994,7 +1994,7 @@ export class Game {
     attackParts.add("Character", modifierAt(context) - afterCombos);
 
     // A one-use card played as a Defense stays in play until the strike resolves, then leaves as printed.
-    if (defenseCard) { remove(defender.hand, defenseCard); (this.afterUseDestination(defenseCard) ? defender.played : defender.discard).push(defenseCard); defender.focus += focus(defenseCard); this.telemetry.focusGenerated += focus(defenseCard); this.track(defenseCard, "played", defender); this.takeStatuses(defender, "extraDefenseZone", "nextTurn"); }
+    if (defenseCard) { remove(defender.hand, defenseCard); (this.afterUseDestination(defenseCard) ? defender.played : defender.discard).push(defenseCard); const defenseFocus = defender.id === this.activePlayer ? focus(defenseCard) : 0; /* rulebook: cards played outside your own turn generate no printed Focus */ defender.focus += defenseFocus; this.telemetry.focusGenerated += defenseFocus; this.track(defenseCard, "played", defender); this.takeStatuses(defender, "extraDefenseZone", "nextTurn"); }
     // Defense: Character DEF + matching Armor + one Defense card's Guard + modifiers (Final Combat Formula).
     // Guard belongs to a Defense card (glossary: Guard), so Guard changes wait for, and apply only to, a played Defense card.
     // "Next Attack against you" statuses are consumed by any incoming strike.
@@ -2088,7 +2088,7 @@ export class Game {
     if (!reversal && (flow || context.flow) && !attacker.turnStats.flowDrawUsed) { this.draw(attacker, 1); attacker.turnStats.flowDrawUsed = true; }
     if (damage > 0) { this.track(card, "damageDealt", attacker, damage); this.track(card, "hits", attacker); }
     if (defenseCard) this.track(defenseCard, damage === 0 ? "blocks" : "damagePrevented", defender, damage === 0 ? 1 : Math.max(0, block - attack + damage));
-    this.emit({ type: "attack", attacker: attacker.id, defender: defender.id, card: card.catalogId, defense: defenseCard?.catalogId ?? null, attack, block, damage, defenseFocus: focus(defenseCard), zone: zone ?? card.zone ?? null, reversal, breakdown });
+    this.emit({ type: "attack", attacker: attacker.id, defender: defender.id, card: card.catalogId, defense: defenseCard?.catalogId ?? null, attack, block, damage, defenseFocus: defenseCard && defender.id === this.activePlayer ? focus(defenseCard) : 0, zone: zone ?? card.zone ?? null, reversal, breakdown });
     if (openWindows && blocked) this.afterDefenseBlocked(defender, attacker, { zone, reversal });
     this.combat = previousCombat; this.checkWinner();
     return { attack, block, damage, defense: defenseCard, reversal, breakdown };

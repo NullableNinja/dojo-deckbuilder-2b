@@ -39,7 +39,7 @@ None open right now.
 | 25 | What is free | Everything is free of money, always. 12 Characters and 5 Bosses at the start; the rest unlock through Clearance Levels and completed series. | Owner | Done (plan) |
 | 28, 35 | Rarity | None. | Owner | Done |
 | 36 | Prevention to 0 damage | It's a Block (no damage dealt), not a Hit. | Claude | Done (engine already) |
-| 37 | Off-turn Focus | Rulebook: a card played outside your own turn generates no printed Focus, Defense cards included. | Claude | To do |
+| 37 | Off-turn Focus | Rulebook: a card played outside your own turn generates no printed Focus, Defense cards included. | Claude | Done |
 | 38 | Attack and Defense XP | Always, Hit or Block. | Claude | Done |
 | 39 | Starter Attacks in Combos | They are Attacks (the rulebook lists them as Attacks). | Claude | Done |
 | 40 | Equipment readies | At its controller's Initiate (rulebook). | Claude | Done |

@@ -54,7 +54,8 @@ test("played Defense is consumed and cannot block a second Attack", async () => 
   const beforeFocus = defender.focus;
   const first = game.resolveAttack(attacker, defender, attacks[0], { defenseCard: defense });
   const second = game.resolveAttack(attacker, defender, attacks[1], { defenseCard: null });
-  assert.equal(defender.focus, beforeFocus + Number(defense.focusValue));
+  // Rulebook: cards played outside your own turn generate no printed Focus (the defender isn't active).
+  assert.equal(defender.focus, beforeFocus);
   assert.equal(first.defense, defense);
   assert.equal(second.defense, null);
   assert.ok(defender.discard.includes(defense));
