@@ -598,6 +598,21 @@
     "defensesPerAttack": 1,
     "playerWinsBossSpeedTies": true
   },
+  "equipment": {
+    "weaponHands": {
+      "source": "content/rules.json#9-equipment/weapons",
+      "summary": "A Character has two Hands. A Weapon occupies the Hands printed on it (one if none are printed). Equipping a Weapon that does not fit replaces equipped Weapons, which are discarded first.",
+      "capacity": 2,
+      "handsStat": "Hands",
+      "defaultHandsPerWeapon": 1,
+      "whenFull": "replace",
+      "restrictions": {
+        "noTwoHandedWeapon": {
+          "maxHandsPerWeapon": 1
+        }
+      }
+    }
+  },
   "progression": {
     "xpPerHonor": 1,
     "attackXpOnHit": 1,
@@ -779,5 +794,101 @@
         }
       }
     ]
-  }
+  },
+  "tableOptions": [
+    {
+      "id": "tempo",
+      "type": "boolean",
+      "label": "Tempo",
+      "default": true,
+      "description": "Every fighter refreshes Tempo at Honor and spends it on their first Attack of the round for +1 Attack Power. Off: no fighter ever has Tempo."
+    },
+    {
+      "id": "locations",
+      "type": "boolean",
+      "label": "Locations",
+      "default": true,
+      "description": "A Location is revealed at every Honor and after a knockout. Off: one fixed Location stays in play all game and the scene never changes.",
+      "whenOff": {
+        "fixedLocation": "DDB-LOC-CORE-047"
+      }
+    },
+    {
+      "id": "openMarket",
+      "type": "boolean",
+      "label": "Open Market",
+      "default": true,
+      "description": "The Market Deck holds every Technique and Item from the Market decks. Off: the listed cards, which still await final art, stay out of the Market Deck.",
+      "whenOff": {
+        "excludeFromMarketDeck": [
+          "DDB-WPN-CORE-046",
+          "DDB-WPN-CORE-047",
+          "DDB-WPN-CORE-048",
+          "DDB-WPN-CORE-049",
+          "DDB-WPN-CORE-050",
+          "DDB-WPN-CORE-051",
+          "DDB-WPN-CORE-052",
+          "DDB-WPN-CORE-053",
+          "DDB-WPN-CORE-054",
+          "DDB-WPN-CORE-055",
+          "DDB-WPN-CORE-056",
+          "DDB-WPN-CORE-057",
+          "DDB-WPN-CORE-058",
+          "DDB-WPN-CORE-059",
+          "DDB-WPN-CORE-060",
+          "DDB-WPN-CORE-061",
+          "DDB-WPN-CORE-062",
+          "DDB-WPN-CORE-063",
+          "DDB-WPN-CORE-064",
+          "DDB-WPN-CORE-065"
+        ]
+      }
+    },
+    {
+      "id": "balancedMarket",
+      "type": "boolean",
+      "label": "Balanced opening Market",
+      "default": false,
+      "description": "The opening Market row starts with the first affordable Attack, Defense and Kata in the shuffled Market Deck, then fills normally. Off: the opening row is the top seven cards.",
+      "whenOn": {
+        "openingRowGuarantees": [
+          {
+            "kind": "Attack",
+            "maxCost": 3
+          },
+          {
+            "kind": "Defense",
+            "maxCost": 3
+          },
+          {
+            "kind": "Kata",
+            "maxCost": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "houseRules",
+      "type": "house-rule-list",
+      "label": "House rules",
+      "default": [],
+      "description": "Optional house rules from content/rules.json houseRules. Only rules with an engine variant below can be enabled.",
+      "variants": [
+        {
+          "id": "market-scramble",
+          "set": {
+            "economy.market.stagnationRefresh": "after-every-round"
+          }
+        },
+        {
+          "id": "fast-belts",
+          "beltThresholds": {
+            "fromBelt": "Orange",
+            "reduceBy": 3,
+            "minimumAbovePrevious": 1
+          }
+        }
+      ]
+    }
+  ]
 }
