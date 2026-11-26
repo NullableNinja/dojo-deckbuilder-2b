@@ -228,10 +228,13 @@ test("Character Initiate Consumable cycling is a resumable headless choice", asy
   player.hand = [consumable];
   player.deck = [game.cardInstance(data.cards.find((card) => card.catalogId === "DDB-STA-CORE-002"))];
   assert.equal(game.applyAction({ type: "pass", playerId: player.id }), true);
-  assert.equal(game.getPendingChoice()?.kind, "cycle-discard-draw");
+  // "You may reveal it to draw 1 card, then discard 1 card": the Consumable stays in hand.
+  assert.equal(game.getPendingChoice()?.kind, "structured");
   assert.equal(game.getPendingChoice()?.options.some((option) => option.id === consumable.instanceId), true);
   assert.equal(game.resolveChoice({ optionId: consumable.instanceId }), true);
-  assert.equal(player.discard.includes(consumable), true);
+  assert.equal(player.hand.includes(consumable), true);
+  assert.equal(player.hand.length, 2);
+  assert.equal(game.getPendingChoice()?.kind, "card-movement");
 });
 
 test("Character Junk discard replacement exposes destroy-or-keep and Green follow-up", async () => {
@@ -245,6 +248,15 @@ test("Character Junk discard replacement exposes destroy-or-keep and Green follo
   assert.equal(game.getPendingChoice()?.kind, "discard-or-destroy");
   assert.equal(game.resolveChoice({ optionId: "destroy" }), true);
   assert.equal(player.destroyed.includes(junk), true);
+  assert.equal(game.getPendingChoice(), null, "the Green follow-up waits for Green Belt");
+  // Next round, at Green Belt, the Green Ability follows the destroy.
+  game.finishTurn(); game.finishTurn();
+  player.beltIndex = game.definition.progression.belts.findIndex((belt) => belt.id === "green");
+  const second = game.cardInstance(data.cards.find((card) => card.category === "Junk"));
+  player.hand = [second];
+  game.activePlayer = player.id;
+  assert.equal(game.discardCard(player, second), true);
+  assert.equal(game.resolveChoice({ optionId: "destroy" }), true);
   assert.equal(game.getPendingChoice()?.kind, "card-movement");
 });
 

@@ -616,6 +616,11 @@
       }
     },
     "progression": {
+      "greenAbility": {
+        "unlockBelt": "green",
+        "resolverNamespace": "character.green.",
+        "summary": "A Character's Green Ability (its effects in the character.green. resolver namespace) unlocks immediately upon reaching Green Belt."
+      },
       "xpPerHonor": 1,
       "attackXpOnHit": 1,
       "defenseXpOnBlock": 1,

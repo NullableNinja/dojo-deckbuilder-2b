@@ -66,6 +66,26 @@ Also fixed on Nov 26 (tests in `tests/engine-reversal.test.mjs`):
 
 The Quick Duel fingerprint moved from `340f87ee9f34a97de97560d1` to `d9c357ef5dba71bf9e18ca19`.
 
+Also fixed on Nov 27 (tests in `tests/engine-combos-characters.test.mjs`):
+
+- **Combos pay every part.** A Combo completed when its Attack is declared now also pays its on-Hit
+  and after-resolve parts in the same strike; its passive part applies once on completion. *Clock In,
+  Block Out* gained the owner-approved Reversal step in `content/combo-requirements.json`.
+- **Character abilities.** `engine/character-abilities.mjs` runs every Character resolver but one on
+  engine events (Attack declared, incoming Attack, damage, Hit, Block, card played, discard, Speed
+  change, equip, Scene Change, promotion, exam progress, Combo reveal, Initiate), with their once
+  per turn/round/game limits. Green abilities unlock at Green Belt (`progression.greenAbility`).
+  Character zone changes widen the Attack zone choice; *Librarian Lin* really reveals two Combos.
+- **Status durations and current Speed.** `nextTurn`, `duringNextTurn`, `nextInitiate`, `nextRound`,
+  `endOfTargetNextTurn`, `nextKata` and `scene` work; Speed statuses count toward current Speed,
+  initiative and Speed conditions.
+- **Market prices.** One price plan: printed cost, Item penalty, Purple discount, qualified discounts
+  with their floors, end-slot Equipment discounts and the Character price hook, known before buying.
+  A purchase consumes only the discounts it used and the refill takes the bought card's slot.
+- **Belts.** Attacks count toward the Brown exam's four cards; Training Stripes follow the mode flag.
+
+The Quick Duel fingerprint moved from `d9c357ef5dba71bf9e18ca19` to `084900af728bc7f20c2885ac`.
+
 Still open (the parity work in Phase 1 will find the rest):
 
 - **Tempo needs a faster fighter**: the rulebook and the mat grant Tempo only against a slower opposing
@@ -77,6 +97,10 @@ Still open (the parity work in Phase 1 will find the rest):
   because the engine does not set up a watcher when the Kata is played.
 - **Piercing** ignores all Defense in the engine; the rulebook says it ignores Armor only.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
+- **Ronin Reroll** (replace a revealed Market card or Location, once per game) is not triggered, and
+  "an opponent modifies your card" (*Coach Karen*) only sees opposing next-Attack and Guard penalties.
+- **Market leftovers:** restricted Focus, Location purchase modifiers, and the *Laminated Lunch
+  Voucher* qualifiers (5+ cards, minimum 4), which its canonical data does not carry yet.
 - **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
 - **Interfere** is not modelled (no current card uses it).
 

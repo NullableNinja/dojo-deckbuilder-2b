@@ -33,8 +33,9 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
     Reverse you). *Should it last until the end of your next turn?*
 13. Green Counter-Signature and Rental Chair Recoil read as Reversal bonuses but their data says "next
     Attack": the engine gives the bonus to a Reversal if you make one, otherwise to your next Attack. *OK?*
-14. **Clock In, Block Out** says "your Reversal" but its requirements have no Reversal step, so it
-    also fires on normal attacks. *Add a Reversal step to its canonical requirements?*
+14. ~~**Clock In, Block Out** says "your Reversal" but its requirements have no Reversal step, so it
+    also fires on normal attacks.~~ **Decided (Nov 27):** a Reversal step was added to its canonical
+    requirements.
 15. A Reversal does not count as "an Attack this turn" (turn counters, "two attacks hit this turn",
     impact Focus) but does count for the Honor-scoped exams. *OK?*
 16. Tag Team: if the attacker was swapped out before the window opens, the window is void. *OK?*
