@@ -57,3 +57,17 @@ test("a knockout voids a pending choice about the knocked-out fighter's cards", 
   game.processKnockouts();
   assert.equal(game.pendingChoice, null);
 });
+
+test("Witness Protection's Reversal protection lasts until the end of the holder's next turn (DDB-RUL-119)", () => {
+  const game = new Game(data, { seed: 4 });
+  const holder = game.players[1];
+  game.addStatus(holder, { action: "reversalProtection", duration: "throughNextTurn", sourceId: "test" });
+  assert.equal(game.hasStatus(holder, "reversalProtection"), true, "active straight away, during the opponent's turn");
+  game.expireStatuses(holder, "endOfTurn");
+  game.expireStatuses(holder, "endOfRound");
+  assert.equal(game.hasStatus(holder, "reversalProtection"), true, "survives the rest of the opponent's turn and round");
+  game.startTurnStatuses(holder);
+  assert.equal(game.hasStatus(holder, "reversalProtection"), true, "still active during the holder's own next turn");
+  game.expireStatuses(holder, "endOfTurn");
+  assert.equal(game.hasStatus(holder, "reversalProtection"), false, "ends when that turn ends");
+});

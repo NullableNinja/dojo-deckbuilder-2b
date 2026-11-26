@@ -3037,6 +3037,13 @@
         "tag": "Boss Blitz",
         "title": "Final Boss KO reward",
         "ruling": "Knocking out the Rival or Mini-Boss gives 5 XP instead of the normal +2. Knocking out the Final Boss gives the normal +2 KO XP, as its Stage card says, then Scenario Victory is checked."
+      },
+      {
+        "id": "DDB-RUL-119",
+        "filed": "Filed Nov 27, 2026",
+        "tag": "Cards",
+        "title": "Witness Protection Stance lasts through your next turn",
+        "ruling": "After Witness Protection Stance Blocks, you cannot be targeted by a Reversal until the end of your next turn (not just until it starts), so the protection covers the attacks it was meant to."
       }
     ],
     "glossary": [

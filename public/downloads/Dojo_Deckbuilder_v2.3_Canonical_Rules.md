@@ -1404,3 +1404,9 @@ As printed, a Boss Defense in Boss Guard reduces the damage of the next player A
 DDB-RUL-118 · Filed Nov 27, 2026 · Boss Blitz
 
 Knocking out the Rival or Mini-Boss gives 5 XP instead of the normal +2. Knocking out the Final Boss gives the normal +2 KO XP, as its Stage card says, then Scenario Victory is checked.
+
+### Witness Protection Stance lasts through your next turn
+
+DDB-RUL-119 · Filed Nov 27, 2026 · Cards
+
+After Witness Protection Stance Blocks, you cannot be targeted by a Reversal until the end of your next turn (not just until it starts), so the protection covers the attacks it was meant to.

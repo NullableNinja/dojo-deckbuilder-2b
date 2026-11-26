@@ -496,6 +496,8 @@ export class Game {
     this.expireStatuses(player, "startOfTurn");
     this.expireStatuses(player, "nextTurn");
     for (const status of player.statuses) if (status.duration === "duringNextTurn") status.duration = status.then ?? "endOfTurn";
+    // "Until the end of your next turn": active now, and ends when that turn ends.
+    for (const status of player.statuses) if (status.duration === "throughNextTurn") status.duration = "endOfTurn";
     const due = player.statuses.filter((status) => status.duration === "nextInitiate");
     player.statuses = player.statuses.filter((status) => status.duration !== "nextInitiate");
     for (const status of due) {
@@ -1721,7 +1723,7 @@ export class Game {
     if (resolver === "defense.forceNextAttackZone") { this.offerChoice({ kind: "structured", playerId: player.id, targetPlayerId: opponent.id, effectId: effect.id ?? null, resolver, options: zones.map((zone) => ({ id: zone, label: zone })) }); return true; }
     if (resolver === "defense.blockChoice") { this.offerChoice({ kind: "structured", playerId: player.id, effectId: effect.id ?? null, resolver, options: [{ id: "counter", label: "Prepare a counterattack" }, { id: "discount", label: "Discount your next purchase" }] }); return true; }
     // "You cannot be targeted by a Reversal until the start of your next turn."
-    if (resolver === "defense.reversalTargetProtection") { this.addStatus(player, { action: "reversalProtection", duration: "startOfTurn", sourceId: card.instanceId }); return true; }
+    if (resolver === "defense.reversalTargetProtection") { this.addStatus(player, { action: "reversalProtection", duration: "throughNextTurn", sourceId: card.instanceId }); return true; } // DDB-RUL-119
 
     if (resolver.startsWith("kata.")) {
       if (resolver === "kata.flowGrant") { player.nextAttackFlow = true; return true; }

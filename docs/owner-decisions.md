@@ -31,7 +31,7 @@ None open right now.
 | 6 | Open Market option | Removed once the missing Weapon art arrived. | Owner | Done |
 | 7 | Piercing | Ignores Armor only. | Owner | Done |
 | 8–11, 13, 15, 16 | Reversal details | As implemented (Tempo spent; next-Attack bonuses used; declining keeps the once-per-round Reversal; Tattoo Pass reading; bonus to the Reversal if made; not "an Attack this turn"; void if the attacker swapped). | Owner | Done |
-| 12 | Witness Protection Stance | Protection lasts until the end of your next turn. | Owner | To do |
+| 12 | Witness Protection Stance | Protection lasts until the end of your next turn (ruling DDB-RUL-119). | Owner | Done |
 | 14 | Clock In, Block Out | Requires a Reversal step. | Owner | Done |
 | 17–21 | Weapons in hand | Replace rather than block, always with a warning; player picks; restriction checked on equip; only subtype Weapon uses Hands; Fast Belts everywhere. | Owner | Done |
 | 22 | Steal the Belt, Friendly Fire | Engine variants for Clash and Tag Team, from the house-rule text. Friendly Fire: each fighter may attack a teammate once per round; that Attack earns no XP, task credit, KO reward, Tempo or Combo trigger. | Owner (spec: Claude) | To do |
