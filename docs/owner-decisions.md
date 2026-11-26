@@ -20,6 +20,16 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 | 13 | Reversal-or-next-Attack bonuses as implemented. | Kept |
 | 14 | Clock In, Block Out gets a Reversal step in its requirements. | In progress |
 | 15 | A Reversal doesn't count as "an Attack this turn" but counts for Honor-scoped exams. | Kept |
+| 16 | Tag Team: a Reversal window is void if the attacker was swapped out. | Kept |
+| 17 | A Weapon that doesn't fit replaces equipped Weapons, and the player is always warned first ("Swap Weapon" hint plus a confirm dialog). | Done |
+| 18–21 | Weapon replacement choice, two-handed restriction timing, Hands counting, Fast Belts in every mode: as implemented. | Kept |
+| 22 | Steal the Belt and Friendly Fire get rules for Clash and Tag Team. | To do (draft spec first) |
+| 23–24 | Shared-pool collections and Open Dojo. | Approved |
+| 25 | Everything is free of money, always; but extra Bosses and new Characters unlock over time. | Plan being revised |
+| 26–27 | Orientation Kit + Starter Kits; 8 themed series, packs only ever contain new cards, no duplicates. | Approved |
+| 28, 35 | No rarity tiers at all. | Plan being revised |
+| 29–34 | Tickets become Merit when complete; earn rates; Merit / Clearance Levels / Diplomas; series gating; rewards by table type; local storage with export codes. | Approved |
+
 
 ## A. Quick Duel on the engine
 
