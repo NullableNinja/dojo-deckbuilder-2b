@@ -65,3 +65,13 @@ Quick Duel presentation is intentionally consolidated into `app/globals.css`, `a
 ## Deployment
 
 `.github/workflows/deploy-pages.yml` runs the same `npm run verify` gate for pull requests and `main`, then deploys successful `main` builds to GitHub Pages.
+
+## License and forking
+
+Dojo Deckbuilder is free to download, change and share.
+
+- **Code** (engine, site, scripts, tests): MIT, see [`LICENSE`](LICENSE).
+- **Game content** (rules, card text, artwork, design docs): CC BY 4.0, see [`LICENSE-CONTENT.md`](LICENSE-CONTENT.md). Credit "Dojo Deckbuilder / Paper-Fu by NullableNinja and contributors" and link back.
+- **Fonts**: SIL Open Font License (files in `app/assets/fonts/`).
+
+To make your own variant, edit the JSON under `content/`, run `npm run game:generate`, and every part of the game (the browser mat, the simulator and the terminal engine) picks up the change. `docs/one-engine-plan.md` explains how the rules engine is organised.
