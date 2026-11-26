@@ -84,6 +84,16 @@ Still open (the parity work in Phase 1 will find the rest):
 
 Each phase ends green on `npm run verify` and is pushed on its own.
 
+**Progress (Nov 27):**
+- Phase 1 has a map: `docs/engine-parity-audit.md` compares 115 mat behaviours with the engine (29
+  same, 51 approximated, 35 missing). P1 fixes are under way.
+- Phase 2 is done: table options and house rules from JSON (`engine/table-options.mjs`), difficulty
+  policies (`engine/difficulty.mjs`), attack breakdown events, the Reversal window, the Weapon Hand
+  limit, and save/resume as setup + decisions (`app/engine-session.ts`).
+- Phase 3 is running side by side: `app/quick-duel-table.tsx` plays Quick Duel, Tag Team and Boss
+  Blitz on the engine with the mat's look. Players opt in with **Rules engine → Shared engine (beta)**
+  in setup; the classic mat stays the default until the P1 gaps are closed (owner decision 50).
+
 1. **Parity spec.** Turn the mat's certification scenarios (`runPlaytestRuntimeCertification`, 907
    card routes) and the `quick-duel-*` host tests into engine-level scenario tests. Every behaviour the
    mat has and the engine lacks becomes a failing test, then a generic engine fix driven by JSON

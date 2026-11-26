@@ -1,7 +1,7 @@
 // A browser session around the canonical engine: who sits where, which seats are human, and
 // the full list of decisions taken. Setup + decisions is the whole game, so the same record
 // drives save/resume, rematches and (later) peer-to-peer play. Framework-free on purpose.
-import { Game } from "../engine/core.mjs";
+import { createModeGame } from "../engine/game-factory.mjs";
 import { clashData, type EngineCard } from "./clash-engine.ts";
 import { difficultyPolicy } from "../engine/difficulty.mjs";
 
@@ -17,6 +17,7 @@ export type EngineSeat = {
   exhaustedEquipment: string[]; statuses: EngineStatus[]; learnedCombos: EngineCard[]; comboOffered: EngineCard | null;
   comboAttemptedThisTurn?: boolean; practiceUsed?: boolean; badHabitFocusUsed?: boolean; attackCount?: number;
   completedTasks: number[]; trainingStripes?: unknown; purchases?: number; plays?: number;
+  roster?: { character: EngineCard; hp?: number; maxHp?: number; knockedOut: boolean }[] | null; activeIndex?: number; isBoss?: boolean;
 };
 export type EngineGame = {
   seed: number; players: EngineSeat[]; phase: string; activePlayer: number; round: number; turnOrder: number[];
@@ -29,11 +30,14 @@ export type EngineGame = {
   canPromote(player: EngineSeat): boolean; statusValue(player: EngineSeat, action: string): number;
 };
 
+export type SessionMode = "quick-duel" | "standard-clash" | "tag-team" | "dojo-drama";
 export type SessionSetup = {
-  mode: "quick-duel" | "standard-clash";
+  mode: SessionMode;
   seed: number;
-  /** Fighter catalog IDs by seat. */
+  /** Fighter catalog IDs by seat (the first fighter of each roster in roster modes). */
   fighters: string[];
+  /** Tag Team and Boss Blitz: each player seat's three-fighter roster, by catalog ID. */
+  rosters?: string[][];
   humanSeats: number[];
   rulesVersion: string;
   /** Table options from content/dojo-game.json `tableOptions` (tempo, locations, market, house rules). */
@@ -69,12 +73,13 @@ export class EngineSession {
   constructor(setup: SessionSetup, policy?: BotPolicy) {
     this.setup = setup;
     this.policy = policy ?? (setup.difficulty ? difficultyPolicy(setup.difficulty) as BotPolicy : defaultPolicy);
-    this.game = new Game(clashData(), {
+    const seats = setup.rosters?.length ?? setup.fighters.length;
+    this.game = createModeGame(clashData(), {
       seed: setup.seed,
       mode: setup.mode,
-      players: setup.fighters.length,
-      characters: setup.fighters.map(characterFor),
-      strategies: setup.fighters.map(() => "balanced"),
+      players: seats,
+      ...(setup.rosters ? { rosters: setup.rosters } : { characters: setup.fighters.map(characterFor) }),
+      strategies: Array.from({ length: seats }, () => "balanced"),
       ...(setup.table ? { table: setup.table } : {}),
     }) as unknown as EngineGame;
     this.game.advanceAutomaticEvents();

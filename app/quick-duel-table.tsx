@@ -7,7 +7,7 @@ import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
 import { useCardMotion } from "./use-card-motion";
 import type { EngineCard } from "./clash-engine.ts";
-import { EngineSession, newSeed, type TableOptions, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
+import { EngineSession, newSeed, type SessionMode, type TableOptions, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 
@@ -30,7 +30,7 @@ type TableProps = {
 };
 
 export const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
-export type QuickDuelStart = { fighterId: string; opponentId: string } | "resume";
+export type QuickDuelStart = { mode?: SessionMode; fighterId: string; opponentId: string; team?: string[]; opponentTeam?: string[] } | "resume";
 export type QuickDuelMatProps = Omit<TableProps, "session" | "sessionKey" | "onSave"> & { start: QuickDuelStart; startKey: number; rulesVersion: string; table: TableOptions; difficulty: string };
 
 function readSaved(): SavedSession | null {
@@ -44,7 +44,9 @@ export default function QuickDuelMat({ start, startKey, rulesVersion, table, dif
       const saved = readSaved();
       return saved && saved.setup.rulesVersion === rulesVersion ? EngineSession.restore(saved) : null;
     }
-    return new EngineSession({ mode: "quick-duel", seed: newSeed(), fighters: [start.fighterId, start.opponentId], humanSeats: [HUMAN], rulesVersion, table, difficulty });
+    const mode = start.mode ?? "quick-duel";
+    const rosters = mode === "tag-team" ? [start.team!, start.opponentTeam!] : mode === "dojo-drama" ? [start.team!] : undefined;
+    return new EngineSession({ mode, seed: newSeed(), fighters: rosters ? rosters.map((roster) => roster[0]) : [start.fighterId, start.opponentId], ...(rosters ? { rosters } : {}), humanSeats: [HUMAN], rulesVersion, table, difficulty });
   });
   useEffect(() => {
     if (!session) { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); onExit(); }
@@ -183,7 +185,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     <header className="playtest-topbar battle-versus-hud">
       <HudFighter seat={human} side="player" title={agentName} />
       <div className="versus-center" aria-label={`Round ${game.round}`}><span>ROUND</span><b>{game.round}</b></div>
-      <HudFighter seat={computer} side="ai" title="COMPUTER" />
+      <HudFighter seat={computer} side="ai" title={computer.isBoss ? bossTitle(game) : "COMPUTER"} />
     </header>
 
     {over && <ResultCertificate game={game} onRematch={onRematch} onExit={onExit} />}
@@ -191,12 +193,12 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     <section className="playtest-arena">
       <div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>
       <section className="playtest-table">
-        <div className="fighter-column fighter-column--player"><SeatPanel game={game} seat={human} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
+        <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
         <div className="combat-stage-column">
           <CombatStage game={game} phase={phase} location={currentLocation} selected={selected} incoming={incoming} exchange={exchange} log={log} coach={guided ? coach : null} onInspect={setInspected} onDropCard={(instanceId) => { const card = human.hand.find((entry) => entry.instanceId === instanceId); if (card) useHandCard(card); }} />
           {phase === "ai-ready" && !over && <span className="ai-thinking"><i /><i /><i /> {game.pendingChoice ? "Computer is deciding" : "Clipboard thinking"}</span>}
         </div>
-        <div className="fighter-column fighter-column--enemy"><SeatPanel game={game} seat={computer} label="Computer" enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
+        <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
       </section>
     </section>
 
@@ -226,9 +228,39 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
 function HudFighter({ seat, side, title }: { seat: EngineSeat; side: "player" | "ai"; title: string }) {
   const percent = Math.max(0, Math.min(100, seat.hp / Math.max(1, seat.maxHp) * 100));
   return <div className={`battle-hud-fighter battle-hud-fighter--${side} hp-tier-${healthTier(seat.hp, seat.maxHp)}`} style={{ "--hp-progress": `${percent}%` } as CSSProperties}>
-    <span><small>{side === "player" ? "YOU" : "COMPUTER"} · {seat.character.name}</small></span><b>{title}</b>
+    <span><small>{side === "player" ? "YOU" : seat.isBoss ? "BOSS" : "COMPUTER"} · {seat.character.name}</small></span><b>{title}</b>
     <div><strong>{seat.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${seat.character.name} health`} aria-valuemin={0} aria-valuemax={seat.maxHp} aria-valuenow={seat.hp}><em style={{ width: `${percent}%` }} /></i></div>
   </div>;
+}
+
+function bossTitle(game: EngineGame) {
+  const boss = game as unknown as { stageIndex?: number; stage?: () => { title: string } | undefined };
+  const stage = typeof boss.stage === "function" ? boss.stage() : undefined;
+  return stage ? `${stage.title} · stage ${(boss.stageIndex ?? 0) + 1} of 3` : "Boss";
+}
+
+/** Tag Team / Boss Blitz roster: who is active, who is benched, who is down, and the tag buttons. */
+function EngineRosterRail({ seat, tags, onTag }: { seat: EngineSeat; tags: EngineAction[]; onTag?: (action: EngineAction) => void }) {
+  const roster = seat.roster ?? [];
+  const side = seat.id === HUMAN ? "player" : "ai";
+  const owner = side === "player" ? "Your team" : "Their team";
+  const standing = roster.filter((entry) => !entry.knockedOut).length;
+  return <section className={`roster-rail roster-rail--${side}`} aria-label={`${owner}: ${standing} of ${roster.length} fighters standing`}>
+    <header><span>{owner}</span><b>{standing} / {roster.length} standing</b></header>
+    <ol>{roster.map((entry, index) => {
+      const active = index === seat.activeIndex;
+      const hp = active ? seat.hp : entry.hp ?? 0;
+      const maxHp = active ? seat.maxHp : entry.maxHp ?? seat.maxHp;
+      const percent = Math.max(0, Math.min(100, Math.round(hp / Math.max(1, maxHp) * 100)));
+      const tag = tags.find((action) => action.fighterIndex === index);
+      const card = entry.character as MatCard;
+      return <li key={`${card.catalogId}-${index}`} className={`roster-slot${active ? " is-active" : ""}${entry.knockedOut ? " is-ko" : ""}`}>
+        <span className="roster-portrait" aria-hidden="true"><img src={fighterIllustrationUrl(card) ?? artistUrl(card) ?? cardPlaceholderUrl} alt="" />{entry.knockedOut && <b>K.O.</b>}</span>
+        <span className="roster-copy"><b>{card.name}</b><span className="roster-hp" role="meter" aria-label={`${card.name} HP`} aria-valuemin={0} aria-valuemax={maxHp} aria-valuenow={hp}><i style={{ width: `${percent}%` }} /></span><small>{entry.knockedOut ? "K.O." : active ? "On the mat" : `${hp}/${maxHp} HP`}</small></span>
+        {tag && onTag && <button type="button" className="roster-action roster-action--tag" data-label="Tag in" onClick={() => onTag(tag)} aria-label={`Tag ${card.name} in`} />}
+      </li>;
+    })}</ol>
+  </section>;
 }
 
 const ids = (cards: EngineCard[]) => cards.map((card) => card.id ?? card.catalogId);

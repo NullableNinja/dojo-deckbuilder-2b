@@ -2,7 +2,8 @@
 // everyone free to attack anyone. The canonical headless engine owns every rule; this component
 // only renders its state, offers its legal actions to you, and lets the bots take their turns.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { clashCardByCatalogId, createClashGame, type EngineCard } from "./clash-engine.ts";
+import { clashCardByCatalogId, clashData, type EngineCard } from "./clash-engine.ts";
+import { EngineSession, newSeed } from "./engine-session.ts";
 
 type Seat = {
   id: number; name: string; character: EngineCard; hp: number; maxHp: number; xp: number; beltIndex: number; focus: number;
@@ -30,6 +31,7 @@ type Props = {
   fighterArtFor: (card: EngineCard) => string | undefined;
   placeholder: string;
   reducedMotion: boolean;
+  difficulty?: string;
 };
 
 const HUMAN = 0;
@@ -37,10 +39,19 @@ const PHASE_LABEL: Record<string, string> = { Honor: "Honor", Initiate: "Initiat
 const PASS_LABEL: Record<string, string> = { Initiate: "Proceed to Yell", Yell: "Proceed to Ascend", Ascend: "Finish Ascend", Hide: "End turn (Hide)" };
 const num = (value: unknown) => Number.parseInt(String(value ?? 0), 10) || 0;
 
-export default function ClashTable({ fighterId, opponents, onExit, onRematch, artFor, fighterArtFor, placeholder, reducedMotion }: Props) {
-  const gameRef = useRef<Engine | null>(null);
-  if (!gameRef.current) gameRef.current = createClashGame({ fighterId, opponents }) as unknown as Engine;
-  const game = gameRef.current;
+/** Seat 0 is you; the other seats are distinct, randomly drawn fighters. */
+function clashSession(fighterId: string, opponents: number, difficulty?: string) {
+  const fighters = (clashData().cards as EngineCard[]).filter((card) => card.cardType === "Character");
+  const human = fighters.find((card) => card.id === fighterId || card.catalogId === fighterId) ?? fighters[0];
+  const pool = fighters.filter((card) => card.catalogId !== human.catalogId).sort(() => Math.random() - .5);
+  return new EngineSession({ mode: "standard-clash", seed: newSeed(), fighters: [human, ...pool.slice(0, opponents)].map((card) => card.catalogId), humanSeats: [HUMAN], rulesVersion: "clash", difficulty });
+}
+
+export default function ClashTable({ fighterId, opponents, onExit, onRematch, artFor, fighterArtFor, placeholder, reducedMotion, difficulty }: Props) {
+  const sessionRef = useRef<EngineSession | null>(null);
+  if (!sessionRef.current) sessionRef.current = clashSession(fighterId, opponents, difficulty);
+  const session = sessionRef.current;
+  const game = session.game as unknown as Engine;
   const [tick, setTick] = useState(0);
   const [targetId, setTargetId] = useState<number | null>(null);
   const [watching, setWatching] = useState(false);
@@ -55,22 +66,7 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
   useEffect(() => {
     if (over || (humanToAct && !humanOut) || (humanOut && !watching)) return;
     const timer = window.setTimeout(() => {
-      const before = game.events.length;
-      for (let step = 0; step < 40 && game.winner === null; step += 1) {
-        game.advanceAutomaticEvents();
-        const pending = game.pendingChoice;
-        if (pending) {
-          if (pending.playerId === HUMAN && !human.eliminated) break;
-          game.resolveChoice(game.defaultChoice());
-        } else if (game.activePlayer === HUMAN && !human.eliminated) {
-          if (game.phase === "Honor") game.applyAction({ type: "pass", playerId: HUMAN }); else break;
-        } else {
-          const legal = game.getLegalActions(game.activePlayer);
-          if (!legal.length) break;
-          game.applyAction(game.defaultAction(legal));
-        }
-        if (game.events.slice(before).some((event) => ["attack", "knockout", "elimination", "promotion", "victory"].includes(event.type))) break;
-      }
+      session.stepBots();
       rerender();
     }, reducedMotion ? 120 : 520);
     return () => window.clearTimeout(timer);
@@ -81,8 +77,8 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
   const legal = !over && !game.pendingChoice && game.activePlayer === HUMAN ? game.getLegalActions(HUMAN) : [];
   const targets = game.legalTargets(human);
   const target = targets.find((seat) => seat.id === targetId) ?? targets[0] ?? null;
-  const act = (action: Action) => { if (game.applyAction(action)) rerender(); };
-  const choose = (optionId: string) => { if (game.resolveChoice({ optionId })) rerender(); };
+  const act = (action: Action) => { if (session.act(action)) rerender(); };
+  const choose = (optionId: string) => { if (session.choose(optionId)) rerender(); };
   const pass = legal.find((action) => action.type === "pass" || action.type === "hide");
   const actionsFor = (card: EngineCard) => legal.filter((action) => action.cardId === card.instanceId);
 

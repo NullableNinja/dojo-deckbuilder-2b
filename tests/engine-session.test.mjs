@@ -45,3 +45,16 @@ test("a corrupted save does not replay", () => {
   saved.decisions.splice(3, 0, { kind: "action", action: { type: "purchase", playerId: 0, cardId: "nope" } });
   assert.equal(EngineSession.restore(saved), null);
 });
+
+test("Tag Team and Boss Blitz sessions play to a winner and replay exactly", () => {
+  const ids = fighters;
+  for (const [mode, rosters] of [["tag-team", [ids.slice(0, 3), ids.slice(3, 6)]], ["dojo-drama", [ids.slice(6, 9)]]]) {
+    const session = new EngineSession({ mode, seed: 13, fighters: rosters.map((roster) => roster[0]), rosters, humanSeats: [], rulesVersion: "test", difficulty: "certified" });
+    for (let beat = 0; beat < 20000 && !session.over; beat += 1) session.stepBots();
+    assert.notEqual(session.game.winner, null, mode);
+    assert.equal(session.stuck, null, mode);
+    const restored = EngineSession.restore(JSON.parse(JSON.stringify(session.save())));
+    assert.ok(restored, mode);
+    assert.equal(snapshot(restored), snapshot(session), mode);
+  }
+});
