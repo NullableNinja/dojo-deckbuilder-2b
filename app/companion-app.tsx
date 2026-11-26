@@ -24,6 +24,7 @@ import { RulesReader } from "./rules-reader";
 import { DetailModal } from "./detail-modal";
 import { GlossaryPage } from "./glossary-page";
 import { QuickstartSetup } from "./quickstart-setup";
+import { EvidenceBoard } from "./evidence-board";
 import "./rulings-docket.css";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
@@ -436,7 +437,11 @@ function StoryView({ goTo }: { goTo: (view: ViewId) => void }) {
   return <main className="page-shell shell story-page">
     <SectionHeader eyebrow="The Backstory" title="The field test was approved. The filing cabinet was not." intro="The official Paper-Fu origin, preserved by the Department of Competitive Safety and immediately declared ancient history." art={headerBackstoryUrl} />
     <section className="story-lede paper-stack"><i className="fastener tape-strip story-tape" aria-hidden="true" /><span className="story-dropcap">P</span><div><span className="eyebrow">The Department’s original mistake</span><h2>{storyParagraphs[1]}</h2></div></section>
-    <section className="story-panels"><article className="paper-stack"><span>01</span><h2>The Expo</h2><p>{storyParagraphs[2]}</p><i>coupons · ferret · fire marshal</i></article><article className="paper-stack"><span>02</span><h2>The Cabinet</h2><p>{storyParagraphs[3]}</p><i>TAX RECEIPTS → ancient wisdom</i></article><article className="paper-stack"><span>03</span><h2>The Tournament</h2><p>{storyParagraphs[4]}</p><i>delegations · field test · Model Dojo</i></article></section>
+    <EvidenceBoard exhibits={[
+      { title: "The Expo", text: storyParagraphs[2], tag: "coupons · ferret · fire marshal" },
+      { title: "The Cabinet", text: storyParagraphs[3], tag: "TAX RECEIPTS → ancient wisdom" },
+      { title: "The Tournament", text: storyParagraphs[4], tag: "delegations · field test · Model Dojo" },
+    ]} />
     <section className="golden-rule-card paper-stack"><div><span className="eyebrow">The Golden Rule</span><h2>The card wins.</h2></div><p>{GOLDEN_RULE}</p><span className="golden-stamp" aria-hidden="true">!</span></section>
     <section className="story-cta paper-stack"><div><span className="eyebrow">Enough lore?</span><h2>Go make the Department regret funding this.</h2></div><button className="button primary" onClick={() => goTo("quickstart")}>Set up the first fight →</button></section>
   </main>;
