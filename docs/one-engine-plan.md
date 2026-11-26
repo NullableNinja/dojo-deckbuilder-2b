@@ -53,17 +53,31 @@ Also fixed on Nov 26 (tests in `tests/engine-table-options.test.mjs`; the finger
   Scramble and Fast Belts are executable house-rule variants. `game.tableOptions` exposes the resolved
   options and `setup.table` records them for replays.
 
+Also fixed on Nov 26 (tests in `tests/engine-reversal.test.mjs`):
+
+- **Reversal window.** After a Defense card Blocks, the defender gets a `reversal` choice (once per
+  round) and the chosen Attack resolves through the normal pipeline against the original attacker, who
+  may defend. Reversals earn no Focus, draw no Flow card, cannot trigger another Reversal and stay out
+  of the owner's turn sequence. "If played as a Reversal" conditions now read the timing, not the
+  card's Reversal tag, and "your Reversal against that attacker gets +X" text arms a bonus only a
+  Reversal consumes.
+- **Rich combat records.** The `attack` event carries `zone`, `reversal` and a `breakdown` of labelled
+  Attack and Defense parts plus prevented damage and piercing.
+
+The Quick Duel fingerprint moved from `340f87ee9f34a97de97560d1` to `d9c357ef5dba71bf9e18ca19`.
+
 Still open (the parity work in Phase 1 will find the rest):
 
-- **Reversal window**: after a successful block the defender may counter with a Reversal. The mat has
-  it; the engine does not.
 - **Tempo needs a faster fighter**: the rulebook and the mat grant Tempo only against a slower opposing
   fighter, and allow it on a Defense (+1 Guard). The engine spends it on the first Attack of the round
   regardless of Speed. Fixing it will move the fingerprint.
+- **After-Block Reaction Items** (e.g. a Reaction whose only timing is "after you Block") are never
+  offered by the engine; only Reactions that act when an Attack is declared are.
+- **Kata watchers**: Kata effects that trigger later on Hit, Block or after an attack never fire,
+  because the engine does not set up a watcher when the Kata is played.
+- **Piercing** ignores all Defense in the engine; the rulebook says it ignores Armor only.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
 - **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
-- **Rich combat records**: the mat's stage, impact readout and VFX need the attack breakdown and
-  modifier notes per exchange. The engine's `attack` event needs to carry them.
 - **Interfere** is not modelled (no current card uses it).
 
 ## Phases

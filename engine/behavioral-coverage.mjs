@@ -129,7 +129,8 @@ function setConditionValue(game, player, opponent, context, effect, condition) {
   else if (kind === "attackUsesEquipmentTagAny") context.attackCard = { ...context.attackCard, tags: [...new Set([...(context.attackCard?.tags ?? []), ...(Array.isArray(expected) ? expected : [expected])])] };
   else if (kind === "sourceArmorHelpedBlock") context.block = expected ? 1 : 0;
   else if (kind === "firstArmorBlockThisRound") player.turnStats.armorBlocksThisRound = expected ? 0 : 1;
-  else if (kind === "currentAttackIsNormal") context.attackCard = { ...context.attackCard, tags: expected ? (context.attackCard?.tags ?? []).filter((tag) => tag !== "Reversal") : [...new Set([...(context.attackCard?.tags ?? []), "Reversal"])] };
+  else if (kind === "currentAttackIsNormal") context.isReversal = !(expected ?? true);
+  else if (kind === "playedAsReversal" || kind === "attackIsReversal") context.isReversal = Boolean(expected ?? true);
   else if (kind === "hasNotAttackedThisTurn") player.attackCount = expected ? 1 : 2;
   else if (kind === "firstHighAttackThisTurn") { player.attackCount = expected ? 1 : 2; context.zone = expected ? "High" : "Low"; }
   else if (kind === "afterOpponentCommitsDefense") context.defensePlayed = Boolean(expected);
