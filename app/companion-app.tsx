@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AVATAR_IMAGES } from "./avatar-catalog";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
@@ -17,16 +17,25 @@ import highGuardArtUrl from "./assets/cards/starters/ddb-sta-core-009_high-guard
 import cardsJson from "./data/cards.json";
 import { CANONICAL_RULES, COMBAT_FORMULA_TEXT, COMBAT_SEQUENCE, COMBAT_XP_RULE, DEFENSE_WITHOUT_CARD_RULE, GAME_MODES as CANONICAL_GAME_MODES, HAND_SIZE, PHASES as CANONICAL_PHASES, PHASE_DETAILS as CANONICAL_PHASE_DETAILS, ROUND_STRUCTURE_SUMMARY, RULE_PRIORITY, SETUP_STEPS, STARTER_CARDS as CANONICAL_STARTER_CARDS, STARTER_EXAMPLES, TABLE_JUDGE_STEPS } from "./canonical-presentation";
 import { PAPER_FU_TOAST_EVENT, type PaperFuToastDetail } from "./paper-fu-events";
+import { paperScrollBehavior, ToastContext, usePaperToast, type ToastInput, type ToastKind } from "./paper-toast-context";
+import { SectionHeader } from "./section-header";
+import { CardLibrary } from "./card-library";
+import { RulesReader } from "./rules-reader";
+import { DetailModal } from "./detail-modal";
+import { GlossaryPage } from "./glossary-page";
+import { QuickstartSetup } from "./quickstart-setup";
+import { EvidenceBoard } from "./evidence-board";
+import "./rulings-docket.css";
+import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
 import SettingsPage from "./settings-page";
 import { ModeCard, modeMetaFor } from "./mode-card";
 import { navigate, readRoute, replaceRoute, subscribeToRoute, topLevelRoute, type RulingsTab, type SitePage, type SiteRoute } from "./routing";
-import { ALL_GLOSSARY_ENTRIES, SEARCH_GROUP_LABELS, cardSearchText, groupSearchResults, normalizeSearchQuery, publicCardDetails, searchDojo, type CardEntry, type SearchResult } from "./search";
+import { SEARCH_GROUP_LABELS, cardSearchText, groupSearchResults, normalizeSearchQuery, publicCardDetails, searchDojo, type CardEntry, type SearchResult } from "./search";
 import { DESKTOP_NAVIGATION, MOBILE_BOTTOM_NAVIGATION, MOBILE_MENU_NAVIGATION, navigationItemIsActive } from "./site-navigation";
 import { AVATAR_OPTIONS, applyThemeToDocument, readInitialTheme, readUserPreferences, THEME_STORAGE_KEY, updateUserPreferences, type AccentKey, type AvatarKey, type PresentationPreferences } from "./user-preferences";
 
-const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 // The game client is the largest chunk; load it only when someone opens the mat.
 const PlaytestView = lazy(() => import("./playtest"));
 const MatLoading = () => <div className="mat-loading" role="status"><b>Unfolding the mat…</b><span>Filing your fighter paperwork.</span></div>;
@@ -157,33 +166,18 @@ type RuleChapter = { id: string; number: number; title: string; fullTitle: strin
 type HouseRule = { id: string; name: string; rule: string; category?: string; summary?: string; notes?: string; quickDuel: { status: "supported" | "planned" | "not-applicable"; reason: string } };
 type OfficialRuling = { id: string; filed: string; tag: string; title: string; ruling: string };
 type Theme = "light" | "dark";
-export type ToastKind = "note" | "success" | "warning" | "stamp" | "critical";
-export type ToastInput = { kind?: ToastKind; eyebrow?: string; title: string; message?: string; duration?: number; variant?: number };
+export type { ToastKind, ToastInput };
 type PaperToast = ToastInput & { id: number };
 
 let toastSequence = 0;
-const ToastContext = createContext<(toast: ToastInput) => void>(() => undefined);
-const usePaperToast = () => useContext(ToastContext);
 const paperHaptic = (pattern: number | number[] = 8) => {
   if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") navigator.vibrate(pattern);
 };
-const paperScrollBehavior = (): ScrollBehavior => typeof window !== "undefined" && (document.documentElement.dataset.motion === "reduced" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "auto" : "smooth";
 
 const cardData = cardsJson as unknown as { version: string; cards: CardEntry[]; counts: Record<string, number>; decks: string[]; total: number };
 const rulesData = CANONICAL_RULES as unknown as { version: string; chapters: RuleChapter[]; officialRulings: OfficialRuling[]; glossary: { term: string; meaning: string }[]; houseRules: HouseRule[] };
-const BINDER_STORAGE_KEY = "dojo-binder-v1";
-const readStoredStringSet = (key: string) => {
-  if (typeof window === "undefined") return new Set<string>();
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(key) ?? "[]");
-    return new Set<string>(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : []);
-  } catch {
-    return new Set<string>();
-  }
-};
 const storyChapter = rulesData.chapters.find((chapter) => chapter.number === 1);
 const ruleChapters = rulesData.chapters.filter((chapter) => chapter.number >= 1 && chapter.number <= 16);
-const GLOSSARY_ENTRIES = ALL_GLOSSARY_ENTRIES;
 const DOWNLOADS = {
   fullRules: `${import.meta.env.BASE_URL}downloads/Dojo_Deckbuilder_v2.3_Full_Rules.docx`,
   canonicalRules: `${import.meta.env.BASE_URL}downloads/Dojo_Deckbuilder_v2.3_Canonical_Rules.md`,
@@ -237,51 +231,15 @@ const GOLDEN_RULE = ruleChapters.flatMap((chapter) => [...chapter.intro, ...chap
   .find((text) => text.startsWith("THE GOLDEN RULE\n"))
   ?.replace("THE GOLDEN RULE\n", "") ?? "When a card directly contradicts this rulebook, the card wins.";
 
-const displayRuleNumber = (chapter: RuleChapter) => String(ruleChapters.findIndex((entry) => entry.id === chapter.id) + 1).padStart(2, "0");
 
 const initialAccent = (): AccentKey => readUserPreferences().accent;
 const initialDisplayName = (): string => readUserPreferences().displayName;
 const initialAvatar = (): AvatarKey => readUserPreferences().avatar;
 const OFFICIAL_RULINGS = rulesData.officialRulings;
+const RULING_TOPICS = [...new Set(OFFICIAL_RULINGS.map((entry) => entry.tag))].sort();
 
-const valueLabel = (value: string | number | null | undefined) => value === null || value === undefined || value === "" ? "—" : String(value);
-const numeric = (value: string | number | null | undefined) => {
-  if (typeof value === "number") return value;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
-};
 const cardImageUrl = (card: CardEntry) => card.image ? CARD_IMAGE_URLS[card.image] ?? card.image : COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId] ?? cardPlaceholderUrl;
 const hasCardArt = (card: CardEntry) => Boolean(card.image || COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId]);
-
-function RuleTable({ rows }: { rows: (string | number)[][] }) {
-  if (!rows.length) return null;
-  if (rows.length === 1 || (rows[0]?.length === 1 && rows.length <= 2)) {
-    return <aside className="rule-callout">{rows.flat().filter(Boolean).map((cell, index) => <p key={index}>{cell}</p>)}</aside>;
-  }
-  const [head, ...body] = rows;
-  return <div className="table-scroll"><table className="rule-table"><thead><tr>{head.map((cell, index) => <th scope="col" key={index}>{cell}</th>)}</tr></thead><tbody>{body.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td data-label={String(head[cellIndex] ?? "")} key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;
-}
-
-function RuleBlocks({ blocks }: { blocks: RuleBlock[] }) {
-  const content: ReactNode[] = [];
-  let bullets: string[] = [];
-  const flush = () => {
-    if (!bullets.length) return;
-    content.push(<ul className="rule-bullets" key={`bullets-${content.length}`}>{bullets.map((bullet, index) => <li key={index}>{bullet}</li>)}</ul>);
-    bullets = [];
-  };
-  blocks.forEach((block, index) => {
-    if (block.kind === "bullet") return void bullets.push(block.text);
-    flush();
-    content.push(block.kind === "table" ? <RuleTable rows={block.rows} key={`table-${index}`} /> : <p key={`p-${index}`}>{block.text}</p>);
-  });
-  flush();
-  return <>{content}</>;
-}
-
-function SectionHeader({ eyebrow, title, intro, art }: { eyebrow: string; title: string; intro: string; art: string }) {
-  return <header className="section-header paper-stack"><i className="fastener paperclip header-paperclip" aria-hidden="true" /><div className="section-header-copy"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{intro}</p><div className="section-header-foot"><span>DEPARTMENT ARCHIVE · OPEN FILE</span><b>Handle with confidence</b></div></div><div className="section-header-art" aria-hidden="true"><span className="section-header-art-label">FORM 00{eyebrow.length % 7 + 1} · VISUAL EVIDENCE</span><img src={art} alt="" decoding="async" /><span className="section-header-art-stamp">CLEARED<br />FOR TABLE USE</span></div></header>;
-}
 
 function BrandMark() {
   // Origami shuriken: the same mark as public/favicon.svg.
@@ -369,30 +327,6 @@ function CombatExample() {
   </article>;
 }
 
-function DetailModal({ eyebrow, title, children, onClose, accent = "red" }: { eyebrow: string; title: string; children: ReactNode; onClose: () => void; accent?: "red" | "green" | "gold" }) {
-  const modalRef = useRef<HTMLElement>(null);
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-  useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); onCloseRef.current(); return; }
-      if (event.key !== "Tab") return;
-      const focusable = Array.from(modalRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? []);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", close);
-    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", close); previouslyFocused?.focus({ preventScroll: true }); };
-  }, []);
-  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><article ref={modalRef} className={`detail-modal paper-stack accent-${accent}`} role="dialog" aria-modal="true" aria-labelledby="detail-modal-title"><i className="modal-burst" aria-hidden="true" /><button autoFocus className="modal-close" onClick={onClose} aria-label="Close details">×</button><span className="eyebrow">{eyebrow}</span><h2 id="detail-modal-title">{title}</h2>{children}</article></div>, document.body);
-}
-
 const fighterCutoutModules = import.meta.glob<string>("./assets/fighters/*.webp", { eager: true, query: "?url", import: "default" });
 const FIGHTER_CUTOUTS: Record<string, string> = Object.fromEntries(Object.entries(fighterCutoutModules).map(([path, url]) => [path.split("/").at(-1)?.replace(/\.webp$/i, "") ?? path, url]));
 const fighterSlug = (name: string) => name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -400,8 +334,7 @@ type HomeFighter = { card: CardEntry; art: string };
 const HOME_FIGHTERS: HomeFighter[] = cardData.cards
   .filter((card) => card.cardType === "Character")
   .flatMap((card) => { const art = FIGHTER_CUTOUTS[fighterSlug(card.name)]; return art ? [{ card, art }] : []; });
-const PRINTED_CARDS = cardData.cards.filter((card) => hasCardArt(card) && card.cardType !== "Character" && card.cardType !== "Boss");
-const dayNumber = () => Math.floor(Date.now() / 86_400_000);
+const PRINTED_CARDS = cardData.cards.filter((card) => hasCardArt(card) && isFeaturable(card));
 const boutFor = (seed: number): [number, number] => {
   const total = HOME_FIGHTERS.length;
   const left = ((seed * 7919) % total + total) % total;
@@ -427,7 +360,7 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
   const [cardSeed, setCardSeed] = useState(dayNumber);
   const [left, right] = boutFor(boutSeed);
   const daily = boutSeed === dayNumber();
-  const featuredCard = PRINTED_CARDS[((cardSeed * 2_654_435) % PRINTED_CARDS.length + PRINTED_CARDS.length) % PRINTED_CARDS.length];
+  const featuredCard = pickBySeed(PRINTED_CARDS, cardSeed);
   const phase = CANONICAL_PHASES[phaseIndex];
   const movePhase = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     const last = CANONICAL_PHASES.length - 1;
@@ -504,7 +437,11 @@ function StoryView({ goTo }: { goTo: (view: ViewId) => void }) {
   return <main className="page-shell shell story-page">
     <SectionHeader eyebrow="The Backstory" title="The field test was approved. The filing cabinet was not." intro="The official Paper-Fu origin, preserved by the Department of Competitive Safety and immediately declared ancient history." art={headerBackstoryUrl} />
     <section className="story-lede paper-stack"><i className="fastener tape-strip story-tape" aria-hidden="true" /><span className="story-dropcap">P</span><div><span className="eyebrow">The Department’s original mistake</span><h2>{storyParagraphs[1]}</h2></div></section>
-    <section className="story-panels"><article className="paper-stack"><span>01</span><h2>The Expo</h2><p>{storyParagraphs[2]}</p><i>coupons · ferret · fire marshal</i></article><article className="paper-stack"><span>02</span><h2>The Cabinet</h2><p>{storyParagraphs[3]}</p><i>TAX RECEIPTS → ancient wisdom</i></article><article className="paper-stack"><span>03</span><h2>The Tournament</h2><p>{storyParagraphs[4]}</p><i>delegations · field test · Model Dojo</i></article></section>
+    <EvidenceBoard exhibits={[
+      { title: "The Expo", text: storyParagraphs[2], tag: "coupons · ferret · fire marshal" },
+      { title: "The Cabinet", text: storyParagraphs[3], tag: "TAX RECEIPTS → ancient wisdom" },
+      { title: "The Tournament", text: storyParagraphs[4], tag: "delegations · field test · Model Dojo" },
+    ]} />
     <section className="golden-rule-card paper-stack"><div><span className="eyebrow">The Golden Rule</span><h2>The card wins.</h2></div><p>{GOLDEN_RULE}</p><span className="golden-stamp" aria-hidden="true">!</span></section>
     <section className="story-cta paper-stack"><div><span className="eyebrow">Enough lore?</span><h2>Go make the Department regret funding this.</h2></div><button className="button primary" onClick={() => goTo("quickstart")}>Set up the first fight →</button></section>
   </main>;
@@ -533,161 +470,13 @@ function QuickStartView({ goTo }: { goTo: (view: ViewId) => void }) {
 
     <section className="golden-rule-card quick-golden paper-stack"><div><span className="eyebrow">The table agreement</span><h2>The card wins.</h2></div><p>{GOLDEN_RULE}</p><span className="golden-stamp" aria-hidden="true">!</span></section>
 
-    <section className="paper-panel setup-panel paper-stack quickstart-step-block" id="quickstart-setup"><div className="quickstart-step-heading"><span className="step-stamp">01</span><div><span className="eyebrow">Set the table</span><h2>{setup.length} things before the first HIYAH</h2><p>Put the right paper on the mat, then let the table get delightfully unreasonable.</p></div><span className="quickstart-step-status">READY<br />TO FILE</span></div><ol className="setup-list">{setup.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></li>)}</ol><StarterDeckLesson jabArt={starterJabArtUrl} guardArt={highGuardArtUrl} /></section>
+    <QuickstartSetup steps={setup} onPlay={() => goTo("playtest")}><StarterDeckLesson jabArt={starterJabArtUrl} guardArt={highGuardArtUrl} /></QuickstartSetup>
 
     <section className="quick-section interactive-round quickstart-step-block" id="quickstart-round"><div className="quickstart-step-heading"><span className="step-stamp">02</span><div><span className="eyebrow">Play the round</span><h2>Honor once. Then each player completes I.Y.A.H.</h2><p className="round-clarifier">{ROUND_STRUCTURE_SUMMARY}</p></div><span className="quickstart-step-status">ONE LOOP<br />FIVE BEATS</span></div><div className="quick-phases">{CANONICAL_PHASES.map((phase, index) => <button className={selectedPhase === index ? "active" : ""} onClick={() => setSelectedPhase(index)} key={phase.name}><span>{phase.letter}</span><div><small>{index === 0 ? "Once per round" : "Each player"}</small><h3>{phase.name}</h3><p>{phase.text}</p></div></button>)}</div><article className="phase-explainer paper-stack"><div><span className="phase-explainer-letter">{CANONICAL_PHASES[selectedPhase].letter}</span><div><span className="eyebrow">{CANONICAL_PHASE_DETAILS[selectedPhase].when}</span><h3>{CANONICAL_PHASE_DETAILS[selectedPhase].name}</h3><p>{CANONICAL_PHASE_DETAILS[selectedPhase].who}</p></div></div><ol>{CANONICAL_PHASE_DETAILS[selectedPhase].steps.map((step) => <li key={step}>{step}</li>)}</ol><blockquote>{CANONICAL_PHASE_DETAILS[selectedPhase].quip}</blockquote></article></section>
 
     <section className="combat-primer paper-stack quickstart-step-block"><div className="combat-copy"><span className="eyebrow">Combat</span><h2>Attack a zone. Let everybody interfere.</h2><ol>{COMBAT_SEQUENCE.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="formula-card"><span>Final combat formula</span><p>{COMBAT_FORMULA_TEXT}</p></div><CombatExample /></section>
     <section className="quick-footer-card paper-stack"><div><span className="eyebrow">The whole game</span><h2>Fight → focus → stronger cards → belt tasks → win.</h2><p>Need every edge case? The complete online rulebook stays one click away.</p></div><button className="button primary" onClick={() => goTo("rules")}>Open the full rules</button></section>
     {selectedMode && <DetailModal eyebrow={`${selectedMode.players} · ${selectedMode.fighters}`} title={selectedMode.title} onClose={() => setSelectedMode(null)} accent={selectedMode.id === "tag-team" ? "green" : "red"}><p className="modal-lede">{selectedMode.detail}</p><div className="modal-win"><span>How to win</span><strong>{selectedMode.win}</strong></div>{selectedMode.notes.length > 0 && <ul className="modal-list">{selectedMode.notes.map((note) => <li key={note}>{note}</li>)}</ul>}</DetailModal>}
-  </main>;
-}
-
-function RulesView({ initialChapterId = "", initialSectionId = "" }: { initialChapterId?: string; initialSectionId?: string }) {
-  const [selectedId, setSelectedId] = useState(() => ruleChapters.some((chapter) => chapter.id === initialChapterId) ? initialChapterId : ruleChapters[0]?.id ?? "");
-  const [query, setQuery] = useState("");
-  const [activeSectionId, setActiveSectionId] = useState(initialSectionId);
-  useEffect(() => {
-    setSelectedId(ruleChapters.some((chapter) => chapter.id === initialChapterId) ? initialChapterId : ruleChapters[0]?.id ?? "");
-  }, [initialChapterId]);
-  const selected = ruleChapters.find((chapter) => chapter.id === selectedId) ?? ruleChapters[0];
-  const selectedIndex = ruleChapters.findIndex((chapter) => chapter.id === selected.id);
-  useEffect(() => {
-    const sectionIds = selected.sections.map((section) => section.id);
-    if (!sectionIds.length) { setActiveSectionId(""); return; }
-    setActiveSectionId((current) => initialSectionId && sectionIds.includes(initialSectionId) ? initialSectionId : sectionIds.includes(current) ? current : sectionIds[0]);
-    const sections = sectionIds.map((id) => document.getElementById(id)).filter((node): node is HTMLElement => node instanceof HTMLElement);
-    if (!sections.length || !("IntersectionObserver" in window)) return;
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) setActiveSectionId(visible[0].target.id);
-    }, { rootMargin: "-18% 0px -68% 0px", threshold: 0 });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [initialSectionId, selected.id]);
-  useEffect(() => {
-    if (!initialSectionId || query) return;
-    const frame = window.requestAnimationFrame(() => document.getElementById(initialSectionId)?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-    return () => window.cancelAnimationFrame(frame);
-  }, [initialSectionId, query, selected.id]);
-  const matches = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    if (!term) return [];
-    return ruleChapters.flatMap((chapter) => {
-      const sections = chapter.sections.filter((entry) => JSON.stringify(entry).toLocaleLowerCase().includes(term));
-      const overview = JSON.stringify([chapter.title, chapter.intro]).toLocaleLowerCase().includes(term);
-      return [...(overview ? [{ chapter, section: undefined }] : []), ...sections.map((section) => ({ chapter, section }))];
-    });
-  }, [query]);
-  const chooseChapter = (id: string) => {
-    setSelectedId(id);
-    setQuery("");
-    navigate({ page: "rules", chapterId: id });
-    window.requestAnimationFrame(() => document.getElementById("rule-reader")?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  const chooseSection = (id: string) => {
-    setActiveSectionId(id);
-    navigate({ page: "rules", chapterId: selected.id, sectionId: id });
-    window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  const chooseSearchResult = (chapterId: string, sectionId?: string) => {
-    setQuery("");
-    navigate({ page: "rules", chapterId, sectionId });
-    if (!sectionId) window.requestAnimationFrame(() => document.getElementById("rule-reader")?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  return <main className="rules-page shell page-shell">
-    <SectionHeader eyebrow="Official game guide" title="Full rules." intro="Find a chapter, search a term, and get back to the table." art={headerRulesUrl} />
-        <div className="rules-toolbar"><label className="search-box large"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all rules—Flow, Tempo, KO, Combo…" aria-label="Search all rules" />{query && <button onClick={() => setQuery("")} aria-label="Clear rules search">×</button>}</label><span className="source-badge">{ruleChapters.length} focused chapters · filed for table use</span></div>
-    <label className="mobile-chapter-picker"><span>Jump to a chapter</span><select value={selected.id} onChange={(event) => chooseChapter(event.target.value)}>{ruleChapters.map((chapter) => <option value={chapter.id} key={chapter.id}>{displayRuleNumber(chapter)} · {chapter.title}</option>)}</select></label>
-    {query ? <section className="rule-search-results" aria-live="polite"><h2>{matches.length} matching section{matches.length === 1 ? "" : "s"}</h2>{matches.length ? matches.map(({ chapter, section }) => <button key={`${chapter.id}-${section?.id ?? "overview"}`} onClick={() => chooseSearchResult(chapter.id, section?.id)}><span>Chapter {displayRuleNumber(chapter)} · {chapter.title}</span><h3>{section?.title ?? "Chapter overview"}</h3><p>Open this match</p></button>) : <div className="empty-state"><strong>No rule found.</strong><p>Try a shorter term or search the Card Library for printed card text.</p></div>}</section> :
-      <div className="rules-layout" id="rule-reader"><aside className="chapter-nav" aria-label="Rule chapters"><span>Contents</span>{ruleChapters.map((chapter) => <button aria-current={chapter.id === selected.id ? "page" : undefined} className={chapter.id === selected.id ? "active" : ""} onClick={() => chooseChapter(chapter.id)} key={chapter.id}><b>{displayRuleNumber(chapter)}</b><span>{chapter.title}</span></button>)}{selected.sections.length > 0 && <nav className="chapter-subsection-nav" aria-label={`${selected.title} sections`}><span>In this chapter</span>{selected.sections.map((section) => <button type="button" aria-current={activeSectionId === section.id ? "location" : undefined} className={activeSectionId === section.id ? "active" : ""} onClick={() => chooseSection(section.id)} key={section.id}>{section.title}</button>)}</nav>}</aside><article className="rule-article paper-stack"><header><span>Chapter {displayRuleNumber(selected)}</span><h1>{selected.title}</h1></header>{selected.sections.length > 0 && <details className="rule-section-picker"><summary>Sections in this chapter</summary><nav className="rule-section-nav" aria-label={`${selected.title} sections`}>{selected.sections.map((section) => <button type="button" aria-current={activeSectionId === section.id ? "location" : undefined} className={activeSectionId === section.id ? "active" : ""} onClick={() => chooseSection(section.id)} key={section.id}>{section.title}</button>)}</nav></details>}<RuleBlocks blocks={selected.intro} />{selected.sections.map((section) => <section id={section.id} key={section.id}><h2>{section.title}</h2><RuleBlocks blocks={section.content} /></section>)}<footer className="chapter-footer"><span>End of Chapter {displayRuleNumber(selected)}</span>{ruleChapters[selectedIndex + 1] && <button onClick={() => chooseChapter(ruleChapters[selectedIndex + 1].id)}>Next: {ruleChapters[selectedIndex + 1].title} →</button>}</footer></article></div>}
-  </main>;
-}
-
-function CardTile({ card, onOpen, saved = false }: { card: CardEntry; onOpen: () => void; saved?: boolean }) {
-  const typeClass = `type-${card.cardType.toLocaleLowerCase().replaceAll(" ", "-")}`;
-  const savedStar = saved && <span className="binder-star" aria-label="Saved in Dojo Binder" title="Saved in Dojo Binder">★</span>;
-  // Printed cards already carry name, stats and rules on the art, so the tile shows the whole card and a short caption.
-  if (hasCardArt(card)) {
-    return <button className={`library-card library-card--printed paper-stack interactive-paper ${typeClass}`} onClick={onOpen} aria-label={`${card.name}, ${card.cardType}. Open card details.`}>
-      {savedStar}
-      <span className="library-card-print"><img src={cardImageUrl(card)} alt="" loading="lazy" decoding="async" /></span>
-      <span className="library-card-caption"><small>{card.catalogId} · {card.deck}</small><b>{card.name}</b></span>
-      <span className="open-card">View card →</span>
-    </button>;
-  }
-  const statPairs = Object.entries(card.stats).slice(0, 3);
-  return <button className={`library-card paper-stack interactive-paper ${typeClass}`} onClick={onOpen}>
-    {savedStar}
-    <div className="card-topline"><span>{card.cardType}</span><b>{card.deck}</b></div><div className="card-art card-art--pending"><img src={cardImageUrl(card)} alt={`Artwork pending for ${card.name}`} loading="lazy" decoding="async" /><span>{card.catalogId}</span></div>
-    <div className="card-body"><small>{card.cardType}</small><h3>{card.name}</h3><div className="card-costs">{card.fpCost !== null && card.fpCost !== undefined && <span><b>{valueLabel(card.fpCost)}</b> Focus Cost</span>}{card.focusValue !== null && card.focusValue !== undefined && <span><b>{valueLabel(card.focusValue)}</b> Focus</span>}{card.zone && <span>{card.zone}</span>}</div>{statPairs.length > 0 && <div className="mini-stats">{statPairs.map(([key, value]) => <span key={key}><b>{value}</b>{key}</span>)}</div>}<p>{card.rulesText || card.flavorText || "Open for complete card details."}</p><div className="tag-row">{card.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div></div><span className="open-card">View card →</span>
-  </button>;
-}
-
-function CardsView({ cardId = "" }: { cardId?: string }) {
-  const [query, setQuery] = useState(""); const [type, setType] = useState("All"); const [deck, setDeck] = useState("All");
-  const [subtype, setSubtype] = useState("All"); const [timing, setTiming] = useState("All"); const [focusCost, setFocusCost] = useState("All");
-  const [sort, setSort] = useState("catalog"); const [visible, setVisible] = useState(24);
-  const [savedIds, setSavedIds] = useState<Set<string>>(() => readStoredStringSet(BINDER_STORAGE_KEY));
-  const [binderOnly, setBinderOnly] = useState(false);
-  const pushToast = usePaperToast();
-  const activeCard = cardId ? cardData.cards.find((card) => card.catalogId.toLocaleLowerCase() === cardId.toLocaleLowerCase()) ?? null : null;
-  useEffect(() => {
-    window.localStorage.setItem(BINDER_STORAGE_KEY, JSON.stringify([...savedIds]));
-  }, [savedIds]);
-  const toggleSaved = (card: CardEntry) => {
-    const wasSaved = savedIds.has(card.catalogId);
-    setSavedIds((current) => {
-      const next = new Set(current);
-      if (next.has(card.catalogId)) next.delete(card.catalogId); else next.add(card.catalogId);
-      return next;
-    });
-    if (binderOnly && wasSaved) setBinderOnly(false);
-    pushToast({ kind: wasSaved ? "note" : "success", eyebrow: "Dojo Binder", title: wasSaved ? "Card removed" : "Card filed", message: card.name });
-  };
-  const openCard = (card: CardEntry) => navigate({ page: "cards", cardId: card.catalogId });
-  const stepCard = (card: CardEntry | null) => { if (card) replaceRoute({ page: "cards", cardId: card.catalogId }); };
-  const closeCard = () => replaceRoute({ page: "cards" });
-  const types = ["All", ...Object.keys(cardData.counts)];
-  const cardsInScope = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    const matches = (card: CardEntry) => !term || cardSearchText(card).includes(term);
-    return cardData.cards.filter((card) => (deck === "All" || card.deck === deck) && matches(card));
-  }, [query, deck]);
-  const typeCounts = useMemo(() => cardsInScope.reduce<Record<string, number>>((counts, card) => { counts[card.cardType] = (counts[card.cardType] ?? 0) + 1; return counts; }, {}), [cardsInScope]);
-  const typedCards = useMemo(() => cardsInScope.filter((card) => (type === "All" || card.cardType === type) && (!binderOnly || savedIds.has(card.catalogId))), [cardsInScope, type, binderOnly, savedIds]);
-  const optionCounts = (values: (string | number | null | undefined)[]) => values.reduce<Record<string, number>>((counts, value) => {
-    const label = value === null || value === undefined ? "" : String(value).trim();
-    if (label && label !== "—") counts[label] = (counts[label] ?? 0) + 1;
-    return counts;
-  }, {});
-  const subtypeCounts = useMemo(() => optionCounts(typedCards.map((card) => card.subtype)), [typedCards]);
-  const timingCounts = useMemo(() => optionCounts(typedCards.map((card) => card.timing)), [typedCards]);
-  const focusCostCounts = useMemo(() => optionCounts(typedCards.map((card) => Number.isFinite(numeric(card.fpCost)) ? numeric(card.fpCost) : null)), [typedCards]);
-  const subtypeOptions = Object.keys(subtypeCounts).sort();
-  const timingOptions = Object.keys(timingCounts).sort();
-  const focusCostOptions = Object.keys(focusCostCounts).sort((a, b) => Number(a) - Number(b));
-  const filtered = useMemo(() => {
-    return typedCards.filter((card) => (subtype === "All" || card.subtype === subtype) && (timing === "All" || card.timing === timing) && (focusCost === "All" || numeric(card.fpCost) === Number(focusCost))).sort((a, b) => {
-      if (sort === "catalog") return a.catalogOrder - b.catalogOrder;
-      if (sort === "focus") return numeric(a.fpCost) - numeric(b.fpCost) || a.name.localeCompare(b.name);
-      if (sort === "type") return a.cardType.localeCompare(b.cardType) || a.name.localeCompare(b.name);
-      if (sort === "deck") return a.deck.localeCompare(b.deck) || a.name.localeCompare(b.name);
-      return a.name.localeCompare(b.name);
-    });
-  }, [typedCards, subtype, timing, focusCost, sort]);
-  const activeIndex = activeCard ? filtered.findIndex((card) => card.id === activeCard.id) : -1;
-  const previousCard = activeIndex > 0 ? filtered[activeIndex - 1] : null;
-  const nextCard = activeIndex >= 0 && activeIndex < filtered.length - 1 ? filtered[activeIndex + 1] : null;
-  const resetSecondaryFilters = () => { setSubtype("All"); setTiming("All"); setFocusCost("All"); };
-  const resetFilters = () => { setQuery(""); setType("All"); setDeck("All"); resetSecondaryFilters(); setBinderOnly(false); setVisible(24); };
-  return <main className="page-shell shell card-library-page"><SectionHeader eyebrow="Card Library" title={`${cardData.total} cards. One awkward curriculum.`} intro="Search the complete Core catalog by ID, deck, type, rules text, or Focus Cost. The 500-card main pool excludes Starter, Character, and Boss-module cards." art={headerCardsUrl} />
-            <section className="library-controls"><div className="library-control library-search-control"><label htmlFor="card-library-search">Search</label><div className="search-box"><span aria-hidden="true">⌕</span><input id="card-library-search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(24); }} placeholder="ID, name, rules, tag…" />{query && <button onClick={() => setQuery("")} aria-label="Clear card search">×</button>}</div></div><label className="library-control"><span>Deck</span><select value={deck} onChange={(event) => { setDeck(event.target.value); resetSecondaryFilters(); setVisible(24); }}><option>All</option>{cardData.decks.map((entry) => <option key={entry}>{entry}</option>)}</select></label><label className="library-control"><span>Subtype</span><select value={subtype} onChange={(event) => { setSubtype(event.target.value); setVisible(24); }} disabled={!subtypeOptions.length}><option value="All">All subtypes</option>{subtypeOptions.map((entry) => <option value={entry} key={entry}>{entry} ({subtypeCounts[entry]})</option>)}</select></label><label className="library-control"><span>Timing</span><select value={timing} onChange={(event) => { setTiming(event.target.value); setVisible(24); }} disabled={!timingOptions.length}><option value="All">All timings</option>{timingOptions.map((entry) => <option value={entry} key={entry}>{entry} ({timingCounts[entry]})</option>)}</select></label><label className="library-control"><span>Focus Cost</span><select value={focusCost} onChange={(event) => { setFocusCost(event.target.value); setVisible(24); }} disabled={!focusCostOptions.length}><option value="All">Any cost</option>{focusCostOptions.map((entry) => <option value={entry} key={entry}>{entry} Focus ({focusCostCounts[entry]})</option>)}</select></label><label className="library-control"><span>Sort</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="catalog">Catalog order</option><option value="name">Name A–Z</option><option value="deck">Deck</option><option value="type">Card type</option><option value="focus">Focus Cost</option></select></label></section>
-    <div className="binder-strip"><button type="button" className={`binder-toggle${binderOnly ? " is-saved" : ""}`} aria-pressed={binderOnly} onClick={() => { setBinderOnly((current) => !current); setVisible(24); }}><span aria-hidden="true">{binderOnly ? "★" : "☆"}</span> Dojo Binder <b>{savedIds.size}</b></button><p>Saved on this device only. Open a card to add or remove it.</p></div>
-    <div className="type-filters" role="group" aria-label="Filter by card type">{types.map((entry) => <button className={type === entry ? "active" : ""} onClick={() => { setType(entry); resetSecondaryFilters(); setVisible(24); }} key={entry}>{entry}<span>{entry === "All" ? cardsInScope.length : typeCounts[entry] ?? 0}</span></button>)}</div>
-    <div className="result-line"><p><strong>{filtered.length}</strong> results</p>{(query || type !== "All" || deck !== "All" || subtype !== "All" || timing !== "All" || focusCost !== "All") && <button onClick={resetFilters}>Reset filters</button>}</div>
-    {filtered.length ? <><section className="card-grid">{filtered.slice(0, visible).map((card) => <CardTile key={card.id} card={card} saved={savedIds.has(card.catalogId)} onOpen={() => openCard(card)} />)}</section>{visible < filtered.length && <button className="button load-more" onClick={() => setVisible((count) => count + 24)}>Load 24 more <span>{filtered.length - visible} remaining</span></button>}</> : <div className="empty-state"><strong>No cards match that search.</strong><p>Clear a filter or try a broader rules term.</p><button className="button ghost" onClick={resetFilters}>Reset filters</button></div>}
-    {activeCard && <Suspense fallback={null}><CardInspector card={activeCard} imageUrl={cardImageUrl(activeCard)} saved={savedIds.has(activeCard.catalogId)} positionLabel={`${Math.max(1, activeIndex + 1)} of ${filtered.length}`} previousName={previousCard?.name} nextName={nextCard?.name} previousDisabled={!previousCard} nextDisabled={!nextCard} onToggleSaved={() => toggleSaved(activeCard)} onPrevious={() => stepCard(previousCard)} onNext={() => stepCard(nextCard)} onClose={closeCard} /></Suspense>}
   </main>;
 }
 
@@ -701,7 +490,19 @@ function RulingsView({ initialTab = "official", initialQuery = "" }: { initialTa
     setSelected(initialTab === "house" && initialQuery ? rulesData.houseRules.find((entry) => normalizeSearchQuery(entry.name) === normalizeSearchQuery(initialQuery)) ?? null : null);
   }, [initialTab, initialQuery]);
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const rulings = OFFICIAL_RULINGS.filter((entry) => !normalizedQuery || Object.values(entry).join(" ").toLocaleLowerCase().includes(normalizedQuery));
+  const [topic, setTopic] = useState("");
+  const pushToast = usePaperToast();
+  const rulings = OFFICIAL_RULINGS.filter((entry) => (!topic || entry.tag === topic) && (!normalizedQuery || Object.values(entry).join(" ").toLocaleLowerCase().includes(normalizedQuery)));
+  const copyCitation = async (entry: OfficialRuling) => {
+    const url = `${window.location.origin}${window.location.pathname}#rulings/official/${encodeURIComponent(entry.id)}`;
+    const citation = `${entry.id} · ${entry.title}: ${entry.ruling} (${url})`;
+    try {
+      await navigator.clipboard.writeText(citation);
+      pushToast({ kind: "success", eyebrow: "Citation filed", title: `${entry.id} copied`, message: "Paste it into the group chat. Argument over.", duration: 2600 });
+    } catch {
+      pushToast({ kind: "note", eyebrow: "Copy this citation", title: entry.id, message: url, duration: 6000 });
+    }
+  };
   const variants = rulesData.houseRules.filter((entry) => !normalizedQuery || `${entry.name} ${entry.rule} ${entry.summary ?? ""} ${entry.notes ?? ""}`.toLocaleLowerCase().includes(normalizedQuery));
   const selectedSupport = selected ? rulesData.houseRules.find((entry) => entry.name === selected.name) ?? null : null;
   const chooseTab = (next: RulingsTab) => {
@@ -733,7 +534,13 @@ function RulingsView({ initialTab = "official", initialQuery = "" }: { initialTa
     <div className="rulings-shared-search"><label className="search-box large"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === "official" ? "Search official rulings…" : "Search house rules…"} aria-label={tab === "official" ? "Search official rulings" : "Search house rules"} />{query && <button onClick={() => setQuery("")} aria-label="Clear guidance search">×</button>}</label><span>{visibleCount} of {tab === "official" ? OFFICIAL_RULINGS.length : rulesData.houseRules.length} shown</span></div>
     {tab === "official" ? <>
       <section className="priority-panel"><div><span className="eyebrow">Rule priority</span><h2>When two things disagree</h2><p>Use this order. Stop as soon as the conflict is resolved.</p></div><ol>{RULE_PRIORITY.map((rule, index) => <li key={rule}><span>{index + 1}</span>{rule}</li>)}</ol></section>
-      <section className="ruling-list-section"><div className="rulings-heading"><div><span className="eyebrow">Official clarifications</span><h2>{OFFICIAL_RULINGS.length} current rulings</h2></div></div>{rulings.length ? <div className="ruling-list">{rulings.map(({ id, filed, tag, title, ruling }, index) => <article key={id}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{tag}</b><h3>{title}</h3><p>{ruling}</p></div><strong>{id} · {filed}</strong></article>)}</div> : <div className="empty-state"><strong>No official ruling found.</strong><p>Try a shorter term or switch to House Rules for optional variants.</p></div>}</section>
+      <section className="ruling-list-section"><div className="rulings-heading"><div><span className="eyebrow">Official clarifications</span><h2>{OFFICIAL_RULINGS.length} current rulings</h2></div></div>
+        <div className="docket-topics" role="group" aria-label="Settle a dispute by topic"><span>Settle a dispute about</span>{["", ...RULING_TOPICS].map((entry) => <button type="button" key={entry || "all"} aria-pressed={topic === entry} onClick={() => setTopic(entry)}>{entry || "Anything"}<small>{entry ? OFFICIAL_RULINGS.filter((ruling) => ruling.tag === entry).length : OFFICIAL_RULINGS.length}</small></button>)}</div>
+        {rulings.length ? <div className="ruling-list docket">{rulings.map((entry) => <article className="docket-slip" key={entry.id}>
+          <span className="docket-tab">{entry.tag}</span>
+          <div className="docket-body"><small>{entry.id}</small><h3>{entry.title}</h3><p>{entry.ruling}</p></div>
+          <div className="docket-side"><strong className="docket-stamp" aria-label={entry.filed}>{entry.filed.replace(/^Filed\s*/i, "")}<small>Filed</small></strong><button type="button" className="docket-cite" onClick={() => void copyCitation(entry)} aria-label={`Copy citation for ${entry.id}`}>Cite</button></div>
+        </article>)}</div> : <div className="empty-state"><strong>No official ruling found.</strong><p>Try a shorter term, pick another topic, or switch to House Rules for optional variants.</p></div>}</section>
       <section className="judge-procedure"><div><span className="step-stamp">?</span><h2>The two-minute table judge</h2></div><ol>{TABLE_JUDGE_STEPS.map((step) => <li key={step}>{step}</li>)}</ol></section>
     </> : <>
       <section className="house-grid">{variants.map((entry, index) => { const support = entry; return <button className="paper-stack interactive-paper" onClick={() => navigate({ page: "rulings", tab: "house", query: entry.name })} key={entry.name}><span>{String(index + 1).padStart(2, "0")}</span><small>{entry.category}</small><h2>{entry.name}</h2><p>{entry.summary || entry.rule}</p>{support?.quickDuel.status === "supported" && <span className="variant-playtest-badge">Quick Duel option</span>}<b>Open full variant →</b></button>; })}</section>
@@ -742,17 +549,6 @@ function RulingsView({ initialTab = "official", initialQuery = "" }: { initialTa
     </>}
     {selected && <DetailModal eyebrow={selected.category || "House Rule"} title={selected.name} onClose={() => replaceRoute({ page: "rulings", tab: "house" })} accent="green"><p className="modal-lede">{selected.summary}</p><aside className="modal-rule"><span>Variant rule</span><p>{selected.rule}</p></aside>{selected.notes && <div className="modal-design-note"><span>Why this wording works</span><p>{selected.notes}</p></div>}{selectedSupport && <div className="variant-support-note" data-status={selectedSupport.quickDuel.status}><b>{selectedSupport.quickDuel.status === "supported" ? "Digital Quick Duel: supported" : selectedSupport.quickDuel.status === "not-applicable" ? "Digital Quick Duel: not applicable" : "Digital Quick Duel: not automated yet"}</b><p>{selectedSupport.quickDuel.reason}</p></div>}<p className="agreement-note">Agree on this variant before setup. It changes only the current game and never rewrites printed card text.</p></DetailModal>}
   </main>;
-}
-
-function GlossaryView({ initialQuery }: { initialQuery: string }) {
-  const [query, setQuery] = useState(initialQuery);
-  const [selected, setSelected] = useState<{ term: string; meaning: string } | null>(() => initialQuery ? GLOSSARY_ENTRIES.find((entry) => normalizeSearchQuery(entry.term) === normalizeSearchQuery(initialQuery)) ?? null : null);
-  useEffect(() => {
-    setQuery(initialQuery);
-    setSelected(initialQuery ? GLOSSARY_ENTRIES.find((entry) => normalizeSearchQuery(entry.term) === normalizeSearchQuery(initialQuery)) ?? null : null);
-  }, [initialQuery]);
-  const filtered = GLOSSARY_ENTRIES.filter((entry) => `${entry.term} ${entry.meaning}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
-  return <main className="page-shell shell glossary-page"><SectionHeader eyebrow="Glossary" title="Speak fluent Paper-Fu" intro="Every defined rules term, separated from the rulebook for fast table lookup. Tap any tile for the full definition." art={headerGlossaryUrl} /><div className="glossary-toolbar"><label className="search-box large"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Flow, Focus, Tempo, Reaction…" aria-label="Search glossary" />{query && <button onClick={() => setQuery("")} aria-label="Clear glossary search">×</button>}</label><span>{filtered.length} of {GLOSSARY_ENTRIES.length} terms</span></div>{filtered.length ? <div className="glossary-grid">{filtered.map((entry, index) => <button className="interactive-paper" onClick={() => navigate({ page: "glossary", term: entry.term })} key={entry.term}><span>{String(index + 1).padStart(2, "0")}</span><strong>{entry.term}</strong><p>{entry.meaning}</p><b>Open term →</b></button>)}</div> : <div className="empty-state"><strong>No term found.</strong><p>Try a shorter word or search the full rules for a phrase that is not a defined term.</p></div>}{selected && <DetailModal eyebrow="Defined term" title={selected.term} onClose={() => replaceRoute({ page: "glossary" })}><aside className="modal-rule"><span>Definition</span><p>{selected.meaning}</p></aside><div className="modal-design-note"><span>At the table</span><p>Use this defined meaning unless a more specific scenario rule or card instruction says otherwise.</p></div></DetailModal>}</main>;
 }
 
 export default function CompanionApp() {
@@ -1071,13 +867,8 @@ export default function CompanionApp() {
     setTheme(next);
     pushToast({ kind: "stamp", eyebrow: "Lighting cue", title: next === "dark" ? "After-hours dojo" : "Daylight dojo", message: next === "dark" ? "Ink, brass, and quiet focus." : "Paper, pigment, and open play." });
   };
-  const routeKey = view === "rules"
-    ? `rules-${route.page === "rules" ? route.chapterId ?? "" : ""}-${route.page === "rules" ? route.sectionId ?? "" : ""}`
-    : view === "rulings"
-      ? "rulings"
-      : view === "glossary"
-        ? `glossary-${route.page === "glossary" ? route.term ?? "" : ""}`
-        : view;
+  // Rules and Glossary keep their own state (search, hovercards, open term) across in-page routes.
+  const routeKey = view;
 
   return <ToastContext.Provider value={pushToast}><div className="site-frame">
     <header className={`site-header${route.page === "playtest" ? " site-header--gameplay" : ""}`}><div className="header-inner shell">
@@ -1107,7 +898,7 @@ export default function CompanionApp() {
       {globalResults.length > 0 ? renderGlobalResults("global-results", "dojo-global-results") : <div className="search-palette-empty">{globalSearch.trim().length >= 2 ? <p>No matching filing number. Try a shorter search.</p> : <><span>Try a filing</span><div>{["Basic Jab", "Tempo", "Combo", "Belt", "Reaction"].map((hint) => <button type="button" key={hint} onClick={() => { setGlobalSearch(hint); searchInputRef.current?.focus(); }}>{hint}</button>)}</div></>}</div>}
       <footer className="search-palette-foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
     </div></div>}
-    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesView initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} />}{route.page === "cards" && <CardsView cardId={route.cardId} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryView initialQuery={route.term ?? ""} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
+    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesReader initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} headerArt={headerRulesUrl} />}{route.page === "cards" && <CardLibrary cardId={route.cardId} headerArt={headerCardsUrl} imageUrlFor={cardImageUrl} hasArt={hasCardArt} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryPage initialQuery={route.term ?? ""} headerArt={headerGlossaryUrl} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
     <nav className="thumb-bar" aria-label="Quick navigation">{MOBILE_BOTTOM_NAVIGATION.map((item) => { const active = navigationItemIsActive(item, route); return <button type="button" key={item.page} className={`thumb-bar-item${item.page === "playtest" ? " is-play" : ""}${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)}><span aria-hidden="true">{item.mobileBottomIcon}</span><b>{item.shortLabel}</b></button>; })}</nav>
     <footer className="site-footer"><div className="shell footer-inner"><div className="brand footer-brand"><BrandMark /><span><b>DOJO</b><em>PAPER-FU // DECKBUILDER</em></span></div><p>Build your deck. Earn your belt. File the incident.</p><span>Filed with the Department. Probably correctly.</span></div></footer>
     {scrollProgress > .2 && <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: paperScrollBehavior() })} aria-label="Back to top"><span aria-hidden="true">↑</span><b>Top</b></button>}

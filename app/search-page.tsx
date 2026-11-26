@@ -10,6 +10,20 @@ import {
   type SearchResultType,
 } from "./search";
 import { navigate, replaceRoute } from "./routing";
+import { escapeRegExp } from "./rule-chapters";
+import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
+import "./search-page.css";
+
+const RECENT_LIMIT = 6;
+const SUGGESTIONS = ["Flow", "Reversal", "Market Mercy", "Tempo", "Belt Exam", "Boss Blitz", "DDB-RUL-001"];
+
+
+
+function Highlighted({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, "gi"));
+  return <>{parts.map((part, index) => index % 2 ? <mark key={index}>{part}</mark> : part)}</>;
+}
 
 const SEARCH_GROUP_ICONS: Record<SearchResultType, string> = {
   card: "◇",
@@ -25,6 +39,7 @@ const searchTypeClass = (type: SearchResultType) => type.replace(/\s+/g, "-");
 export default function SearchPage({ query = "" }: { query?: string }) {
   const [draftQuery, setDraftQuery] = useState(query);
   const [activeTypes, setActiveTypes] = useState<SearchResultType[]>(SEARCH_GROUP_ORDER);
+  const [recent, setRecent] = useState<string[]>(() => readStoredList(PERSONAL_STORAGE_KEYS.recentSearches).slice(0, RECENT_LIMIT));
 
   useEffect(() => setDraftQuery(query), [query]);
 
@@ -50,7 +65,16 @@ export default function SearchPage({ query = "" }: { query?: string }) {
       : SEARCH_GROUP_ORDER.filter((entry) => entry === type || current.includes(entry)));
   };
 
-  const openResult = (result: SearchResult) => navigate(result.route);
+  // A search counts as "filed" once it led somewhere: opening a result remembers the query.
+  const openResult = (result: SearchResult) => {
+    const filed = draftQuery.normalize("NFKC").trim().replace(/\s+/g, " ");
+    const next = [filed, ...recent.filter((entry) => normalizeSearchQuery(entry) !== normalizeSearchQuery(filed))].slice(0, RECENT_LIMIT);
+    writeStoredList(PERSONAL_STORAGE_KEYS.recentSearches, next);
+    setRecent(next);
+    navigate(result.route);
+  };
+  const clearRecent = () => { writeStoredList(PERSONAL_STORAGE_KEYS.recentSearches, []); setRecent([]); };
+  const markTerm = draftQuery.trim();
 
   return <main className="search-page shell page-shell" aria-labelledby="dojo-search-title">
     <header className="search-page-hero paper-stack">
@@ -78,6 +102,8 @@ export default function SearchPage({ query = "" }: { query?: string }) {
       <span className="eyebrow">Search the filing cabinet</span>
       <h2>Type at least two characters.</h2>
       <p>Try a card name, catalog ID, rules phrase, glossary term, ruling number, or house-rule name.</p>
+      {recent.length > 0 && <div className="search-chip-row" role="group" aria-label="Recent searches"><span>Recently filed</span>{recent.map((entry) => <button type="button" className="search-chip is-recent" key={entry} onClick={() => updateQuery(entry)}>{entry}</button>)}<button type="button" className="search-chip-clear" onClick={clearRecent}>Shred</button></div>}
+      <div className="search-chip-row" role="group" aria-label="Suggested searches"><span>Try</span>{SUGGESTIONS.map((entry) => <button type="button" className="search-chip" key={entry} onClick={() => updateQuery(entry)}>{entry}</button>)}</div>
     </section> : results.length === 0 ? <section className="search-page-empty paper-stack" aria-live="polite">
       <span className="eyebrow">Nothing in the drawer</span>
       <h2>No results for “{draftQuery.trim()}”.</h2>
@@ -126,7 +152,7 @@ export default function SearchPage({ query = "" }: { query?: string }) {
           <div className="search-result-list">
             {group.results.map((result) => <button type="button" className="search-result-card paper-stack interactive-paper" onClick={() => openResult(result)} key={`${result.type}-${result.title}-${result.detail}`}>
               <span className="search-result-kind">{SEARCH_GROUP_LABELS[result.type]}</span>
-              <div><h4>{result.title}</h4><p>{result.detail}</p></div>
+              <div><h4><Highlighted text={result.title} query={markTerm} /></h4><p><Highlighted text={result.detail} query={markTerm} /></p></div>
               <span className="search-result-open" aria-hidden="true">→</span>
             </button>)}
           </div>

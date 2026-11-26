@@ -1,0 +1,4 @@
+// The navy page header shared by every content page: copy on the left, taped "visual evidence" on the right.
+export function SectionHeader({ eyebrow, title, intro, art }: { eyebrow: string; title: string; intro: string; art: string }) {
+  return <header className="section-header paper-stack"><i className="fastener paperclip header-paperclip" aria-hidden="true" /><div className="section-header-copy"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{intro}</p><div className="section-header-foot"><span>DEPARTMENT ARCHIVE · OPEN FILE</span><b>Handle with confidence</b></div></div><div className="section-header-art" aria-hidden="true"><span className="section-header-art-label">FORM 00{eyebrow.length % 7 + 1} · VISUAL EVIDENCE</span><img src={art} alt="" decoding="async" /><span className="section-header-art-stamp">CLEARED<br />FOR TABLE USE</span></div></header>;
+}

@@ -1,0 +1,130 @@
+/* Card Library: Card of the Day, collection ledger, origin tags, sealed envelopes and the dealt grid.
+   Designed for light and dark together: every color is a token from app/globals.css. */
+
+@layer components {
+  /* ---- Front desk: Card of the Day beside the collection ledger ---- */
+  .library-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: 24px; align-items: stretch; margin: 6px 0 30px; }
+
+  .daily-filing { position: relative; display: grid; grid-template-columns: minmax(130px, 180px) minmax(0, 1fr); gap: 24px; align-items: center; overflow: hidden; border-radius: var(--pf-radius) 3px var(--pf-radius) 4px; padding: 28px 26px; color: #fffaf0; background: var(--pf-ink-panel); box-shadow: 8px 9px 0 var(--pf-stage-edge), var(--pf-shadow-paper); isolation: isolate; }
+  .daily-filing::before { content: ""; position: absolute; inset: 0; z-index: -1; background: repeating-conic-gradient(from 200deg at 22% 40%, rgba(255, 250, 240, .045) 0 8deg, transparent 8deg 22deg); }
+  .daily-filing-print { position: relative; transform: rotate(-3deg); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+  .daily-filing:hover .daily-filing-print, .daily-filing:focus-within .daily-filing-print { transform: rotate(-1deg) translateY(-4px); }
+  .daily-filing-print img { width: 100%; aspect-ratio: 11 / 15; object-fit: contain; border-radius: 7px; filter: drop-shadow(6px 9px 0 rgba(0, 0, 0, .35)); }
+  .daily-filing-tape { top: -9px; left: 50%; width: 82px; transform: translateX(-50%) rotate(-4deg); }
+  .daily-filing-stamp { position: absolute; right: -14px; bottom: 14px; z-index: 3; display: grid; place-items: center; width: 74px; height: 74px; border: 3px double var(--pf-action); border-radius: 50%; color: var(--pf-action); background: color-mix(in srgb, var(--pf-surface-raised) 88%, transparent); font: 400 10px/1.05 var(--pf-impact); letter-spacing: .02em; text-align: center; text-transform: uppercase; transform: rotate(14deg); box-shadow: 2px 3px 0 rgba(0, 0, 0, .25); }
+  .daily-filing-copy { min-width: 0; display: grid; justify-items: start; gap: 10px; }
+  .daily-filing-copy .eyebrow { margin: 0; color: var(--pf-brass-on-ink); }
+  .daily-filing-copy .eyebrow::before { color: var(--pf-action); }
+  .daily-filing-copy h2 { max-width: 100%; margin: 0; color: #fffaf0; font: 400 clamp(24px, 2.1vw, 32px)/.95 var(--pf-display); overflow-wrap: anywhere; text-transform: uppercase; text-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
+  .daily-filing-meta { max-width: 100%; margin: 0; overflow-wrap: anywhere; color: rgba(255, 250, 240, .72); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .daily-filing-flavor { max-width: 46ch; margin: 0; color: rgba(255, 250, 240, .82); font-size: 14px; font-style: italic; line-height: 1.5; }
+  .daily-filing-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .daily-filing-actions .button.ghost { border-color: rgba(255, 250, 240, .4); color: #fffaf0; background: transparent; }
+  .daily-filing-actions .button.ghost:hover { background: rgba(255, 250, 240, .08); box-shadow: 4px 5px 0 rgba(0, 0, 0, .3); }
+
+  .collection-ledger { display: grid; align-content: start; gap: 14px; padding: 24px 24px 22px; }
+  .collection-ledger-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+  .collection-ledger-head .eyebrow { margin-bottom: 4px; }
+  .collection-ledger-head h2 { margin: 0; color: var(--pf-ink); font: 400 clamp(26px, 2.6vw, 34px)/1 var(--pf-display); text-transform: uppercase; }
+  .collection-ledger-stamp { flex: 0 0 auto; border: 2px solid var(--pf-action); padding: 6px 9px; color: var(--pf-action); font: 400 12px/1 var(--pf-impact); letter-spacing: .06em; text-transform: uppercase; transform: rotate(4deg); }
+  .collection-ledger.is-recruit-preview .collection-ledger-stamp { border-color: var(--pf-brass); color: var(--pf-brass-text); border-style: dashed; }
+  .collection-ledger-summary { max-width: 62ch; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.55; }
+  .collection-view-toggle { display: inline-flex; justify-self: start; border: 1px solid var(--pf-line-strong); border-radius: var(--pf-radius-small); padding: 3px; background: var(--pf-surface); }
+  .collection-view-toggle button { min-height: 44px; border: 0; border-radius: 2px; padding: 0 14px; color: var(--pf-ink-soft); background: transparent; font: 700 14px/1 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+  .collection-view-toggle button[aria-pressed="true"] { color: var(--pf-on-blue); background: var(--pf-blue); }
+  .collection-view-toggle button:not([aria-pressed="true"]):hover { color: var(--pf-ink); background: var(--pf-surface-dim); }
+  .collection-total { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 2px 8px; }
+  .collection-total > b { color: var(--pf-ink); font: 400 36px/1 var(--pf-display); }
+  .collection-total > span:not(.collection-meter) { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; text-transform: uppercase; }
+  .collection-total .collection-meter { grid-column: 1 / -1; height: 10px; }
+  .collection-meter { position: relative; display: block; height: 6px; overflow: hidden; border: 1px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-dim); }
+  .collection-meter i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, var(--pf-brass) 0 6px, color-mix(in srgb, var(--pf-brass) 78%, var(--pf-surface-raised)) 6px 12px); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+  .collection-packs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin: 2px 0 0; padding: 0; list-style: none; }
+  .collection-pack { width: 100%; min-height: 44px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; border: 1px solid var(--pf-line); border-radius: 3px; padding: 6px 10px; color: var(--pf-ink); background: var(--pf-surface); text-align: left; cursor: pointer; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+  .collection-pack:hover { border-color: var(--pf-blue); transform: translate(-1px, -2px); box-shadow: 3px 4px 0 var(--pf-line-strong); }
+  .collection-pack[aria-pressed="true"] { border-color: var(--pf-action); background: var(--pf-surface-raised); box-shadow: inset 4px 0 0 var(--pf-action); }
+  .collection-pack-name { min-width: 0; display: grid; gap: 1px; }
+  .collection-pack-name b { overflow: hidden; font: 400 15px/1.1 var(--pf-display); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+  .collection-pack-name small { color: var(--pf-muted); font-size: 11px; }
+  .collection-pack--roster { border-left: 3px solid var(--pf-action); }
+  .collection-pack-count { color: var(--pf-ink-soft); font-family: var(--pf-mono); font-size: 11px; }
+  .collection-pack .collection-meter { grid-column: 1 / -1; }
+  .collection-pack.is-locked { border-style: dashed; }
+  .collection-pack.is-locked .collection-pack-name b { color: var(--pf-ink-soft); }
+
+  /* ---- Origin tags: where a card comes from. There is no rarity: every card is equal, unlocks only set order. ---- */
+  .origin-tag { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--pf-ink-soft); font: 700 13px/1 var(--pf-label); letter-spacing: .07em; text-transform: uppercase; }
+  .origin-tag b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .origin-tag i { flex: 0 0 auto; width: 14px; height: 11px; display: inline-block; border: 1.5px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-raised); }
+  .origin-tag--compact { gap: 6px; font-size: 11px; }
+  .origin-tag--issue i { border-style: dashed; background: transparent; }
+  .origin-tag--starter i { width: 13px; height: 13px; border-color: var(--pf-blue); border-radius: 50%; box-shadow: inset 0 0 0 2px var(--pf-surface-raised), inset 0 0 0 5px var(--pf-blue); }
+  .origin-tag--booster i { border-color: var(--pf-manila-deep); background: linear-gradient(160deg, var(--pf-manila-deep) 0 38%, var(--pf-manila) 40%); }
+  .origin-tag--roster i { width: 13px; height: 13px; border: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ec7a63 0 18%, var(--pf-action) 20% 62%, var(--pf-action-deep) 64%); }
+  .daily-filing .origin-tag { color: var(--pf-brass-on-ink); }
+  .daily-filing .origin-tag--starter i { box-shadow: inset 0 0 0 2px var(--pf-ink-panel), inset 0 0 0 5px var(--pf-brass-on-ink); border-color: var(--pf-brass-on-ink); }
+
+  /* ---- Filters ---- */
+  .library-secondary-filters { display: contents; }
+  .library-more-filters { display: none; }
+  .result-line p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+  .result-pack-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--pf-action); padding: 0 0 0 8px; color: var(--pf-action); background: var(--pf-surface-raised); }
+  .result-pack-chip button { min-width: 32px; min-height: 32px; border: 0; color: inherit; background: transparent; font-size: 16px; cursor: pointer; }
+
+  /* ---- Tiles: dealt onto the desk; a laminate gloss passes over printed cards on hover ---- */
+  .card-library-page .card-grid > .library-card { animation: pf-card-deal .42s cubic-bezier(.2, .8, .25, 1) backwards; animation-delay: calc(var(--deal, 0) * 24ms); }
+  .library-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; margin-top: auto; border-top: 1px solid var(--pf-line); padding: 8px 14px; }
+  .library-card-foot .open-card { flex: 0 0 auto; border: 0; padding: 0; }
+  .library-card .binder-star { pointer-events: none; }
+  .library-card--printed .library-card-print::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(112deg, transparent 36%, var(--pf-gloss) 48%, var(--pf-gloss) 52%, transparent 64%); mix-blend-mode: screen; transform: translateX(-110%); }
+  .library-card--printed:is(:hover, :focus-visible) .library-card-print::after { opacity: 1; transform: translateX(110%); transition: transform .85s cubic-bezier(.3, .7, .2, 1), opacity .2s ease; }
+  .library-card--printed.is-sealed .library-card-print::after { display: none; }
+
+  .library-envelope { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 6px; padding: 14px; overflow: hidden; color: var(--pf-manila-ink); background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .025) 0 1px, transparent 1px 6px), linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); }
+  .library-envelope-flap { position: absolute; inset: 0 0 auto; height: 46%; background: linear-gradient(180deg, var(--pf-manila-deep), color-mix(in srgb, var(--pf-manila-deep) 85%, #000)); clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .2)); }
+  .library-envelope-flap::after { content: ""; position: absolute; left: 50%; bottom: 6%; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e86b55 0 18%, var(--pf-action) 20% 62%, var(--pf-action-deep) 64%); transform: translateX(-50%); }
+  .library-envelope b { position: relative; margin-top: 30%; border: 2px solid var(--pf-action-deep); padding: 5px 9px; color: var(--pf-action-deep); font: 400 clamp(14px, 1.6vw, 20px)/1 var(--pf-impact); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-6deg); }
+  .library-envelope small { position: relative; font: 700 12px/1.15 var(--pf-label); letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+  /* Personnel files: a straight-cut folder tab instead of an envelope flap. */
+  .library-envelope--roster .library-envelope-flap { height: 16%; clip-path: polygon(0 0, 46% 0, 52% 100%, 0 100%); }
+  .library-envelope--roster .library-envelope-flap::after { left: 22%; bottom: auto; top: 20%; width: 20px; height: 20px; }
+  .library-card.is-sealed .library-card-caption b { color: var(--pf-ink-soft); }
+
+  @keyframes pf-card-deal { from { opacity: 0; transform: translateY(16px) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
+}
+
+@layer responsive {
+  @media (max-width: 1100px) {
+    .library-desk { grid-template-columns: 1fr; }
+    .daily-filing { grid-template-columns: minmax(130px, 190px) minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .library-more-filters { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pf-line-strong); border-radius: 3px; color: var(--pf-ink); background: var(--pf-surface-raised); font: 700 14px/1 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+    .library-controls .library-secondary-filters { display: none; }
+    .library-controls.is-expanded .library-secondary-filters { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .library-controls .library-search-control { grid-column: 1 / -1; }
+  }
+  @media (max-width: 600px) {
+    .library-desk { gap: 18px; margin-bottom: 22px; }
+    .daily-filing { grid-template-columns: 1fr; justify-items: center; gap: 18px; padding: 24px 18px 20px; text-align: left; }
+    .daily-filing-copy { justify-items: stretch; }
+    .daily-filing-actions .button { flex: 1 1 100%; }
+    .collection-ledger { padding: 20px 16px 18px; }
+    .collection-packs { gap: 6px; }
+    .collection-pack { padding: 6px 8px; }
+    .collection-pack-name b { font-size: 13px; }
+    .collection-pack-name small { display: none; }
+    .collection-pack--roster { border-left: 3px solid var(--pf-action); }
+  .collection-pack-count { font-size: 10px; }
+    .daily-filing-print { width: min(48vw, 180px); }
+    .collection-view-toggle { justify-self: stretch; }
+    .collection-view-toggle button { flex: 1 1 50%; padding: 0 8px; }
+    .library-card-foot { padding: 8px 10px; }
+    .library-card-foot .open-card { display: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-card--printed .library-card-print::after { display: none; }
+}
+:root[data-motion="reduced"] .library-card--printed .library-card-print::after { display: none; }

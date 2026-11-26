@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useEffect, useRef, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import cardEffectsJson from "./data/card-effects.json";
 
@@ -75,6 +75,12 @@ export type CardInspectorProps = {
   onPrevious?: () => void;
   onNext?: () => void;
   onClose: () => void;
+  /** Flip the printed card in when the Dossier opens or pages. Off for game tables. */
+  reveal?: boolean;
+  /** Host-supplied panels: where the card comes from, cards to read next, and an overlay on the printed card. */
+  provenance?: ReactNode;
+  related?: ReactNode;
+  stageOverlay?: ReactNode;
 };
 
 const effectRegistry = cardEffectsJson as unknown as CardEffectRegistry;
@@ -342,6 +348,18 @@ function CardInspectorErrorDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** A FILED stamp sits on saved cards; it slams down only when the card is saved while you watch. */
+function useFiledStamp(cardId: string, saved: boolean) {
+  const previous = useRef({ cardId, saved });
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    const justFiled = previous.current.cardId === cardId && !previous.current.saved && saved;
+    previous.current = { cardId, saved };
+    setFresh(justFiled);
+  }, [cardId, saved]);
+  return fresh;
+}
+
 function CardInspectorContent({
   card,
   imageUrl,
@@ -357,8 +375,13 @@ function CardInspectorContent({
   onPrevious,
   onNext,
   onClose,
+  reveal = false,
+  provenance,
+  related,
+  stageOverlay,
 }: CardInspectorProps) {
   const dialogRef = useInspectorDialog(onClose, { onPrevious, onNext, previousDisabled, nextDisabled });
+  const freshlyFiled = useFiledStamp(card.catalogId, saved);
   const resolvedEffectEntry = effectEntry ?? effectRegistry.cards?.[card.catalogId];
   const resolvedEffectRevision = effectRevision ?? effectRegistry.rulesRevision ?? effectRegistry.rulesVersion;
   const statPairs = Object.entries(card.stats ?? {});
@@ -384,7 +407,11 @@ function CardInspectorContent({
       <div className="card-inspector-layout">
         <section className="card-inspector-card-stage" aria-label={`${card.name} card image`}>
           <div className="card-inspector-card-wrap">
-            <img src={imageUrl} alt={card.name} decoding="async" />
+            <span className={`card-inspector-print${reveal ? " is-revealing" : ""}`} key={reveal ? card.catalogId : undefined}>
+              <img src={imageUrl} alt={card.name} decoding="async" />
+              {saved && <span className={`card-inspector-filed${freshlyFiled ? " is-fresh" : ""}`} aria-hidden="true">Filed<small>Dojo Binder</small></span>}
+            </span>
+            {stageOverlay}
             <button type="button" className={`card-inspector-star${saved ? " is-saved" : ""}`} aria-pressed={saved} aria-label={saved ? `Remove ${card.name} from Dojo Binder` : `Add ${card.name} to Dojo Binder`} title={saved ? "Remove from Dojo Binder" : "Add to Dojo Binder"} onClick={onToggleSaved}>{saved ? "★" : "☆"}</button>
           </div>
           <p>Click the star to {saved ? "remove this card from" : "save this card to"} your Dojo Binder.</p>
@@ -398,6 +425,7 @@ function CardInspectorContent({
           </header>
 
           <div className="card-inspector-badges"><span>{card.deck}</span>{card.lineage && <span>{card.lineage}</span>}{card.category && <span>{card.category}</span>}</div>
+          {provenance}
 
           {(primaryFacts.length > 0 || statPairs.length > 0) && <section className="card-inspector-facts" aria-label="Card statistics">
             {primaryFacts.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
@@ -412,6 +440,7 @@ function CardInspectorContent({
             {buildPaths.length > 0 && <div><span>Build paths</span><p>{buildPaths.map((path) => <b key={path}>{path}</b>)}</p></div>}
           </section>}
 
+          {related}
           <DesignNotes card={card} entry={resolvedEffectEntry} />
         </section>
       </div>

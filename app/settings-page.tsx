@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AVATAR_IMAGES } from "./avatar-catalog";
+import { readPersonalRecord } from "./personal-record";
+import { RULE_CHAPTERS } from "./rule-chapters";
+import { navigate } from "./routing";
+import "./settings-record.css";
 import { ACCENT_OPTIONS, AVATAR_OPTIONS, DEFAULT_USER_PREFERENCES, type AccentKey, type AvatarKey, type PresentationPreferences } from "./user-preferences";
 
 type Theme = "light" | "dark";
@@ -57,6 +61,7 @@ export default function SettingsPage({ theme, accent, displayName, avatar, prese
     onToast({ kind: "stamp", eyebrow: "Personal settings", title: "Defaults restored", message: "The Department has returned your dojo to Ember standard.", duration: 3200 });
   };
 
+  const record = useMemo(readPersonalRecord, []);
   return <main className="page-shell shell settings-page" aria-labelledby="settings-title">
     <header className="settings-hero paper-stack">
       <div className="settings-hero-copy"><span className="eyebrow">Paper-Fu / Personal filing</span><h1 id="settings-title">Your dojo.<br /><em>Your rules.</em></h1><p>Set the way Paper-Fu speaks, moves, and throws a paper airplane at your screen. These preferences stay in this browser and travel across the whole website.</p><span className="settings-saved"><i aria-hidden="true" />{savedNotice}</span></div>
@@ -99,7 +104,12 @@ export default function SettingsPage({ theme, accent, displayName, avatar, prese
       </div>
     </section>
 
-    <section className="settings-profile paper-stack" aria-labelledby="profile-title"><div><span className="eyebrow">05 / Personal record</span><h2 id="profile-title">Your Paper-Fu profile</h2><p>Your choices stay in this browser. No account. No backend. No committee minutes.</p></div><div className="settings-profile-stats"><div><strong>{AVATAR_OPTIONS.length}</strong><span>faces on file</span></div><div><strong>{ACCENT_OPTIONS.length}</strong><span>accent filings</span></div><div><strong>LOCAL</strong><span>browser-only profile</span></div></div><div className="settings-profile-actions"><button type="button" className="button ghost" onClick={resetPreferences}>Restore style defaults</button></div></section>
+    <section className="settings-profile paper-stack" aria-labelledby="profile-title"><div><span className="eyebrow">05 / Personal record</span><h2 id="profile-title">Your Paper-Fu profile</h2><p>Your record stays in this browser. No account. No backend. No committee minutes.</p></div><div className="settings-profile-stats settings-record">
+      <button type="button" onClick={() => navigate({ page: "rules" })}><strong>{record.certifiedChapters}<small> / {RULE_CHAPTERS.length}</small></strong><span>rule chapters certified</span><i aria-hidden="true">→</i></button>
+      <button type="button" onClick={() => navigate({ page: "cards" })}><strong>{record.binderCards}</strong><span>cards in the Dojo Binder</span><i aria-hidden="true">→</i></button>
+      <button type="button" onClick={() => navigate({ page: "search" })}><strong>{record.recentSearches}</strong><span>searches on file</span><i aria-hidden="true">→</i></button>
+      <div><strong>OPEN</strong><span>Dojo: the full catalog is on loan</span></div>
+    </div><div className="settings-profile-actions"><button type="button" className="button ghost" onClick={resetPreferences}>Restore style defaults</button></div></section>
   </main>;
 }
 

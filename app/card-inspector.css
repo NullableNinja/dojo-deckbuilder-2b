@@ -176,7 +176,7 @@ body:has(.universal-card-inspector-backdrop) {
 .card-inspector-card-wrap::before { top: -7px; left: 28px; transform: rotate(-7deg); }
 .card-inspector-card-wrap::after { right: 27px; bottom: -5px; transform: rotate(6deg); }
 
-.card-inspector-card-wrap > img {
+.card-inspector-print > img {
   width: 100%;
   max-height: calc(94vh - 150px);
   aspect-ratio: 11 / 15;
@@ -579,7 +579,7 @@ body:has(.universal-card-inspector-backdrop) {
     padding: 24px 16px 18px;
   }
   .card-inspector-card-wrap { width: min(82vw, 390px); max-height: none; }
-  .card-inspector-card-wrap > img { max-height: none; width: 100%; }
+  .card-inspector-print > img { max-height: none; width: 100%; }
   .card-inspector-star { width: 50px; height: 50px; top: 10px; right: 10px; }
   .card-inspector-details { overflow: visible; padding: 26px 17px 90px; }
   .card-inspector-title-block { padding-right: 0; }
@@ -769,3 +769,85 @@ body:has(.universal-card-inspector-backdrop) {
     overflow: visible !important;
   }
 }
+
+/* Dossier moments (Card Library) ---------------------------------------------
+   The printed card flips in, a FILED stamp lands when it joins the Dojo Binder,
+   and a preview-only sealed envelope can cover it. All instant under reduced motion. */
+.card-inspector-print { position: relative; display: block; width: 100%; }
+.card-inspector-print.is-revealing { transform-origin: 50% 60%; animation: pf-dossier-reveal .5s cubic-bezier(.2, .8, .25, 1) backwards; }
+.card-inspector-filed {
+  position: absolute;
+  top: 36%;
+  right: 5%;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  border: 4px double var(--pf-action);
+  border-radius: 4px;
+  padding: 7px 12px 6px;
+  color: var(--pf-action);
+  background: color-mix(in srgb, var(--pf-surface-raised) 86%, transparent);
+  font: 400 clamp(22px, 2.6vw, 30px)/1 var(--pf-impact);
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(9deg);
+  pointer-events: none;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, .18);
+}
+.card-inspector-filed small { font: 700 11px/1 var(--pf-label); letter-spacing: .16em; }
+.card-inspector-filed.is-fresh { animation: pf-filed-slam .46s cubic-bezier(.2, .9, .3, 1.2) both; }
+
+.dossier-provenance { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: -6px 0 20px; border: 1px dashed var(--pf-line-strong); border-radius: 4px; padding: 11px 14px; background: var(--pf-surface); }
+.dossier-provenance p { flex: 1 1 260px; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.5; }
+.dossier-provenance p b { color: var(--pf-ink); }
+.dossier-provenance-status { display: inline-block; margin-left: 4px; border-bottom: 2px solid var(--pf-brass); color: var(--pf-ink); font-weight: 700; }
+.dossier-provenance.is-sealed { border-color: var(--pf-manila-deep); background: color-mix(in srgb, var(--pf-manila) 22%, var(--pf-surface)); }
+.dossier-provenance.is-sealed .dossier-provenance-status { border-bottom-color: var(--pf-action); }
+
+.related-filings { margin: 26px 0 8px; border-top: 1px solid var(--line); padding-top: 18px; }
+.related-filings h3 { margin: 0 0 12px; font: 400 24px/1 var(--pf-display); }
+.related-filings ul { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.related-filings button { width: 100%; min-height: 44px; display: grid; gap: 6px; border: 0; padding: 0; color: var(--pf-ink); background: none; text-align: left; cursor: pointer; }
+.related-filings img, .related-filings-blank { width: 100%; aspect-ratio: 11 / 15; object-fit: contain; border-radius: 4px; box-shadow: 0 0 0 1px var(--pf-line), 2px 3px 0 var(--pf-line-strong); transition: transform .16s ease, box-shadow .16s ease; }
+.related-filings-blank { display: grid; place-items: center; color: var(--pf-muted); background: var(--pf-surface); font-family: var(--pf-mono); font-size: 11px; }
+.related-filings button:hover img, .related-filings button:focus-visible img { transform: translate(-2px, -3px) rotate(-1deg); box-shadow: 0 0 0 1px var(--pf-blue), 4px 5px 0 var(--pf-line-strong); }
+.related-filings b { overflow: hidden; font-size: 11px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.dossier-envelope {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  align-content: end;
+  gap: 18px;
+  overflow: hidden;
+  border-radius: 8px;
+  padding: 26px 20px 30px;
+  color: var(--pf-manila-ink);
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .025) 0 1px, transparent 1px 6px), linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep));
+  box-shadow: 0 17px 16px rgba(38, 29, 18, .24);
+}
+.dossier-envelope-flap { position: absolute; inset: 0 0 auto; height: 44%; transform-origin: 50% 0; background: linear-gradient(180deg, var(--pf-manila-deep), color-mix(in srgb, var(--pf-manila-deep) 82%, #000)); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.dossier-envelope-flap::after { content: ""; position: absolute; left: 50%; bottom: 5%; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ec7a63 0 16%, var(--pf-action) 18% 62%, var(--pf-action-deep) 64%); transform: translateX(-50%); }
+.dossier-envelope-label { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.dossier-envelope-label small { font: 700 11px/1 var(--pf-label); letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+.dossier-envelope-label b { border: 3px solid var(--pf-action-deep); padding: 6px 14px; color: var(--pf-action-deep); font: 400 34px/1 var(--pf-impact); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-5deg); }
+.dossier-envelope-label span { font: 700 14px/1.2 var(--pf-label); letter-spacing: .08em; text-transform: uppercase; }
+.dossier-envelope .button small { font-weight: 600; opacity: .85; }
+.dossier-envelope.is-opening { pointer-events: none; animation: pf-envelope-away .62s cubic-bezier(.4, 0, .2, 1) forwards; }
+.dossier-envelope.is-opening .dossier-envelope-flap { animation: pf-envelope-flap .32s ease-in forwards; }
+
+@keyframes pf-dossier-reveal { from { opacity: 0; transform: perspective(1100px) rotateY(-68deg) translateY(10px) scale(.94); } 65% { opacity: 1; transform: perspective(1100px) rotateY(5deg); } to { opacity: 1; transform: none; } }
+@keyframes pf-filed-slam { 0% { opacity: 0; transform: rotate(22deg) scale(1.9); } 60% { opacity: 1; transform: rotate(7deg) scale(.94); } 100% { opacity: 1; transform: rotate(9deg) scale(1); } }
+@keyframes pf-envelope-flap { to { transform: perspective(700px) rotateX(-180deg); opacity: .6; } }
+@keyframes pf-envelope-away { 0%, 40% { transform: none; opacity: 1; } 100% { transform: translateY(70%) rotate(3deg); opacity: 0; } }
+
+@media (max-width: 980px) {
+  .related-filings ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-inspector-print.is-revealing, .card-inspector-filed.is-fresh, .dossier-envelope.is-opening, .dossier-envelope.is-opening .dossier-envelope-flap { animation: none; }
+}
+:root[data-motion="reduced"] :is(.card-inspector-print.is-revealing, .card-inspector-filed.is-fresh, .dossier-envelope.is-opening, .dossier-envelope.is-opening .dossier-envelope-flap) { animation: none; }

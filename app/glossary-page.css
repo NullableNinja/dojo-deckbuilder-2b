@@ -1,0 +1,58 @@
+/* Glossary: Term of the Day, A–Z rail and letter-tabbed index cards. Tokens only, both themes. */
+
+@layer components {
+  .term-of-day { position: relative; margin: 4px 0 28px; border: 1px solid var(--pf-line); border-left: 8px solid var(--pf-action); border-radius: 3px 6px 6px 3px; padding: 26px 150px 22px 28px; background: var(--pf-surface-raised); box-shadow: 6px 7px 0 var(--pf-line-strong); }
+  .term-of-day .eyebrow { margin-bottom: 6px; }
+  .term-of-day h2 { margin: 0 0 8px; color: var(--pf-ink); font: 400 clamp(36px, 5vw, 60px)/.92 var(--pf-display); text-transform: uppercase; }
+  .term-of-day > p { max-width: 70ch; margin: 0; color: var(--pf-ink-soft); font-size: 17px; line-height: 1.55; }
+  .term-of-day-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 18px; }
+  .term-of-day-foot > span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 11px; text-transform: uppercase; }
+  .term-of-day-stamp { position: absolute; top: 22px; right: 26px; width: 96px; height: 96px; display: grid; place-items: center; border: 3px double var(--pf-brass); border-radius: 50%; color: var(--pf-brass-text); font: 400 13px/1.05 var(--pf-impact); letter-spacing: .03em; text-align: center; text-transform: uppercase; transform: rotate(12deg); }
+
+  .glossary-rail { position: sticky; top: 86px; z-index: 8; display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 22px; border: 1px solid var(--pf-line); padding: 6px; background: color-mix(in srgb, var(--pf-surface-raised) 94%, transparent); backdrop-filter: blur(6px); box-shadow: 3px 4px 0 var(--pf-line); }
+  .glossary-rail button { min-width: 36px; min-height: 40px; flex: 1 0 auto; border: 1px solid transparent; border-radius: 2px; color: var(--pf-ink); background: transparent; font: 400 17px/1 var(--pf-display); cursor: pointer; }
+  .glossary-rail button:hover:not(:disabled) { border-color: var(--pf-line-strong); color: var(--pf-on-blue); background: var(--pf-blue); }
+  .glossary-rail button:disabled { color: var(--pf-faint); opacity: .45; cursor: default; }
+
+  .glossary-letter-group { position: relative; margin-bottom: 30px; scroll-margin-top: 160px; border-top: 2px solid var(--pf-ink); padding-top: 18px; }
+  .glossary-letter-tab { position: absolute; top: -2px; left: 0; min-width: 54px; margin: 0; border-radius: 0 0 6px 6px; padding: 6px 12px 8px; color: var(--pf-on-blue); background: var(--pf-blue); font: 400 26px/1 var(--pf-display); text-align: center; }
+  .glossary-index { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding-top: 34px; }
+  .glossary-index-card { min-height: 170px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; border: 1px solid var(--pf-line); border-top: 3px solid var(--pf-action); border-radius: 2px 2px 6px 6px; padding: 18px 18px 12px; color: var(--pf-ink); background: linear-gradient(180deg, transparent 0 46px, color-mix(in srgb, var(--pf-action) 35%, transparent) 46px 47px, transparent 47px), var(--pf-surface-raised); text-align: left; cursor: pointer; }
+  .glossary-index-card strong { color: var(--pf-ink); font: 400 22px/1 var(--pf-display); text-transform: uppercase; }
+  .glossary-index-card p { margin: 6px 0 0; color: var(--pf-ink-soft); font-size: 14px; line-height: 1.5; }
+  .glossary-index-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 10px; }
+  .glossary-index-foot small { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; text-transform: uppercase; }
+  .glossary-index-foot b { color: var(--pf-blue); font: 700 13px/1 var(--pf-label); letter-spacing: .08em; text-transform: uppercase; }
+
+  .term-related, .term-passages { margin-top: 15px; }
+  .term-related > span, .term-passages > span { display: block; margin-bottom: 8px; color: var(--pf-brass-text); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .term-related > div { display: flex; flex-wrap: wrap; gap: 6px; }
+  .term-related button { min-height: 40px; border: 1px solid var(--pf-line-strong); border-radius: 999px; padding: 0 14px; color: var(--pf-ink); background: var(--pf-surface); font: 700 14px/1 var(--pf-label); letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+  .term-related button:hover { border-color: var(--pf-action); color: var(--pf-action); }
+  .term-passages ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .term-passages li button { width: 100%; min-height: 48px; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--pf-line); padding: 8px 12px; color: var(--pf-ink); background: var(--pf-surface-raised); text-align: left; cursor: pointer; }
+  .term-passages li button:hover { border-color: var(--pf-blue); box-shadow: 3px 3px 0 var(--pf-line-strong); }
+  .term-passages small { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; text-transform: uppercase; }
+  .term-passages b { font-size: 14px; }
+  .term-passages i { color: var(--pf-blue); font-style: normal; }
+  .term-passages p { margin: 8px 0 0; color: var(--pf-muted); font-size: 13px; }
+}
+
+@layer responsive {
+  @media (max-width: 1080px) {
+    .glossary-index { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .glossary-rail { top: 68px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .glossary-rail button { min-width: 40px; min-height: 44px; flex: 0 0 auto; }
+  }
+  @media (max-width: 600px) {
+    .term-of-day { padding: 74px 18px 18px 20px; }
+    .term-of-day-stamp { top: 14px; right: 14px; width: 70px; height: 70px; font-size: 10px; }
+    .term-of-day-foot .button { flex: 1 1 100%; }
+    .glossary-index { grid-template-columns: 1fr; }
+    .glossary-index-card { min-height: 0; }
+    .term-passages li button { grid-template-columns: 1fr auto; }
+    .term-passages li button small { grid-column: 1 / -1; }
+  }
+}

@@ -85,6 +85,9 @@
     --pf-accent-combo: var(--pf-violet);
     --pf-accent-progress: var(--pf-brass);
     --pf-accent-wayfinding: var(--pf-blue);
+    /* Card Library materials: the laminate gloss on printed cards and the sealed manila envelope. */
+    --pf-gloss: rgba(255, 246, 220, .5);
+    --pf-manila: #dcc48e; --pf-manila-deep: #c4a565; --pf-manila-ink: #3b2f17;
     --pf-shadow-paper: 0 5px 0 rgba(32, 46, 64, .12), 0 18px 34px rgba(25, 35, 49, .13);
     --pf-shadow-lifted: 0 8px 0 rgba(32, 46, 64, .12), 0 26px 54px rgba(25, 35, 49, .2);
     --pf-shadow-ink: 0 10px 0 rgba(5, 15, 28, .2), 0 28px 58px rgba(5, 15, 28, .28);
@@ -108,6 +111,8 @@
     --pf-blue: #cfd3d8; --pf-blue-deep: #15171a; --pf-action: #f07a5f; --pf-action-deep: #b84535; --pf-brass: #e3b457; --pf-brass-soft: #5a4522; --pf-guard: #8fc6c4; --pf-guard-soft: #1e4046; --pf-violet: #c9adde; --pf-danger: #f0786d;
     --pf-brass-on-ink: #ecd59c; --pf-brass-text: #e8bd62; --pf-on-blue: #16181b; --pf-scrim: rgba(8, 9, 11, .8);
     --pf-ink-panel: #2d3239;
+    --pf-gloss: rgba(255, 240, 210, .22);
+    --pf-manila: #a68d5a; --pf-manila-deep: #85703f; --pf-manila-ink: #1e180c;
     --pf-spot-strength: 9%;
     --pf-stage: #191b1f; --pf-stage-deep: #111316; --pf-stage-glow: #2c3038; --pf-stage-edge: #0a0b0d;
     --pf-curtain-a: #2f2a2c; --pf-curtain-b: #3a3234; --pf-floor-top: #3b3f46; --pf-floor-bottom: #2e3238; --pf-floor-seam: rgba(255, 250, 240, .07);
@@ -492,8 +497,6 @@
   .rule-article p, .rule-bullets { color: var(--pf-ink-soft); font-size: 13px; line-height: 1.72; }
   .rule-bullets { padding-left: 22px; }
   .rule-bullets li + li { margin-top: 8px; }
-  .rule-callout { margin-block: 17px; border-left: 5px solid var(--pf-brass); padding: 14px 17px; color: var(--pf-blue); background: var(--pf-brass-soft); }
-  .rule-callout p { margin: 0; color: inherit; font-weight: 800; }
   .table-scroll { overflow-x: auto; }
   .rule-table { width: 100%; border-collapse: collapse; font-size: 11px; }
   .rule-table th { padding: 11px; color: #fffaf0; background: var(--pf-blue); text-align: left; }
@@ -573,12 +576,8 @@
   .rulings-shared-search > span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .1em; text-align: right; text-transform: uppercase; }
   .ruling-list-section { margin-top: 44px; }
   .ruling-list { display: grid; gap: 9px; }
-  .ruling-list article { display: grid; grid-template-columns: 45px 1fr auto; gap: 14px; align-items: start; border: 1px solid var(--pf-line); padding: 17px; background: var(--pf-surface-raised); }
-  .ruling-list article > span { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; font-weight: 900; }
-  .ruling-list article div > b { color: var(--pf-blue); font-family: var(--pf-mono); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
   .ruling-list h3 { margin: 6px 0; color: var(--pf-ink); font-family: var(--pf-display); font-size: 22px; text-transform: uppercase; }
   .ruling-list p { margin: 0; color: var(--pf-muted); font-size: 11px; line-height: 1.5; }
-  .ruling-list article > strong { border: 1px solid var(--pf-guard); padding: 6px 8px; color: var(--pf-guard); font-family: var(--pf-mono); font-size: 8px; text-transform: uppercase; }
   .house-grid, .glossary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
   .house-grid button, .glossary-grid button { min-height: 205px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--pf-line); padding: 19px; color: var(--pf-ink); background: var(--pf-surface-raised); text-align: left; cursor: pointer; }
   .house-grid button > span, .glossary-grid button > span { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; }
@@ -1289,8 +1288,6 @@
     .card-body { padding: 10px; }
     .card-body h3 { font-size: 18px; }
     .binder-strip { align-items: start; flex-direction: column; gap: 7px; }
-    .ruling-list article { grid-template-columns: 30px 1fr; }
-    .ruling-list article > strong { grid-column: 2; width: fit-content; }
     .priority-panel ol, .judge-procedure ol { grid-template-columns: 1fr; }
     .detail-modal { max-height: calc(100vh - 28px); padding: 23px 18px; }
     .modal-heading { grid-template-columns: 1fr; }
@@ -1492,7 +1489,6 @@
   .story-panels i { color: var(--pf-muted); font-size: 12px; font-style: normal; }
   .story-cta { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 28px; }
   .story-cta h2 { margin: 0; color: var(--pf-ink); font: 700 30px/1.15 var(--pf-display); }
-  .chapter-nav { position: static; max-height: none; overflow: visible; }
   .rule-section-picker { margin: 0 0 28px; border: 1px solid var(--pf-line); background: var(--pf-surface); }
   .rule-section-picker summary { min-height: 48px; padding: 14px; color: var(--pf-ink); font-weight: 700; cursor: pointer; }
   .rule-section-picker .rule-section-nav { margin: 0; border-top: 1px solid var(--pf-line); padding: 12px; }
