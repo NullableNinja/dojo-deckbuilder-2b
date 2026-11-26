@@ -166,8 +166,8 @@
   },
   "progression": {
     "xpPerHonor": 1,
-    "attackXpOnHit": 1,
-    "defenseXpOnBlock": 1,
+    "xpPerLegalAttack": 1,
+    "xpPerLegalDefense": 1,
     "quickDuelUsesFullBeltRewards": false,
     "beltCheckAction": {
       "usesPerTurn": 1,
