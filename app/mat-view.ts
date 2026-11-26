@@ -142,6 +142,8 @@ export function choicePrompt(game: EngineGame, pending: EnginePending, human: nu
   if (pending.kind === "defense") return `${attacker ?? "Your opponent"} attacks ${pending.zone ? `${pending.zone} ` : ""}with ${incoming?.name ?? "an Attack"}. Play a Defense that covers that zone, or take the hit.`;
   if (pending.kind === "reaction") return `${attacker ?? "Your opponent"} declared ${incoming?.name ?? "an Attack"}. You may play a Reaction before choosing a Defense.`;
   if (pending.kind === "reversal") return "You blocked it. Counter with a Reversal Attack, or let the moment pass.";
+  if (pending.kind === "attack-zone") return "This Attack can go High, Mid or Low. Choose where it lands.";
+  if (pending.kind === "zone-choice") return "Choose a zone for this effect.";
   const source = typeof pending.sourceCardId === "string" ? findInstance(game, pending.sourceCardId)?.name : null;
   return source ? `${source} asks you to choose.` : "Choose one option.";
 }
