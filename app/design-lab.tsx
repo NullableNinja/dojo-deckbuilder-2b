@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { ToastInput } from "./companion-app";
+import type { ToastInput } from "./paper-toast-context";
 import { readUserPreferences, replaceUserLab, updateUserPreferences, type EffectIntensity, type PreferenceDensity, type ToastDuration } from "./user-preferences";
 
 type Theme = "light" | "dark";

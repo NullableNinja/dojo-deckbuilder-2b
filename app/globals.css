@@ -85,6 +85,9 @@
     --pf-accent-combo: var(--pf-violet);
     --pf-accent-progress: var(--pf-brass);
     --pf-accent-wayfinding: var(--pf-blue);
+    /* Collection rarity and sealed-envelope materials (Card Library). Rarity sets discovery order, not power. */
+    --pf-carbon: #3d5f91; --pf-black-ink: #0d141d; --pf-foil: rgba(255, 236, 178, .62);
+    --pf-manila: #dcc48e; --pf-manila-deep: #c4a565; --pf-manila-ink: #3b2f17;
     --pf-shadow-paper: 0 5px 0 rgba(32, 46, 64, .12), 0 18px 34px rgba(25, 35, 49, .13);
     --pf-shadow-lifted: 0 8px 0 rgba(32, 46, 64, .12), 0 26px 54px rgba(25, 35, 49, .2);
     --pf-shadow-ink: 0 10px 0 rgba(5, 15, 28, .2), 0 28px 58px rgba(5, 15, 28, .28);
@@ -108,6 +111,8 @@
     --pf-blue: #cfd3d8; --pf-blue-deep: #15171a; --pf-action: #f07a5f; --pf-action-deep: #b84535; --pf-brass: #e3b457; --pf-brass-soft: #5a4522; --pf-guard: #8fc6c4; --pf-guard-soft: #1e4046; --pf-violet: #c9adde; --pf-danger: #f0786d;
     --pf-brass-on-ink: #ecd59c; --pf-brass-text: #e8bd62; --pf-on-blue: #16181b; --pf-scrim: rgba(8, 9, 11, .8);
     --pf-ink-panel: #2d3239;
+    --pf-carbon: #9cb6e0; --pf-black-ink: #060709; --pf-foil: rgba(255, 228, 160, .42);
+    --pf-manila: #a68d5a; --pf-manila-deep: #85703f; --pf-manila-ink: #1e180c;
     --pf-spot-strength: 9%;
     --pf-stage: #191b1f; --pf-stage-deep: #111316; --pf-stage-glow: #2c3038; --pf-stage-edge: #0a0b0d;
     --pf-curtain-a: #2f2a2c; --pf-curtain-b: #3a3234; --pf-floor-top: #3b3f46; --pf-floor-bottom: #2e3238; --pf-floor-seam: rgba(255, 250, 240, .07);
