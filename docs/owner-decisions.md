@@ -170,3 +170,18 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 63. **"−X Speed next round"** is currently "until the next Honor", so it never changes next round's
     turn order. *Should it last through the next round's Honor (affecting initiative)?*
 64. **XP anti-loop rule** (each physical card earns XP once per round) isn't implemented yet. *Keep it?*
+
+## K. Combos, Characters and the Market (engine fixes, Nov 26)
+
+65. **Gramma Uppercut** ("once per game when attacked, ignore temporary Attack bonuses"): the engine
+    spends it automatically on the first strike that has a temporary bonus. *Should it be optional?*
+66. **"Temporary" bonuses** = card, Combo and Character modifiers, statuses, next-Attack bonuses, Tempo
+    and the Reversal bonus (not printed Attack Power, ATK, Equipment or Location). *OK?*
+67. "The first time each turn you discard / play …" abilities also fire on the opponent's turn
+    (e.g. Boo-Fu); any next-Attack bonus they give ends with that turn. *OK?*
+68. A Defense played on the opponent's turn doesn't count toward your card types for Three Squirrels. *OK?*
+69. Swan Wing Guard's "purchase discount for your next turn" lasts through that whole turn. *OK?*
+70. For The Belt Collector, a new zone or a new card type toward an exam counts as "completing a
+    requirement". *OK?*
+71. Market Aisle Map's "either end slot" = the first or last Market position. *OK?*
+72. **Ronin Reroll** is the one Character ability not yet automated. (No question; noted.)
