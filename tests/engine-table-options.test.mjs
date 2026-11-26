@@ -67,7 +67,8 @@ test("defaults reproduce the canonical declaration and are exposed and recorded"
 test("unknown options, unknown house rules and non-boolean switches are rejected", () => {
   assert.throws(() => new Game(data, { table: { tempoo: false } }), /Unknown table option/);
   assert.throws(() => new Game(data, { table: { houseRules: ["no-such-rule"] } }), /no engine variant/);
-  const unsupported = data.rules.houseRules.find((rule) => rule.quickDuel.status !== "supported");
+  const withVariant = new Set(tableOption(definition, "houseRules").variants.map((variant) => variant.id));
+  const unsupported = data.rules.houseRules.find((rule) => !withVariant.has(rule.id));
   assert.throws(() => new Game(data, { table: { houseRules: [unsupported.id] } }), /no engine variant/);
   assert.throws(() => new Game(data, { table: { tempo: "no" } }), /true or false/);
 });
@@ -252,4 +253,31 @@ test("equip effects offer replacement options and discard the replaced Weapon", 
   assert.deepEqual(replacing.replaceCardIds, [held.instanceId]);
   assert.ok(game.resolveChoice({ optionId: replacing.id }));
   assert.ok(player.equipment.includes(incoming) && player.discard.includes(held));
+});
+
+test("Steal the Belt: a KO of an opposing fighter at your Belt or higher completes your current task", () => {
+  const game = new Game(data, { seed: 21, mode: "standard-clash", players: 3, table: { houseRules: ["steal-the-belt"] } });
+  const [hero, victim] = game.players;
+  victim.beltIndex = hero.beltIndex;
+  victim.lastDamagedBy = hero.id; victim.hp = 0;
+  const taskBefore = hero.completedTasks.length;
+  game.processKnockouts();
+  assert.equal(hero.completedTasks.length, taskBefore + 1);
+  const plain = new Game(data, { seed: 21, mode: "standard-clash", players: 3 });
+  const [other, target] = plain.players;
+  target.lastDamagedBy = other.id; target.hp = 0;
+  const before = other.completedTasks.length;
+  plain.processKnockouts();
+  assert.equal(other.completedTasks.length, before, "off by default");
+});
+
+test("Friendly Fire: an ally may be attacked once per round, for no rewards", () => {
+  const game = new Game(data, { seed: 22, mode: "tag-team", teams: [[0, 2], [1, 3]], table: { houseRules: ["friendly-fire"] } });
+  const [attacker, , ally] = game.players;
+  assert.ok(game.isLegalTarget(attacker, ally), "allies are targetable with Friendly Fire");
+  attacker.alliedAttacksThisRound = 1;
+  assert.ok(!game.isLegalTarget(attacker, ally), "once per round");
+  const plain = new Game(data, { seed: 22, mode: "tag-team", teams: [[0, 2], [1, 3]] });
+  assert.ok(!plain.isLegalTarget(plain.players[0], plain.players[2]), "off by default");
+  assert.equal(plain.defaultTargetId(0) % 2, 1, "default targeting never picks an ally");
 });

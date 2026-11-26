@@ -579,7 +579,7 @@ export class Game {
 
   gainXp(player, amount, source = "effect") {
     const gained = Math.max(0, num(amount));
-    if (!gained || !player) return 0;
+    if (!gained || !player || this.friendlyStrikeInvolves(player)) return 0;
     player.xp += gained;
     this.telemetry.xpGenerated += gained;
     this.emit({ type: "xp-generated", player: player.id, amount: gained, source });
@@ -611,6 +611,7 @@ export class Game {
   }
 
   checkBeltExam(player) {
+    if (this.friendlyStrikeInvolves(player)) return false;
     const nextIndex = player.beltIndex + 1;
     const exam = this.definition.progression.belts[nextIndex]?.exam;
     if (!exam || player.completedTasks.includes(nextIndex)) return false;
@@ -831,7 +832,7 @@ export class Game {
   // re-checking requirements or counting as a new trigger (rules: Combo Timing — Modifier vs.
   // Aftermath). Its passive part, if any, applies once when it completes.
   activateCombos(player, trigger, currentCard, zone, event = {}) {
-    if (!player.learnedCombos.length) return [];
+    if (!player.learnedCombos.length || this.friendlyStrikeInvolves(player)) return [];
     const activated = [];
     const session = this.combat ? ((this.combat.combos ??= {})[player.id] ??= []) : null;
     for (const combo of player.learnedCombos) {
@@ -1955,9 +1956,11 @@ export class Game {
     this.declaredAttack = null;
     zone = zone ?? (card.zone === "Any" ? undefined : card.zone);
     // Tempo is checked when the Attack and the Defense card are played (rules: Tempo Advantage).
-    const attackerTempo = useTempo && this.hasTempoAdvantage(attacker, defender);
-    const defenderTempo = Boolean(defenseCard) && this.hasTempoAdvantage(defender, attacker);
-    const previousCombat = this.combat; this.combat = { attackerId: attacker.id, defenderId: defender.id, zoneChangedBy: strike.zoneChangedBy ?? null, marks: [], combos: {} };
+    const friendly = attacker.team === defender.team && attacker.id !== defender.id;
+    const attackerTempo = useTempo && !friendly && this.hasTempoAdvantage(attacker, defender);
+    const defenderTempo = Boolean(defenseCard) && !friendly && this.hasTempoAdvantage(defender, attacker);
+    if (friendly) attacker.alliedAttacksThisRound = (attacker.alliedAttacksThisRound ?? 0) + 1;
+    const previousCombat = this.combat; this.combat = { attackerId: attacker.id, defenderId: defender.id, zoneChangedBy: strike.zoneChangedBy ?? null, marks: [], combos: {}, friendly };
     remove(attacker.hand, card); attacker.played.push(card); attacker.plays += 1;
     const firstAttackInZoneThisTurn = !reversal && !attacker.turnStats.zones.has(zone ?? "Mid");
     if (!reversal) {
@@ -2960,7 +2963,7 @@ export class Game {
   clearCharacterMarks(player, prefix) { for (const key of Object.keys(player.characterMarks ?? {})) if (key.startsWith(prefix)) delete player.characterMarks[key]; }
 
   // "This turn" ends for everyone when the active player's turn ends.
-  finishTurn() { this.turns += 1; for (const player of this.players) { this.expireStatuses(player, "endOfTurn"); this.clearCharacterMarks(player, "turn:"); } this.players[this.activePlayer].effectUsage.turn = {}; let nextPosition = this.turnOrderPosition + 1; while (nextPosition < this.turnOrder.length && this.players[this.turnOrder[nextPosition]].eliminated) nextPosition += 1; if (nextPosition < this.turnOrder.length) { this.turnOrderPosition = nextPosition; this.activePlayer = this.turnOrder[nextPosition]; this.startTurn(this.players[this.activePlayer]); this.phase = "Initiate"; } else { const completedRound = this.round; this.round = Math.min(this.round + 1, this.mode.maxRounds); this.roundLimitReached = completedRound >= this.mode.maxRounds; this.referee = (this.referee + 1) % this.playerCount; this.turnOrderPosition = 0; for (const player of this.players) { player.effectUsage.round = {}; player.reversalUsedThisRound = false; this.expireStatuses(player, "endOfRound"); this.clearCharacterMarks(player, "round:"); } if (this.marketRefreshesAtRoundEnd()) this.refillMarket(true); this.marketPurchasedThisRound = false; this.phase = "Honor"; } this.checkWinner(); }
+  finishTurn() { this.turns += 1; for (const player of this.players) { this.expireStatuses(player, "endOfTurn"); this.clearCharacterMarks(player, "turn:"); } this.players[this.activePlayer].effectUsage.turn = {}; let nextPosition = this.turnOrderPosition + 1; while (nextPosition < this.turnOrder.length && this.players[this.turnOrder[nextPosition]].eliminated) nextPosition += 1; if (nextPosition < this.turnOrder.length) { this.turnOrderPosition = nextPosition; this.activePlayer = this.turnOrder[nextPosition]; this.startTurn(this.players[this.activePlayer]); this.phase = "Initiate"; } else { const completedRound = this.round; this.round = Math.min(this.round + 1, this.mode.maxRounds); this.roundLimitReached = completedRound >= this.mode.maxRounds; this.referee = (this.referee + 1) % this.playerCount; this.turnOrderPosition = 0; for (const player of this.players) { player.effectUsage.round = {}; player.reversalUsedThisRound = false; player.alliedAttacksThisRound = 0; this.expireStatuses(player, "endOfRound"); this.clearCharacterMarks(player, "round:"); } if (this.marketRefreshesAtRoundEnd()) this.refillMarket(true); this.marketPurchasedThisRound = false; this.phase = "Honor"; } this.checkWinner(); }
 
   hide(player) { player.targetId = null; player.taggedThisTurn = false; player.equippedThisInitiate = false; player.noEquipThisTurn = false; const incomingDamage = player.turnStats.damageTaken ?? 0; const benchedGear = this.benchedEquipment(player); for (const card of new Set([...player.played, ...player.equipment])) if (!benchedGear.has(card)) this.applyCardEffects(player, card, "onHide", { opponent: this.opponentOf(player), incomingDamage }); player.lastTurnWasHit = false; player.dealtCombatDamageLastTurn = Boolean(player.turnStats.dealtCombatDamageThisTurn); player.anyZoneGrant = null; player.nextAttackAnyZone = false; player.lastTurnAttacked = Boolean(player.turnStats.attacked); player.lastTurnWasBlocked = Boolean(player.turnStats.blocked); player.discard.push(...player.hand, ...player.played.filter((card) => !player.equipment.includes(card) && !this.benchedEquipment(player).has(card))); player.hand = []; player.played = [...player.equipment, ...this.benchedEquipment(player)]; player.focus = 0; player.badHabitFocusUsed = false; player.practiceUsed = false; player.nextAttackPower = 0; player.tempSpeed = 0; this.expireStatuses(player, "endOfTurn"); this.resolveDelayedDamage(player); this.closeComboTurn(player); this.draw(player, this.definition.turn.handSize + this.beltRewardAmount(player, "hand-size")); this.emit({ type: "hide", player: player.id, handSize: player.hand.length }); }
 
@@ -3102,7 +3105,17 @@ export class Game {
 
   isOpponent(player, other) { return Boolean(other) && other.id !== player.id && other.team !== player.team; }
 
-  isLegalTarget(player, target) { return this.isOpponent(player, target) && !target.eliminated && target.hp > 0 && !this.hasStatus(target, "untargetable"); }
+  isLegalTarget(player, target) { return (this.isOpponent(player, target) || this.friendlyFireAllowed(player, target)) && !target.eliminated && target.hp > 0 && !this.hasStatus(target, "untargetable"); }
+
+  /** Friendly Fire house rule: an ally may be attacked a limited number of times per round. */
+  friendlyFireAllowed(player, target) {
+    const rule = this.definition.combat?.friendlyFire;
+    if (!rule?.enabled || !target || target.id === player.id || target.team !== player.team || target.isBoss) return false;
+    return (player.alliedAttacksThisRound ?? 0) < Number(rule.alliedAttacksPerRound ?? 1);
+  }
+
+  /** True while an allied (Friendly Fire) strike is resolving: it grants no rewards to either teammate. */
+  friendlyStrikeInvolves(player) { return Boolean(this.combat?.friendly) && [this.combat.attackerId, this.combat.defenderId].includes(player?.id); }
 
   legalTargets(player) {
     const count = this.players.length;
@@ -3125,7 +3138,8 @@ export class Game {
   defaultTargetId(playerId) {
     const player = this.players[playerId];
     if (this.players.length === 2) return 1 - playerId;
-    const targets = this.legalTargets(player); if (!targets.length) return null;
+    const legal = this.legalTargets(player); const opponents = legal.filter((target) => this.isOpponent(player, target));
+    const targets = opponents.length ? opponents : legal; if (!targets.length) return null; // never pick an ally by default
     if (player.targetId !== undefined && player.targetId !== null && targets.some((target) => target.id === player.targetId)) return player.targetId;
     player.targetId = this.chooseTarget(player, targets).id;
     return player.targetId;
@@ -3158,6 +3172,8 @@ export class Game {
       if (responsible && this.isOpponent(responsible, victim) && !responsible.eliminated) {
         this.gainXp(responsible, Number(this.mode.knockout?.xpForResponsiblePlayer ?? 2), "knockout");
         if (responsible.beltIndex === this.definition.progression.belts.length - 2) { responsible.examProgress.koWhileBrown = true; this.checkBeltExam(responsible); }
+        // Steal the Belt house rule: KO an opposing non-Boss fighter at your Belt or higher to complete your current task.
+        if (this.definition.progression.knockoutCompletesBeltTask && !victim.isBoss && victim.beltIndex >= responsible.beltIndex) this.markBeltExamComplete(responsible);
       }
       for (const card of [...victim.equipment]) { remove(victim.played, card); victim.discard.push(card); }
       victim.equipment = []; victim.exhaustedEquipment = []; victim.statuses = []; victim.tempSpeed = 0;

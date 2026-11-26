@@ -158,7 +158,8 @@ function attackScore(game, attacker, defender, card) {
 
 // ---- Targets in multiplayer --------------------------------------------------------------
 
-const legalTargets = (game, player) => (typeof game.legalTargets === "function" ? game.legalTargets(player) : []);
+// Opponents only: computers never choose a Friendly Fire target on purpose.
+const legalTargets = (game, player) => (typeof game.legalTargets === "function" ? game.legalTargets(player) : []).filter((target) => typeof game.isOpponent !== "function" || game.isOpponent(player, target));
 
 /** Finish a fighter this attack can knock out, otherwise press the weakest, otherwise the leader. */
 function chooseTarget(game, attacker, card, targets) {

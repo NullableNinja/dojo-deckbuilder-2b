@@ -588,6 +588,11 @@
       }
     },
     "combat": {
+      "friendlyFire": {
+        "enabled": false,
+        "alliedAttacksPerRound": 1,
+        "summary": "Friendly Fire house rule: in team play a fighter may Attack an allied active fighter once per round; that Attack grants no XP, Belt task credit, KO reward, Tempo or Combo trigger to either teammate."
+      },
       "attackFormula": [
         "printedAttackPower",
         "characterAtk",
@@ -639,6 +644,7 @@
       }
     },
     "progression": {
+      "knockoutCompletesBeltTask": false,
       "greenAbility": {
         "unlockBelt": "green",
         "resolverNamespace": "character.green.",
@@ -797,6 +803,14 @@
           {
             "id": "market-scramble",
             "set": { "economy.market.stagnationRefresh": "after-every-round" }
+          },
+          {
+            "id": "steal-the-belt",
+            "set": { "progression.knockoutCompletesBeltTask": true }
+          },
+          {
+            "id": "friendly-fire",
+            "set": { "combat.friendlyFire.enabled": true }
           },
           {
             "id": "fast-belts",
