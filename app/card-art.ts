@@ -4,13 +4,13 @@ import highGuardArtUrl from "./assets/starter/high-guard-art-v2.webp";
 
 export type ArtCard = { name: string; catalogId: string; image?: string | null; cardType?: string };
 
-const cardArtModules = import.meta.glob<string>("./assets/cards/{attacks,defenses,katas,consumables,defense-equipment,gear,weapons,reactions,combos,characters,starters,locations}/*.webp", { eager: true, query: "?url", import: "default" });
+const cardArtModules = import.meta.glob<string>("./assets/cards/{attacks,defenses,katas,consumables,defense-equipment,gear,weapons,reactions,combos,characters,starters,locations,bosses}/*.webp", { eager: true, query: "?url", import: "default" });
 const fighterIllustrationModules = import.meta.glob<string>("./assets/fighters/*.webp", { eager: true, query: "?url", import: "default" });
 
 const CARD_ART = Object.fromEntries(Object.entries(cardArtModules).map(([path, url]) => [`/cards/${path.split("/cards/")[1]}`, url]));
 const CARD_ART_BY_CATALOG_ID = Object.fromEntries(
   Object.entries(cardArtModules).flatMap(([path, url]) => {
-    const match = path.match(/\/(ddb-(?:atk|def|kat|con|deq|gea|wpn|rit|cmb|sta|loc)-core-\d{3})_/i);
+    const match = path.match(/\/(ddb-(?:atk|def|kat|con|deq|gea|wpn|rit|cmb|sta|loc|bat|bdf|btq|bpr|bst)-core-\d{3})_/i);
     return match ? [[match[1].toUpperCase(), url]] : [];
   }),
 );

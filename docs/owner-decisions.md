@@ -107,3 +107,23 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
     (beta)" in Quick Duel setup. The audit's high-priority gaps are being fixed. My recommendation is
     to switch the default once those land and a few full games feel right to you, then delete the old
     mat's rules code.
+
+## H. Boss Blitz (`docs/boss-blitz-review.md`)
+
+51. **Stage cards say "Boss Character … ignore its Character abilities."** Chapter 14 uses Boss
+    Profiles. *Update the Rival / Mini-Boss Stage card text to say "Boss Profile", or is a normal
+    Character as a Boss meant to be an option?*
+52. **Boss Defense:** "reduce damage by N" (cards) or "add Guard to the Boss's Defense" (rulebook)?
+    The engine uses the rulebook.
+53. **Final Boss KO XP:** +5 (rulebook) or the normal +2 (Final Boss Stage card)?
+54. Should the **8 HP stage-clear heal** be capped at max HP? (Engine: capped.)
+55. Should the mat offer **Challenge Boss Blitz** (pick your three Bosses) as well as random Bosses?
+56. Players win **Speed ties** against the Boss, and Director Clipwell's "active player" means the
+    player the Boss is about to attack. *OK?*
+
+## I. Weapon art
+
+57. The 20 Weapons without art (`DDB-WPN-CORE-046`–`065`) are not in `dojo-deckbuilder-2a` yet. Its
+    only branch, `main`, was last updated Nov 23 and its weapons folder matches ours exactly. *Push
+    the new files to 2a (or tell me where they are) and I'll bring them over without touching anything
+    else.*
