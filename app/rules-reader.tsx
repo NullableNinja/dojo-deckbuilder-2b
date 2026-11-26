@@ -2,30 +2,20 @@
 // hovercards, Department Notice callouts, Official Example exhibits and pocket reference cards.
 // Presentation only: every word comes from app/data/rules.json through canonical-presentation.ts.
 import { createContext, Fragment, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { CANONICAL_RULES, COMBAT_FORMULA_TEXT, PHASES, RULE_PRIORITY } from "./canonical-presentation";
+import { COMBAT_FORMULA_TEXT, PHASES, RULE_PRIORITY } from "./canonical-presentation";
+import { blockText, chapterNumber, escapeRegExp, RULE_CHAPTERS, type RuleBlock, type RuleChapter, type RuleSection } from "./rule-chapters";
 import { paperScrollBehavior, prefersReducedMotion, usePaperToast } from "./paper-toast-context";
 import { navigate, serializeRoute, type SiteRoute } from "./routing";
 import { ALL_GLOSSARY_ENTRIES, normalizeSearchQuery } from "./search";
 import { SectionHeader } from "./section-header";
 import "./rules-reader.css";
 
-type RuleBlock =
-  | { kind: "paragraph"; text: string }
-  | { kind: "bullet"; text: string }
-  | { kind: "table"; rows: (string | number)[][] };
-type RuleSection = { id: string; title: string; content: RuleBlock[] };
-type RuleChapter = { id: string; number: number; title: string; intro: RuleBlock[]; sections: RuleSection[] };
-
-const RULE_CHAPTERS = (CANONICAL_RULES as unknown as { chapters: RuleChapter[] }).chapters.filter((chapter) => chapter.number >= 1 && chapter.number <= 16);
 const INTRO_KEY = "intro";
 const CERTIFIED_STORAGE_KEY = "paper-fu-rules-certified-v1";
 const MAX_SEARCH_RESULTS = 60;
 
-const chapterNumber = (chapter: RuleChapter) => String(RULE_CHAPTERS.findIndex((entry) => entry.id === chapter.id) + 1).padStart(2, "0");
-const blockText = (block: RuleBlock) => block.kind === "table" ? block.rows.flat().map(String).join(" · ") : block.text;
 const chapterBlocks = (chapter: RuleChapter) => [...chapter.intro, ...chapter.sections.flatMap((section) => section.content)];
 const readingMinutes = (chapter: RuleChapter) => Math.max(1, Math.round(chapterBlocks(chapter).map(blockText).join(" ").split(/\s+/).length / 200));
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** A single-cell rule table is a notice: "TITLE\nbody". */
 const splitNotice = (cell: string) => {
