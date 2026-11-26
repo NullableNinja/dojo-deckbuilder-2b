@@ -105,12 +105,41 @@ Also fixed on Nov 27, combos, Characters, statuses and Market (tests in `tests/e
 
 The Quick Duel fingerprint moved from `c480b51e9f73de8c9e141562` to `9b8cbb605941c0ea768d99cb`.
 
+Also fixed on Nov 27, Equipment, Reactions, Consumables and choices (tests in
+`tests/engine-equipment-reactions.test.mjs`; audit rows E-T5, E-A15, E-R1–R4, E-C1, E-C2, E-X16, E-X18 and
+parts of E-T8, E-A1, E-D8, E-E3, E-X19):
+
+- **One-use cards leave play as printed.** `definition.equipment.afterUse`: a resolved Consumable returns
+  to the box (a new `box` zone, out of the game) unless its own effect destroys it; Reaction Items are
+  destroyed. A Reaction Item no longer lands in two zones at once.
+- **Equipment readies** at its controller's Initiate (`definition.equipment.readiness.readyAt`; `honor`
+  reproduces the old mat).
+- **Equipment triggers fire:** `onAttackDeclared` (the attacker's own Attack, and "when you are
+  targeted" effects at declaration), `onDefenseDeclared` and `afterResolve`. An exhaust-cost ability is
+  skipped while its card is exhausted.
+- **Consumable windows by timing** (`definition.equipment.consumableWindows`): Turn in Yell; Ascend in
+  Ascend; Anytime in Yell, Ascend and the defender's Reaction Window; Reaction in the Reaction Window when
+  it answers the Attack. The Reaction Window stays open until the defender passes and also offers
+  Equipment the defender may exhaust (a zone call). A defender who becomes Untargetable spends the strike.
+  Cards played outside your turn generate no printed Focus.
+- **After-Block Reaction Items** get a window after a Block, before the Reversal window.
+- **Choices queue instead of overwriting**, structured choices only offer options the engine resolves,
+  `play-attack` validates its zone against printed zones and grants, and zone-call / forced-zone
+  statuses are read.
+
+With the two passes above and the table-option changes on `main` (`28c8388a8cfb253c91af935b`), the
+Quick Duel fingerprint is now `28bbde920723dc2a96d66806`.
+
 Still open (the parity work in Phase 1 will find the rest):
 
 - **Optional Tempo**: the engine applies Tempo whenever it is legal; the rulebook makes it optional.
 - **Location damage modifiers** and the damage-prevention layers (audit E-D6, E-L3) are not modelled.
-- **After-Block Reaction Items** (e.g. a Reaction whose only timing is "after you Block") are never
-  offered by the engine; only Reactions that act when an Attack is declared are.
+- **Remaining Reaction and Equipment windows:** the out-of-turn-Consumable Reaction (*Instant Noodle
+  Smokescreen*), passive Reaction watchers (discount kept, Combo payoff cancelled, forced discard
+  ignored), attacker-side manual Equipment activations at declaration (*Orange Permit Puncher*), the
+  `defense-guard` defence-window plan, Reaction-to-a-Reaction (*Air Horn*), Disarm and card-reveal
+  windows (*Emergency Shoelace*, *Lucky Dumpling* are offered nowhere yet), and Ascend Katas.
+- **X-Ray Paper** is encoded as "prevent 0"; its "deals 0 damage" needs a data encoding.
 - **Kata watchers**: Kata effects that trigger later on Hit, Block or after an attack never fire,
   because the engine does not set up a watcher when the Kata is played.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.

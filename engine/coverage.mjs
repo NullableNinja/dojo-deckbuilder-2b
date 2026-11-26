@@ -80,7 +80,6 @@ const listValue = (value) => Array.isArray(value) ? value.join(",") : String(val
 export const canonicalAction = (effect) => {
   const action = String(effect.action ?? effect.effect ?? "(none)");
   if (action !== "custom") return action;
-  if (String(effect.id).endsWith("dodge-block-cycle")) return "cycleDiscardDraw";
   if (HEADLESS_RESOLVER_ACTIONS[String(effect.resolver)]) return HEADLESS_RESOLVER_ACTIONS[String(effect.resolver)];
   if (String(effect.resolver) === "attack.final.cycle") return action;
   if (["attack.final.defensiveReaction", "attack.final.comboMultiplicity", "attack.final.fireDrillFeint"].includes(String(effect.resolver))) return "structured";

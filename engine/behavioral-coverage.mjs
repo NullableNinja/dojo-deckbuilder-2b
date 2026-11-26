@@ -52,6 +52,7 @@ function setConditionValue(game, player, opponent, context, effect, condition) {
   else if (kind === "isSlowest") { if (expected) opponent.speed = player.speed + 1; }
   else if (kind === "selfSpeedAtLeast") player.speed = Math.max(player.speed, atLeast);
   else if (kind === "armedEquipmentZoneMatched") context.sourceCard.zone = context.zone;
+  else if (kind === "resolvedCardType") context.resolvedCard = cardWithType(game.data, expected, player.character);
   else if (kind === "sourceExhausted") {
     if (expected) { if (!player.equipment.includes(context.sourceCard)) player.equipment.push(context.sourceCard); if (!player.exhaustedEquipment.includes(context.sourceCard.instanceId)) player.exhaustedEquipment.push(context.sourceCard.instanceId); }
     else player.exhaustedEquipment = player.exhaustedEquipment.filter((id) => id !== context.sourceCard?.instanceId);
