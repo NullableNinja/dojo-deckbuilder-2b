@@ -31,20 +31,20 @@ type TableProps = {
 
 export const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
 export type QuickDuelStart = { fighterId: string; opponentId: string } | "resume";
-export type QuickDuelMatProps = Omit<TableProps, "session" | "sessionKey" | "onSave"> & { start: QuickDuelStart; startKey: number; rulesVersion: string; table: TableOptions };
+export type QuickDuelMatProps = Omit<TableProps, "session" | "sessionKey" | "onSave"> & { start: QuickDuelStart; startKey: number; rulesVersion: string; table: TableOptions; difficulty: string };
 
 function readSaved(): SavedSession | null {
   try { return JSON.parse(window.localStorage.getItem(ENGINE_DUEL_STORAGE_KEY) ?? "null") as SavedSession | null; } catch { return null; }
 }
 
 /** Starts (or resumes) a Quick Duel session and keeps its save up to date. */
-export default function QuickDuelMat({ start, startKey, rulesVersion, table, onExit, ...props }: QuickDuelMatProps) {
+export default function QuickDuelMat({ start, startKey, rulesVersion, table, difficulty, onExit, ...props }: QuickDuelMatProps) {
   const [session] = useState<EngineSession | null>(() => {
     if (start === "resume") {
       const saved = readSaved();
       return saved && saved.setup.rulesVersion === rulesVersion ? EngineSession.restore(saved) : null;
     }
-    return new EngineSession({ mode: "quick-duel", seed: newSeed(), fighters: [start.fighterId, start.opponentId], humanSeats: [HUMAN], rulesVersion, table });
+    return new EngineSession({ mode: "quick-duel", seed: newSeed(), fighters: [start.fighterId, start.opponentId], humanSeats: [HUMAN], rulesVersion, table, difficulty });
   });
   useEffect(() => {
     if (!session) { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); onExit(); }
@@ -168,7 +168,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
   const stats = seatStats(game, human);
   const coach = coachLine(game, phase, legal, selected, handChoice);
 
-  const dock = !over && <nav className={`playtest-action-dock dock-${phase}`} aria-label="Next legal action">
+  const dock = !over && !deskView && <nav className={`playtest-action-dock dock-${phase}`} aria-label="Next legal action">
     <div><span>{PHASE_WORD[phase]}</span><b>{dockLabel(game, phase, selected, handChoice)}</b></div>
     {phase === "player-initiate" && pass && <button onClick={() => act(pass)}>Proceed to Yell →</button>}
     {phase === "player-yell" && <div className="dock-action-group">{selectedAttack && <button onClick={() => act(selectedAttack)}>Declare Attack →</button>}{pass && <button className={selectedAttack ? "dock-secondary" : ""} onClick={() => act(pass)}>{selectedAttack ? "Skip · Ascend" : "Proceed to Ascend →"}</button>}</div>}

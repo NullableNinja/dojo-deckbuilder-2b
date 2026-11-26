@@ -3,6 +3,7 @@
 // drives save/resume, rematches and (later) peer-to-peer play. Framework-free on purpose.
 import { Game } from "../engine/core.mjs";
 import { clashData, type EngineCard } from "./clash-engine.ts";
+import { difficultyPolicy } from "../engine/difficulty.mjs";
 
 export type EngineOption = { id: string; label: string };
 export type EnginePending = { kind: string; playerId: number; attackerId?: number; targetPlayerId?: number; cardId?: string; zone?: string; options: EngineOption[]; [key: string]: unknown };
@@ -37,6 +38,8 @@ export type SessionSetup = {
   rulesVersion: string;
   /** Table options from content/dojo-game.json `tableOptions` (tempo, locations, market, house rules). */
   table?: TableOptions;
+  /** How well computer seats play: "student" | "certified" | "master" (engine/difficulty.mjs). */
+  difficulty?: string;
 };
 export type TableOptions = { tempo?: boolean; locations?: boolean; openMarket?: boolean; balancedMarket?: boolean; houseRules?: string[] };
 export type Decision = { kind: "action"; action: EngineAction } | { kind: "choice"; optionId: string };
@@ -63,9 +66,9 @@ export class EngineSession {
   readonly decisions: Decision[] = [];
   private policy: BotPolicy;
 
-  constructor(setup: SessionSetup, policy: BotPolicy = defaultPolicy) {
+  constructor(setup: SessionSetup, policy?: BotPolicy) {
     this.setup = setup;
-    this.policy = policy;
+    this.policy = policy ?? (setup.difficulty ? difficultyPolicy(setup.difficulty) as BotPolicy : defaultPolicy);
     this.game = new Game(clashData(), {
       seed: setup.seed,
       mode: setup.mode,
