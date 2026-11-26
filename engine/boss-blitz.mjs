@@ -219,7 +219,8 @@ export class BossBlitzGame extends Game {
     let guardUsed = null;
     if (defender === boss && boss.guardCard && boss.guardCard.zone === zone) {
       guardUsed = boss.guardCard;
-      this.addStatus(boss, { action: "modifyDefense", amount: number(guardUsed.stats?.Guard), duration: "nextIncomingAttack", sourceId: guardUsed.instanceId });
+      // DDB-RUL-117: as printed, Boss Guard reduces the damage of the matching Attack.
+      this.addStatus(boss, { action: "preventDamage", amount: number(guardUsed.stats?.Guard), duration: "nextAttack", sourceId: guardUsed.instanceId });
     }
     const result = super.resolveAttack(attacker, defender, card, options);
     if (guardUsed && result) { boss.discard.push(guardUsed); if (boss.guardCard === guardUsed) boss.guardCard = null; }
@@ -262,7 +263,8 @@ export class BossBlitzGame extends Game {
     this.emit({ type: "boss-defeated", stage: stage.id, profile: boss.character.catalogId, by: killer?.id ?? null });
     const brown = this.definition.progression.belts.length - 2;
     if (killer && !killer.isBoss) {
-      this.gainXp(killer, this.bossRules.stageVictory.xp, "boss-stage"); // replaces the +2 KO award
+      // DDB-RUL-118: Rival and Mini-Boss pay 5 XP instead of the KO award; the Final Boss pays the normal KO XP.
+      this.gainXp(killer, final ? Number(this.bossRules.stageVictory.finalStageXp ?? this.bossRules.stageVictory.xp) : this.bossRules.stageVictory.xp, "boss-stage");
       if (killer.beltIndex === brown) { killer.examProgress.koWhileBrown = true; this.checkBeltExam(killer); } // ${BLACK_TASK_HP_NOTE}
     }
     const healed = this.bossRules.stageVictory.coopHealsEachActive ? this.livingHumans() : this.livingHumans().slice(0, 1);

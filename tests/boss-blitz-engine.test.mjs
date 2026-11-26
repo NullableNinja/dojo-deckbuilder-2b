@@ -48,7 +48,7 @@ test("players win Speed ties with the Boss", () => {
   assert.ok(game.seatTiebreak(player) < game.seatTiebreak(game.boss));
 });
 
-test("Boss Guard adds its Guard only against a matching zone, then is discarded", () => {
+test("Boss Guard reduces a matching Attack's damage, then is discarded (DDB-RUL-117)", () => {
   const game = new BossBlitzGame(data, { seed: 10 });
   const boss = game.boss; const [player] = game.humans();
   const guardCard = game.cardInstance(bossCard("Boss Defense"));
@@ -63,8 +63,9 @@ test("Boss Guard adds its Guard only against a matching zone, then is discarded"
   const result = game.resolveAttack(player, boss, second, { zone: guardCard.zone });
   assert.equal(boss.guardCard, null, "a matched Attack spends Boss Guard");
   assert.ok(boss.discard.includes(guardCard));
-  assert.ok(result.block >= defBefore + Number(guardCard.stats.Guard), "Guard adds to the Boss's Defense");
-  assert.ok(boss.hp <= hpBefore);
+  const guardAmount = Number(guardCard.stats.Guard);
+  assert.ok(result.block < defBefore + guardAmount || guardAmount === 0, "Guard no longer adds to the Boss's Defense");
+  assert.equal(hpBefore - boss.hp, Math.max(0, result.attack - result.block - guardAmount), "Guard reduces the damage by its amount");
 });
 
 test("a newly revealed Boss Defense replaces the old Boss Guard", () => {

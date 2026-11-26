@@ -2519,7 +2519,7 @@
               },
               {
                 "kind": "bullet",
-                "text": "Boss Guard: when a player declares an Attack whose zone matches the face-up Boss Defense, add that card's Guard to the Boss's Defense for that Attack, then discard the Boss Defense after the Attack resolves. An unmatched player Attack leaves Boss Guard in place. A newly revealed Boss Defense replaces the old one."
+                "text": "Boss Guard: when a player declares an Attack whose zone matches the face-up Boss Defense, reduce that Attack's damage to the Boss by the card's printed amount, then discard the Boss Defense after the Attack resolves (DDB-RUL-117). An unmatched player Attack leaves Boss Guard in place. A newly revealed Boss Defense replaces the old one."
               },
               {
                 "kind": "bullet",
@@ -2541,7 +2541,7 @@
             "content": [
               {
                 "kind": "paragraph",
-                "text": "1. When the Rival or Mini-Boss is KO'd, gain 5 XP. This replaces the normal +2 XP award for causing that Boss KO. When the Final Boss is KO'd, gain 5 XP as well, then check for Scenario Victory."
+                "text": "1. When the Rival or Mini-Boss is KO'd, gain 5 XP. This replaces the normal +2 XP award for causing that Boss KO. When the Final Boss is KO'd, gain the normal +2 KO XP instead, as its Stage card says, then check for Scenario Victory (DDB-RUL-118)."
               },
               {
                 "kind": "paragraph",
@@ -3016,6 +3016,27 @@
         "tag": "Tag Team",
         "title": "Who chooses a KO replacement",
         "ruling": "The owner of the knocked-out fighter always chooses which conscious benched Character becomes active."
+      },
+      {
+        "id": "DDB-RUL-116",
+        "filed": "Filed Nov 27, 2026",
+        "tag": "Boss Blitz",
+        "title": "\"Boss Character\" on Stage cards",
+        "ruling": "The Rival and Mini-Boss Stage cards call the stage's Boss Profile the \"chosen Boss Character\". Use the Profile's printed ATK, DEF and Speed and its one Boss Rule; it has no other Character abilities."
+      },
+      {
+        "id": "DDB-RUL-117",
+        "filed": "Filed Nov 27, 2026",
+        "tag": "Boss Blitz",
+        "title": "Boss Defense reduces damage",
+        "ruling": "As printed, a Boss Defense in Boss Guard reduces the damage of the next player Attack in its zone by its amount, after Attack and Defense are compared, then is discarded. An Attack in another zone leaves it in place."
+      },
+      {
+        "id": "DDB-RUL-118",
+        "filed": "Filed Nov 27, 2026",
+        "tag": "Boss Blitz",
+        "title": "Final Boss KO reward",
+        "ruling": "Knocking out the Rival or Mini-Boss gives 5 XP instead of the normal +2. Knocking out the Final Boss gives the normal +2 KO XP, as its Stage card says, then Scenario Victory is checked."
       }
     ],
     "glossary": [

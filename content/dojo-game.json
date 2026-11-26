@@ -418,6 +418,7 @@
           "stageVictory": {
             "xp": 5,
             "replacesKoXp": true,
+            "finalStageXp": 2,
             "healActiveHp": 8,
             "coopHealsEachActive": true,
             "sceneChange": true,

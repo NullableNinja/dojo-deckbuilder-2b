@@ -16,7 +16,8 @@ None open right now.
    corrected so they agree.
 3. **Fair and readable beats clever:** no hidden handicaps, no hidden information used against the player,
    and every automatic decision is shown in the fight log.
-4. **Card copy changes one card at a time**, and only to fix a rules contradiction.
+4. **Printed cards are not edited to settle a contradiction**: their text is part of the card art. The
+   rulebook gets a filed ruling (DDB-RUL-1xx) and the engine follows it.
 
 ## Decided
 
@@ -51,9 +52,9 @@ None open right now.
 | 47 | Combo offer | Each player reveals their own offer in Ascend (rulebook). | Claude | Done |
 | 48 | Computer and your hand | Student and Certified play without looking at your hand; Master still reads the table (it is the "Bad decision" difficulty). | Claude | Done |
 | 50 | Switching Quick Duel to the shared engine | Switch the default once the remaining engine merge is in and a full browser game passes; the classic mat stays one click away until the old rules code is deleted. | Claude | Pending merge |
-| 51 | Boss Stage cards | Correct the Rival and Mini-Boss text to say "Boss Profile" (chapter 14). | Claude | To do |
-| 52 | Boss Defense | Rulebook math (Guard added to the Boss's Defense); the six Boss Defense cards' text is corrected to match. | Claude | To do |
-| 53 | Final Boss KO | +5 XP (chapter 14); the Stage card's reward line is corrected. | Claude | To do |
+| 51 | Boss Stage cards | Printed cards stay as they are (the text is on the card art); ruling DDB-RUL-116 says the Stage card's "Boss Character" means the stage's Boss Profile. | Claude | Done |
+| 52 | Boss Defense | Golden Rule: the printed cards win. Boss Guard reduces the matching Attack's damage (DDB-RUL-117); chapter 14 and the engine now say so. | Claude | Done |
+| 53 | Final Boss KO | Golden Rule: the Final Boss Stage card wins, so the normal +2 KO XP (DDB-RUL-118); Rival and Mini-Boss still give 5. | Claude | Done |
 | 54 | Stage-clear heal | Capped at max HP. | Claude | Kept |
 | 55 | Challenge Boss Blitz | Yes: a "Choose your Bosses" option in Boss Blitz setup. | Claude | Backlog |
 | 56 | Boss Speed ties, Clipwell | Players win ties; "active player" = the player the Boss is attacking. | Claude | Kept |
