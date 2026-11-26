@@ -115,6 +115,9 @@ test("a Bad Habit cash-in is taken when the engine offers it", () => {
   game.applyAction({ type: "pass", playerId: game.activePlayer });
   assert.equal(game.phase, "Yell");
   const player = game.players[game.activePlayer];
-  const offer = { type: "bad-habit-focus", playerId: player.id, cardId: player.hand[0].instanceId };
-  for (const level of DIFFICULTIES) assert.deepEqual(difficultyPolicy(level).chooseAction(game, [...game.getLegalActions(), offer]), offer, level);
+  // Use the engine's own offer when this hand holds a Bad Habit; otherwise inject one.
+  const legal = game.getLegalActions();
+  const offer = legal.find((action) => action.type === "bad-habit-focus") ?? { type: "bad-habit-focus", playerId: player.id, cardId: player.hand[0].instanceId };
+  const actions = legal.includes(offer) ? legal : [...legal, offer];
+  for (const level of DIFFICULTIES) assert.deepEqual(difficultyPolicy(level).chooseAction(game, actions), offer, level);
 });
