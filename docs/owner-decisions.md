@@ -64,3 +64,4 @@ None open right now.
 | 64 | XP anti-loop rule | Implement the rulebook's once-per-physical-card-per-round XP limit. | Claude | Backlog |
 | 65–71 | Combo / Character / Market details | As implemented (Gramma Uppercut automatic; "temporary" bonus list; off-turn "first time" abilities; Three Squirrels counts your own turn; Swan Wing lasts the turn; Belt Collector counting; Aisle Map ends). | Claude | Kept |
 | 72 | Ronin Reroll | Automate it. | Claude | Backlog |
+| 73 | Card Library "Preview new recruit" | Keep it public as a clearly labelled teaser; Open Dojo stays the default until unlocks ship. | Claude | Done |
