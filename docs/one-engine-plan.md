@@ -66,13 +66,40 @@ Also fixed on Nov 26 (tests in `tests/engine-reversal.test.mjs`):
 
 The Quick Duel fingerprint moved from `340f87ee9f34a97de97560d1` to `d9c357ef5dba71bf9e18ca19`.
 
+Also fixed on Nov 26 (tests in `tests/engine-equipment-reactions.test.mjs`; audit rows E-T5, E-A15, E-R1–R4,
+E-C1, E-C2, E-X16, E-X18 and parts of E-T8, E-A1, E-D8, E-E3, E-X19):
+
+- **One-use cards leave play as printed.** `definition.equipment.afterUse`: a resolved Consumable returns
+  to the box (a new `box` zone, out of the game) unless its own effect destroys it; Reaction Items are
+  destroyed. A Reaction Item no longer lands in two zones at once.
+- **Equipment readies** at its controller's Initiate (`definition.equipment.readiness.readyAt`; `honor`
+  reproduces the old mat).
+- **Equipment triggers fire:** `onAttackDeclared` (the attacker's own Attack, and "when you are
+  targeted" effects at declaration), `onDefenseDeclared` and `afterResolve`. An exhaust-cost ability is
+  skipped while its card is exhausted.
+- **Consumable windows by timing** (`definition.equipment.consumableWindows`): Turn in Yell; Ascend in
+  Ascend; Anytime in Yell, Ascend and the defender's Reaction Window; Reaction in the Reaction Window when
+  it answers the Attack. The Reaction Window stays open until the defender passes and also offers
+  Equipment the defender may exhaust (a zone call). A defender who becomes Untargetable spends the strike.
+  Cards played outside your turn generate no printed Focus.
+- **After-Block Reaction Items** get a window after a Block, before the Reversal window.
+- **Choices queue instead of overwriting**, structured choices only offer options the engine resolves,
+  `play-attack` validates its zone against printed zones and grants, and zone-call / forced-zone
+  statuses are read.
+
+The Quick Duel fingerprint moved from `d9c357ef5dba71bf9e18ca19` to `2a66748098392dcddd3c0175`.
+
 Still open (the parity work in Phase 1 will find the rest):
 
 - **Tempo needs a faster fighter**: the rulebook and the mat grant Tempo only against a slower opposing
   fighter, and allow it on a Defense (+1 Guard). The engine spends it on the first Attack of the round
   regardless of Speed. Fixing it will move the fingerprint.
-- **After-Block Reaction Items** (e.g. a Reaction whose only timing is "after you Block") are never
-  offered by the engine; only Reactions that act when an Attack is declared are.
+- **Remaining Reaction and Equipment windows:** the out-of-turn-Consumable Reaction (*Instant Noodle
+  Smokescreen*), passive Reaction watchers (discount kept, Combo payoff cancelled, forced discard
+  ignored), attacker-side manual Equipment activations at declaration (*Orange Permit Puncher*), the
+  `defense-guard` defence-window plan, Reaction-to-a-Reaction (*Air Horn*), Disarm and card-reveal
+  windows (*Emergency Shoelace*, *Lucky Dumpling* are offered nowhere yet), and Ascend Katas.
+- **X-Ray Paper** is encoded as "prevent 0"; its "deals 0 damage" needs a data encoding.
 - **Kata watchers**: Kata effects that trigger later on Hit, Block or after an attack never fire,
   because the engine does not set up a watcher when the Kata is played.
 - **Piercing** ignores all Defense in the engine; the rulebook says it ignores Armor only.

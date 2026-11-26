@@ -611,6 +611,45 @@
           "maxHandsPerWeapon": 1
         }
       }
+    },
+    "readiness": {
+      "source": "content/rules.json#armor-and-gear; glossary:Ready",
+      "summary": "Equipment enters play ready. All of a player's exhausted Equipment readies at that player's Initiate Phase. Set readyAt to \"honor\" to ready everyone's Equipment at Honor instead.",
+      "readyAt": "own-initiate"
+    },
+    "afterUse": {
+      "source": "content/rules.json#consumables; #items-and-tools; glossary:Consumable",
+      "summary": "A one-use card leaves play after it resolves. Consumables return to the box (out of the game) unless their own effects destroy them; every printed Reaction Item reads \"Destroy this\". A card whose own effect already moved it stays where that effect put it.",
+      "bySubtype": {
+        "Consumable": "box",
+        "Reaction Item": "destroy"
+      }
+    },
+    "consumableWindows": {
+      "source": "content/rules.json glossary:Anytime, glossary:Reaction; #consumables (\"Play them during their printed timing\")",
+      "summary": "Where a Consumable may be played, by its printed timing. \"incoming-attack\" is the defender's Reaction Window after an Attack targeting them is declared; a Reaction Consumable is offered there only when it answers that Attack (one of its effects is listed in incomingAttackActions). Cards played outside your own turn generate no printed Focus.",
+      "byTiming": {
+        "Turn": [
+          "Yell"
+        ],
+        "Anytime": [
+          "Yell",
+          "Ascend",
+          "incoming-attack"
+        ],
+        "Reaction": [
+          "incoming-attack"
+        ],
+        "Ascend": [
+          "Ascend"
+        ]
+      },
+      "incomingAttackActions": [
+        "preventDamage",
+        "modifyDefense",
+        "modifyDefenseContribution",
+        "untargetable"
+      ]
     }
   },
   "progression": {
