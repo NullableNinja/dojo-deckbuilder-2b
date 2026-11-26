@@ -1,187 +1,163 @@
 # Packs, collections and Clearance Levels
 
-Status: proposal, Nov 26, 2026. Nothing here is wired into gameplay or the UI yet. Owner decisions are
-listed at the end, each with a recommendation.
+Status: **approved** (owner answers of Nov 27, 2026). Nothing is wired into gameplay or the UI yet; the
+implementation phases are at the end. The owner asked for small decisions to be made here rather than
+sent back, so the final section lists what was decided and why, and no open questions remain.
 
-The data proposal is `content/packs.json` (shape: `content/packs.schema.json`), checked by
+The data is `content/packs.json` (shape: `content/packs.schema.json`), checked by
 `scripts/check-packs.mjs` (`npm run packs:check`, and `tests/packs-data.test.mjs` in `npm test`).
 
 ## Goals
 
 1. New players start with a small, readable game and grow into the full 500-card catalog.
-2. Winning (and, more slowly, losing) earns free booster packs. No money, no accounts, no server.
-3. A career level track gives long-term goals and paces new content.
-4. Matches stay fair. A veteran's collection must not beat a newcomer's by itself, and online
+2. Playing earns free booster packs. **Nothing ever costs money.** There are no accounts and no server.
+3. Not everything is available on day one. New **Characters** and new **Bosses** arrive over time, so
+   there is always a new fighter to try and a new challenge to beat.
+4. The collection is about fun. There are no rarities and no duplicates, and every pack holds only cards
+   you do not own yet.
+5. Matches stay fair. A veteran's collection must not beat a newcomer's by itself, and online
    lockstep PvP must agree on every card in play before the first shuffle.
-5. Everything is data. A fork can redefine packs, rarities, earn rates and levels in one JSON
-   file, or switch collections off.
-6. Pack membership is easy to rebalance: move one line in `packs.json`. `cards.json` stays the printed
+6. Everything is data. A fork can redefine packs, unlocks, earn rates and levels in one JSON file, or
+   unlock everything with one switch (`"unlockEverything": true`).
+7. Pack membership is easy to rebalance: move one line in `packs.json`. `cards.json` stays the printed
    catalog and is not bulk-edited.
+
+## What is Merit?
+
+Merit is your career score across all matches you play. You earn it at the end of every match that
+counts: 100 for a win and 40 for a loss. Small bonuses add to it: 50 for your first win of the day, and 5
+for each Belt promotion during the match. Harder computer opponents pay a little more and easier ones a
+little less, and Boss Blitz pays more the further up the Boss ladder you get. Merit is never spent and
+never resets. As it adds up it raises your Clearance Level from 1 to 30. Each new level hands out
+rewards: Booster Tickets, new booster series to open, your other Starter Kits, new playable
+Characters, new Bosses to fight, and cosmetics such as card backs, mat frames and titles. Merit is not
+the XP you earn inside a match. That XP pays for Belt promotions and starts again at zero every match.
 
 ## What the catalog already says about where a card comes from
 
 `content/cards.json` has 597 cards. Every one is `availability: "Approved"`, `v2Status: "Approved"` and
 `rulesVersion: "v2.3"`, so those fields carry no information about where a card comes from.
 
-| `cardType` / `subtype` | `deck` | Cards | Used in a match as |
-| --- | --- | ---: | --- |
-| Technique / Attack | Technique Deck | 71 | Market |
-| Technique / Defense | Technique Deck | 50 | Market |
-| Technique / Kata | Technique Deck | 62 | Market |
-| Item / Weapon | Item Deck | 65 | Market |
-| Item / Consumable | Item Deck | 62 | Market |
-| Item / Defense Equipment | Item Deck | 46 | Market |
-| Item / Gear | Item Deck | 24 | Market |
-| Item / Reaction Item | Item Deck | 12 | Market |
-| Combo / Learned Combo | Combo Deck | 55 | shared Combo deck |
-| Location / Location | Location Deck | 53 | shared Location deck |
-| Starter / Starter | Starter Deck | 11 (15 copies) | every player's fixed starting deck |
-| Character / Fighter | Character Deck | 41 | chosen fighters |
-| Boss / Profile, Attack, Technique, Defense, Stage | Boss Profile / Arsenal / Materials | 45 | Boss Blitz only |
+| `cardType` / `subtype` | `deck` | Cards | Used in a match as | In this plan |
+| --- | --- | ---: | --- | --- |
+| Technique / Attack, Defense, Kata | Technique Deck | 71 / 50 / 62 | Market | collectible |
+| Item / Weapon, Consumable, Defense Equipment, Gear, Reaction Item | Item Deck | 65 / 62 / 46 / 24 / 12 | Market | collectible |
+| Combo / Learned Combo | Combo Deck | 55 | shared Combo deck | collectible |
+| Location | Location Deck | 53 | shared Location deck | collectible |
+| Starter | Starter Deck | 11 (15 copies) | every player's starting deck | always available |
+| Character / Fighter | Character Deck | 41 | chosen fighters | 12 starting, 29 unlockable |
+| Boss / Profile | Boss Profile Deck | 10 | Boss Blitz opponents | 5 starting, 5 unlockable |
+| Boss / Attack, Technique, Defense, Stage | Boss Arsenal Deck, Boss Materials | 35 | the Boss's own deck | always available |
 
 Fields that already describe origin or theme:
 
 - **`deck`** decides the match zone. The engine builds the Market from `economy.market.decks`
   (`Technique Deck`, `Item Deck`), the Combo deck from `Combo Deck` and the scene deck from Locations.
-  Everyone shares all of them, and every player starts with `definition.starterDeck`.
-- **`catalogSystem.countedMainPool: 500`** is exactly Technique + Item + Combo + Location. It is the
-  natural collectible set.
-- **`lineage`** is set on only 66 cards: `Dojo Original` (all 41 Characters) and `Paper-Fu Original` (25,
-  including 8 Boss Profiles). That is authorship, not distribution.
-- **`sourceSheet`** (17 values such as `Techniques - Attack`, `Base 500 Growth`, `v2.0 Belt Support`)
-  records which design spreadsheet a card came from. It is useful history but not a player-facing set.
-- **`buildPaths`** (346 of 500 collectible cards have one to three): Fortress 90, Pressure 78, Combo 57,
-  Momentum 54, Flow 52, Control 51, Arsenal 44, Counter 38, Economy 36, Sustain 20, Kata 19, Anti-Armor
-  11, Deck-Thin 7, Catch-Up 6, Anti-Weapon 6, and a few singletons. These are the best theme signal and
-  drive the booster themes below.
-- **`tags`** (Kick, Guard, Flow, Weapon, Blade, Counter, ...) and **`category`** (Armor, Attack Chain,
-  Street, Commercial, ...) refine themes and feed Combo requirements.
-- `catalogId` prefixes (`ATK`, `DEF`, `KAT`, `WPN`, `CON`, `DEQ`, `GEA`, `RIT`, `CMB`, `LOC`) match the
-  subtypes one to one and have stable numbers, which suits compact collection codes.
+  Today everyone shares all of them.
+- **`catalogSystem.countedMainPool: 500`** is exactly Technique + Item + Combo + Location, the
+  collectible set.
+- **`lineage`** (`Dojo Original` for all 41 Characters; `Paper-Fu Original` on 25 cards) records
+  authorship. **`sourceSheet`** records which design spreadsheet a card came from. Neither says where a
+  player gets the card.
+- **`buildPaths`** (346 of 500 collectible cards have one to three: Fortress 90, Pressure 78, Combo 57,
+  Momentum 54, Flow 52, Control 51, Arsenal 44, Counter 38, Economy 36, Sustain 20, Kata 19, ...),
+  **`tags`** and **`category`** are the theme signals behind the booster series.
+- **Boss Profile tags** carry their Stage Fit (`Rival`, `Mini-Boss`, `Final Boss`), which matches
+  `boss.stages[].stageFit` in `dojo-game.json`. The checker uses this to prove the starting Bosses can
+  fill the whole ladder.
 
-Nothing in the catalog says "starter pack", "booster", "rarity" or "owned". That is new data.
+### Why membership and unlocks live in `packs.json`, not in each card
 
-### Why pack membership lives in `packs.json`, not in each card
+- **One place to rebalance.** Moving a card between packs, or a Character to another level, is a
+  one-line diff in one file, with no merge conflicts against card redesigns.
+- **The printed card does not change.** `cards.json` is the printed catalog, redesigned one card at a
+  time. How a player gets a card is a game-economy choice, not printed text.
+- **Forks swap or switch off one file.** `"unlockEverything": true` makes every card, Character and Boss
+  available, with no packs.
+- **Lookups stay easy.** The generator can derive `catalogId → { pack }` and `catalogId → { unlock }`
+  into `app/data/packs.json`, so the card inspector can show "Found in: Iron Wall" or "Unlocks at
+  Clearance Level 12".
 
-- **One place to rebalance.** Moving a card between packs or rarities is a one-line diff in one file. A
-  per-card field spreads that decision over 500 records and invites merge conflicts with card redesigns.
-- **The printed card should not change.** AGENTS.md treats `cards.json` as the printed catalog that is
-  redesigned one card at a time. Distribution is a game-economy choice, not printed text.
-- **Forks swap one file.** Different packs, or none, mean replacing `packs.json` and leaving the cards alone.
-- **Lookups are still easy.** The generator can derive `catalogId → { pack, rarity }` into
-  `app/data/packs.json` so the card inspector can show "Found in: Iron Wall · Brass Seal".
-
-A per-card field would earn its place only if a **set symbol is printed on the card face**, as in printed
-TCGs. That belongs to the Phase 2 card redesign. Even then the field should be generated from
-`packs.json` and never hand-edited (see decision 15).
-
-Each entry repeats the card name next to its `catalogId`. The checker fails if a name drifts from
-`cards.json`, as it already does for `card-effects`. The names make rebalancing diffs readable.
+Each entry repeats the card name next to its `catalogId`, and the checker fails if a name drifts from
+`cards.json`, which keeps diffs readable.
 
 ## How a collection changes play
 
-What you own has to affect matches, or packs mean nothing. The options:
-
 | Option | Fair? | Lockstep PvP | Verdict |
 | --- | --- | --- | --- |
-| **A. Constructed starting decks**: build your 15-card deck from owned cards | No. Veterans start stronger, and it replaces the deckbuilding core. | Each deck goes into setup | Rejected |
-| **B. Personal Markets**: each player buys only from their own pool | No. A bigger pool means better choices. | Needs per-seat Markets in the engine | Rejected |
-| **C. Shared pool from the union of seated collections** | Yes. One Market row for everyone; your cards can be bought by your opponent too. | The union of both lists goes into setup | **Recommended** |
-| D. Intersection of collections | Yes, but a newcomer shrinks a veteran's game to the smallest pool | Same as C | Rejected |
-| E. Host's collection only | Fair, but a guest's progress never matters | Simple | Fallback for odd cases |
-| F. Cosmetic only | Fair, but weak motivation | No effect | Rejected as the main model |
+| Constructed starting decks from owned cards | No; veterans start stronger, and it replaces the deckbuilding core | Each deck in setup | Rejected |
+| Personal Markets (each buys from their own pool) | No; a bigger pool means better choices | Per-seat Markets in the engine | Rejected |
+| **Shared pool: union of everyone's collection** | Yes; one Market row for all | The union goes into setup | **Approved** |
+| Intersection of collections | Yes, but the newest player shrinks everyone's game | Same | Rejected |
+| Host's collection only | Fair, but a guest's progress never matters | Simple | Rejected |
 
-**Recommendation (C, "pooled dojo").** Each seated player's owned cards (the Starter Deck, the Orientation
-Kit, their Starter Kit and every booster card they have opened) are merged into one Market pool, one
-Combo pool and one Location pool for the match. Everyone draws from the same shared rows.
+**Approved model ("pooled dojo").** Each seated player's owned cards are merged into one Market pool,
+one Combo pool and one Location pool for the match, and everyone draws from the same rows.
 
-Why C works:
+- **Fair.** Everyone shops from the same row, so a collection adds variety, not power.
+- **Lying gains nothing.** In PvP, claiming to own everything only enlarges the shared pool for both
+  players. This matches the open-table, no-anti-cheat stance of the PvP plan.
+- **Lockstep-friendly.** The pool is a sorted list of catalog IDs inside the match `setup`, hashed
+  together with the seed. Replays, saves and spectators keep working.
+- **Newcomers benefit.** Playing a veteran previews cards the newcomer does not own yet.
+- **Starter pool health.** A new player brings about 97 Market cards, 12 Combos and 11 Locations. The
+  checker enforces `collection.minimumStarterPool`: every subtype is present, Attacks reach High, Mid and
+  Low, and Defenses cover every zone, so every Belt exam can still be completed.
+- **Open Dojo** switches any table to the full catalog. It earns nothing and is the default for tests and
+  simulations.
 
-- **Fair.** Everyone shops from the same row, so a collection adds variety and themes, not power.
-- **Lying gains nothing.** In PvP a player who claims to own everything only enlarges the shared pool
-  for both sides. The open-table, no-anti-cheat stance of the PvP plan holds.
-- **Lockstep-friendly.** The pool is a sorted list of catalog IDs (or a compact bitset) inside the match
-  `setup`, hashed together with the seed. Replays, saves and spectators keep working, because setup plus
-  moves is still the whole game.
-- **Newcomers benefit.** Playing a veteran shows a newcomer cards they do not own yet: a preview, not a
-  handicap.
-- **No engine branching.** The engine just receives pools. It never learns about packs or owners.
-
-Things to watch:
-
-- **Dilution.** A full collection gives the same 392-card Market as today, so each card shows up less
-  often. A later "Dojo Box" option could cap what you bring (for example "Orientation + up to three
-  boosters"), but it stays off until simulations show a problem (decision 13).
-- **Small pools.** A brand-new player brings about 97 Market cards (80 Orientation + 17 kit), 12 Combos
-  and 11 Locations. The engine already reshuffles the Market discard when the deck runs out. The checker
-  enforces a minimum starter pool (`collection.minimumStarterPool`): every subtype present, Attacks in
-  High, Mid and Low, and Defenses covering every zone. The Purple exam (buy two different card types) and
-  the Blue exam (two Equipment) can therefore always be completed.
-- **Open Dojo.** Any table can switch to the full catalog. Open Dojo earns nothing, keeps today's
-  behaviour for anyone who wants it, and is what tests and simulations use by default.
+Characters and Bosses work differently from cards: they are a **personal roster**, not a pool. You
+choose fighters only from your own unlocked Characters (in PvP each player picks from their own).
+Computer opponents may field any Character, which also previews what is coming (decided below).
+Boss Blitz draws Bosses from the unlocked Bosses of the humans at the table (the union, as with cards).
 
 ## Starter packs: what a new player owns
 
 | Pack | Grant | Cards | Contents |
 | --- | --- | ---: | --- |
-| Starter Deck (existing) | always | 11 (15 copies) | Unchanged, from `definition.starterDeck` |
-| **Orientation Kit** | every new profile | 100 | The most readable card of each kind: 16 Attacks (5 High, 5 Mid, 4 Low, 2 Any), 11 Defenses (3 Any plus each zone), 12 Katas, 12 Consumables, 12 Weapons, 9 Defense Equipment, 5 Gear, 3 Reaction Items, 10 Combos completable with these cards alone, 10 Locations |
-| **Striker Kit** | choose one at level 1 | 20 | Pressure, Momentum, Anti-Armor, blades (6 Attacks, 4 Weapons) |
-| **Guardian Kit** | choose one | 20 | Fortress, Counter, Sustain (4 Defenses, 4 Defense Equipment) |
-| **Strategist Kit** | choose one | 20 | Flow, Kata, Economy, Control (5 Katas, 3 Consumables) |
+| Starter Deck (existing) | always | 11 (15 copies) | Unchanged |
+| **Orientation Kit** | every new profile | 100 | The most readable card of each kind: 16 Attacks (5 High, 5 Mid, 4 Low, 2 Any), 11 Defenses, 12 Katas, 12 Consumables, 12 Weapons, 9 Defense Equipment, 5 Gear, 3 Reaction Items, 10 Combos completable with these cards alone, 10 Locations |
+| **Striker Kit** | choose one at level 1 | 20 | Pressure, Momentum, Anti-Armor, blades |
+| **Guardian Kit** | choose one | 20 | Fortress, Counter, Sustain |
+| **Strategist Kit** | choose one | 20 | Flow, Kata, Economy, Control |
 
-The two kits you did not pick unlock at Clearance Levels 5 and 9. You choose which comes first. Every kit
-is 20 cards, and the checker enforces equal size within a choice group, so no first choice is a trap.
-Characters and Boss cards are not collectible (decision 3).
-
-Orientation cards were picked by a simplicity score (short rules text, low cost, no Belt, Reversal or
-Market dependencies), with the zone quotas above. Kit and booster cards were picked by theme affinity
-(build paths, tags, category). The result is a proposal for the designer to adjust by hand.
+The other two kits unlock at Clearance Levels 5 and 9, in the order you choose. The checker enforces
+equal kit sizes, so no first choice is a trap.
 
 ## Booster packs
 
-### Series (all free)
+### Series
 
-Eight themed series of 42 or 43 cards each, 340 cards in total. Each series has a balanced spread: about
-5–6 Attacks, 4 Defenses, 5–6 Katas, 5–6 Consumables, 5–6 Weapons, 3–4 Defense Equipment, 1–2 Gear, 1
-Reaction Item, 5 Combos and 5 Locations. The theme comes from which cards are picked, not from skewed
-counts, so every series is playable on top of the Orientation Kit.
+Eight themed series of 42 or 43 cards (340 in total), each with a balanced spread: about 5–6 Attacks,
+4 Defenses, 5–6 Katas, 5–6 Consumables, 5–6 Weapons, 3–4 Defense Equipment, 1–2 Gear, 1 Reaction Item,
+5 Combos and 5 Locations. Completing a series also unlocks its featured Character.
 
-| Series | Unlocks at level | Cards | Theme |
-| --- | ---: | ---: | --- |
-| Iron Wall | 1 | 42 | Fortress, Sustain, Anti-Weapon: guards, armor, healing |
-| Pressure Point | 1 | 43 | Pressure, Anti-Armor: heavy strikes, armor breakers |
-| Flow State | 1 | 42 | Flow, Kata, Speed: spins, jumps, Flow chains |
-| Back-Room Armory | 1 | 42 | Arsenal: traditional and improvised Weapons |
-| Counter Culture | 4 | 43 | Counter: parries, dodges, Reaction Items |
-| Stockroom Hustle | 6 | 43 | Economy, Deck-Thin: Focus, Market tricks, Consumables |
-| Combo Theory | 8 | 42 | Combo, Momentum: chains, zone changes, finishers |
-| Red Tape Riot | 10 | 43 | Control, Chaos: disruption, Belt Exam bureaucracy |
+| Series | Opens at level | Cards | Theme | Complete it to unlock |
+| --- | ---: | ---: | --- | --- |
+| Iron Wall | 1 | 42 | Fortress, Sustain: guards, armor, healing | Mr. Clip |
+| Pressure Point | 1 | 43 | Pressure, Anti-Armor: heavy strikes | The Nerfhammer |
+| Flow State | 1 | 42 | Flow, Kata, Speed: spins and jumps | Whirlwind Wynn |
+| Back-Room Armory | 1 | 42 | Arsenal: traditional and improvised Weapons | The Rebooter |
+| Counter Culture | 4 | 43 | Counter: parries, dodges, Reaction Items | Wavey Davey |
+| Stockroom Hustle | 6 | 43 | Economy, Deck-Thin: Focus and Market tricks | Master Bento Blitz |
+| Combo Theory | 8 | 42 | Combo, Momentum: chains and finishers | Tia Three Gates |
+| Red Tape Riot | 10 | 43 | Control, Chaos: disruption and Belt Exam bureaucracy | The Belt Collector |
 
 Every Combo in a pack must be completable from the Starter Deck, the Orientation Kit and that pack alone.
-The checker evaluates each requirement with the engine's own `stepMatches` (now exported from
-`engine/combo-runtime.mjs`), so a Combo never arrives without the cards that complete it.
+The checker evaluates each requirement with the engine's own `stepMatches`
+(`engine/combo-runtime.mjs`).
 
 ### Opening a booster
 
-- A **Booster Ticket** opens one pack from **any unlocked series you choose**. Choosing lets players
-  chase a theme, and the randomness stays inside the pack.
-- **5 cards per pack**, in slots: 2 Plain Paper; 1 Plain Paper (70%) or Carbon Copy (30%); 1 Carbon Copy;
-  1 Brass Seal (75%) or Black Ink (25%).
-- **Rarity tiers**: Plain Paper (common, 50% of each series), Carbon Copy (uncommon, 30%), Brass Seal
-  (rare, 15%), Black Ink (legendary, 5%, two per series). Starter cards are "Issued" and never rolled.
-  In a game with a shared Market, rarity sets **how soon** you find a card, not how strong it is. The
-  tiers were assigned by a complexity percentile within each subtype, so commons are the cards a new
-  player reads fastest.
-- **Duplicates**: none. Ownership is binary (owning a card means it can appear), so a pack only rolls
-  cards you do not own yet. If a slot's tier is used up in that series, the slot takes the nearest tier
-  that still has cards, preferring the higher one. A series completes in 9 packs (8 full plus 1 partial).
-- **Pity**: if you have not opened a Black Ink card from a series by its 5th pack, the seal slot gives one.
-- **Completed series** cannot be chosen. Once the whole collection is complete, each further ticket
+- A **Booster Ticket** opens one 5-card pack from **any unlocked series you choose**.
+- **Only new cards.** A pack holds 5 cards you do not own yet, drawn at random from that series. There
+  are no duplicates and no rarities. A series' last pack holds whatever is left (2 or 3 cards), so each
+  series takes 9 packs.
+- A **completed series** cannot be chosen. Once the whole collection is complete, each further ticket
   becomes 50 Merit.
-- **Seeded randomness.** Each profile gets a random seed when it is created. Pack *n* is rolled with the
-  engine's `Rng` from (profile seed, *n*), and the result is saved **before** the reveal animation.
-  Reloading never rerolls a pack, and any pack can be audited.
+- **Seeded randomness.** Each profile gets a random seed at creation. Pack *n* is rolled with the
+  engine's `Rng` from (profile seed, *n*), and the result is saved before the reveal animation, so
+  reloading never rerolls a pack.
 
 ### Earning packs
 
@@ -195,198 +171,249 @@ The checker evaluates each requirement with the engine's own `stepMatches` (now 
 | Win against Master difficulty | +1 stub |
 | Difficulty Merit multiplier | Student ×0.75, Certified ×1, Master ×1.25 |
 
-Eligibility: a match must reach 3 completed rounds to pay out, conceding earlier pays nothing, and each
-match ID pays once. Open Dojo pays nothing, and local hot-seat pays Merit only (decision 11).
+A match must reach 3 completed rounds to pay, conceding earlier pays nothing, and each match ID pays
+once.
 
-**Pacing.** Completing all 340 booster cards takes 68 packs. At a 50% win rate a match earns about 0.67
-tickets on average, and the level track adds 36 tickets by level 30 (11 of them by level 10). The whole
-collection lands at roughly **70–80 matches**, or 20–25 hours of Quick Duel, with all eight series open
-by about match 30.
+**Pacing.** All 340 booster cards take 68 packs. At a 50% win rate a match averages about 0.67 tickets,
+and the level track adds 36 tickets by level 30 (11 by level 10). The full card collection lands at
+roughly **70–80 matches**, with all eight series open by about match 30.
+
+## Characters and Bosses: unlocked over time
+
+### Characters
+
+**12 available from the start**, chosen for clear abilities and a spread of stat lines: four
+strikers, four guardians and four speed or tactics fighters, one group for each Starter Kit style. Twelve
+covers a Tag Team roster of three with plenty of choice, and any number of Clash seats (fighters may
+repeat across seats).
+
+| Style | Starting Characters |
+| --- | --- |
+| Striker (ATK 4 or Attack-focused) | Karatesaurus, Knuckleton the Brawler, Gramma Uppercut, Punchline Pete |
+| Guardian (DEF 4) | Auntie Parry, Sentry Bobby, Crash Test Dummy, Honorable Trash Panda |
+| Speed / tactics | Paper Crane, Disco Dojo Dan, Coupon Carl, Sir Kixalot |
+
+**29 unlockable.** 21 arrive one per Clearance Level from 2 to 22, roughly from the simplest ability to
+the most involved. 8 are series-completion rewards (table above).
+
+| Level | Character | Level | Character | Level | Character |
+| ---: | --- | ---: | --- | ---: | --- |
+| 2 | El Pollo Rojo | 9 | Custodian Kwon | 16 | Librarian Lin |
+| 3 | Glitterpunch | 10 | Ink Fist | 17 | Blurred Monk |
+| 4 | Margo Two-Forms | 11 | Doodle Bopper | 18 | Venue Val |
+| 5 | Flaming Monk Dude Broski | 12 | Sensei Ducktape | 19 | Janitor Joe |
+| 6 | Late Bell Lee | 13 | Boo-Fu | 20 | Three Squirrels in One Gi |
+| 7 | Ronin Reroll | 14 | Some guy named Steve | 21 | Coach Karen |
+| 8 | Baron von Backflip | 15 | Miss Direction | 22 | Master Mimen |
+
+Profile avatars are separate cosmetics and stay unlocked, so nothing players have today is taken away.
+
+### Bosses
+
+Boss Blitz climbs Rival → Mini-Boss → Final Boss and needs a different Boss Profile at each stage, picked
+by Stage Fit.
+
+**5 available from the start:** Captain Cone and Snack-Fu 5000 (Rival), Sister Cinder and Lord
+Leasehold (Mini-Boss), and The Warranty Void (Final Boss). That fills every stage with two choices for
+the first two, and the checker proves a distinct assignment exists.
+
+**5 unlockable,** each a new challenge, mostly at the top of the ladder:
+
+| Level | Boss | Stage Fit |
+| ---: | --- | --- |
+| 3 | Director Clipwell and the Three Staplers of Doom | Rival or Mini-Boss |
+| 6 | Chief Inspector Buffer, Keeper of the Wet Floor | Rival or Mini-Boss |
+| 9 | Chairman Foldwell, Supreme Director of Seating | Final Boss |
+| 13 | Madam Misdemeanor, Leaseholder of the Unlicensed Trolley | Final Boss |
+| 17 | Archive of Practical Fighting Wisdom, Now Upright | Mini-Boss or Final Boss |
+
+Boss Arsenal and Stage cards are the Boss's own deck and are always available.
+
+### How it is modelled and checked
+
+`packs.json` has `unlockables.characters.starting` and `unlockables.bosses.starting`. Every other
+Character or Boss Profile is unlocked by exactly one reward: `{ "kind": "unlock-character" | "unlock-boss",
+"catalogId", "name" }` on a Clearance Level, or as a booster's `completionReward`. The checker fails if:
+
+- a Character or Boss Profile is neither starting nor unlocked, or is made available twice;
+- an unlock names a card from the wrong deck, or a name drifts from `cards.json`;
+- the starting Characters are fewer than the largest roster in any mode (3, for Tag Team);
+- the starting Bosses cannot fill every Boss Blitz stage with a different profile.
+
+`"unlockEverything": true` skips all of this and makes every card, Character and Boss available. That
+is the single data change a forker needs.
 
 ## Clearance Levels: the career track
 
-In-match progression already uses **Belts**, **XP** and **Training Stripes**, which reset every match. The
-career track uses different words so the two never blur:
+In-match progression uses **Belts**, **XP** and **Training Stripes**, which reset every match. The career
+track uses different words so the two never blur: **Merit** (above), **Clearance Level** 1–30 (shown on
+the Field Agent menu), and **Diplomas**. Diplomas are framed certificates in the nine Belt colors,
+starting with White Diploma at level 1, then Gold at 3, Orange 6, Green 9, Purple 12, Blue 15, Red 19,
+Brown 23 and Black 27. The UI shows a diploma frame, never a belt, so a Brown Diploma is never mistaken
+for Brown Belt in the current match.
 
-- **Merit** is career experience. It is never called XP.
-- **Clearance Level** runs from 1 to 30. It is shown on the Field Agent menu, which already frames the
-  player as a "Field Agent".
-- **Diplomas** are framed certificates on the dojo wall. They borrow the nine Belt colors in order (White
-  Diploma at level 1, Gold at 3, Orange 6, Green 9, Purple 12, Blue 15, Red 19, Brown 23, Black 27). The
-  UI shows a diploma frame, never a belt, so "Brown Diploma" cannot be mistaken for being Brown Belt in
-  the current match. The checker requires every diploma to name a real belt id from `dojo-game.json`.
+The curve: level 2 needs 150 Merit, and each level after costs 25 more (level 10 at 2,250; level 22 at
+8,400; level 30 at 14,500). After level 30, every 2,000 Merit gives a ticket.
 
-The curve: level 2 needs 150 Merit, and each level after that costs 25 more (level 10 at 2,250; level 30
-at 14,500, about 200 average matches). After level 30, every 2,000 Merit gives a booster ticket
-("Continuing Education").
-
-Rewards by level (full list in `packs.json`):
-
-| Level | Rewards |
+| Level | Rewards (plus the Character in the table above) |
 | ---: | --- |
-| 1 | Orientation Kit (profile creation), choose a Starter Kit, unlock 4 series, 1 ticket |
-| 2–3 | 1 ticket each; carbon-copy card back at 3 |
-| 4 | Unlock Counter Culture, 1 ticket |
+| 1 | Orientation Kit at profile creation, choose a Starter Kit, 4 series open, 1 ticket |
+| 2–3 | 1 ticket each; Boss Clipwell and a card back at 3 |
+| 4 | Counter Culture opens, 1 ticket |
 | 5 | Second Starter Kit, 1 ticket |
-| 6 | Unlock Stockroom Hustle, 1 ticket |
+| 6 | Stockroom Hustle opens, Boss Buffer, 1 ticket |
 | 7 | 1 ticket, Orange Diploma mat frame |
-| 8 | Unlock Combo Theory, 1 ticket |
-| 9 | Third Starter Kit, 1 ticket |
-| 10 | Unlock Red Tape Riot, 2 tickets, title "Certified Field Agent" |
-| 11–29 | 1 ticket each; 2 tickets plus a card back at 15, 20 and 25 |
+| 8 | Combo Theory opens, 1 ticket |
+| 9 | Third Starter Kit, Boss Foldwell, 1 ticket |
+| 10 | Red Tape Riot opens, 2 tickets, title "Certified Field Agent" |
+| 11–29 | 1 ticket each; Bosses at 13 and 17; 2 tickets and a card back at 15, 20 and 25 |
 | 30 | 3 tickets, title "Licensed Black Diploma", Black Diploma mat frame |
 
-Cosmetic ids (`card-back:*`, `mat-frame:*`, `title:*`) are placeholders until those cosmetics are
-designed in both themes. Existing avatars stay unlocked; nothing players have today gets locked.
+Cosmetic ids (`card-back:*`, `mat-frame:*`, `title:*`) are placeholders until the cosmetics are designed
+in both themes.
 
 ## Storage: localStorage, versioning, export, anti-loss
 
 New key: `paper-fu-career-v1`, separate from `paper-fu-user-profile-v1` (preferences) and `dojo-binder-v1`
-(saved favourites, which stays a wishlist and gains "owned" badges).
+(saved favourites, which gains "owned" badges).
 
 ```jsonc
 {
   "schema": 1,
-  "profileId": "c0ffee…",            // random, for display and merge
-  "createdAt": "2026-11-26T12:00:00Z",
-  "packsRevision": "packs-proposal-2026-11-26", // the packs.json last reconciled against
-  "rngSeed": 123456789,               // pack rolls: Rng(seed, packSerial)
+  "profileId": "c0ffee…",
+  "createdAt": "2026-11-27T12:00:00Z",
+  "packsRevision": "packs-2026-11-27",
+  "rngSeed": 123456789,              // pack rolls: Rng(seed, packSerial)
   "packSerial": 7,
   "starterKits": ["kit-guardian"],
   "pendingKitChoices": 0,
-  "opened": ["DDB-DEF-CORE-005", "…"], // booster cards only; starter grants are derived, not stored
+  "opened": ["DDB-DEF-CORE-005", "…"], // booster cards only
   "wallet": { "booster-ticket": 1, "ticket-stub": 2 },
   "merit": 1340,
   "claimedLevels": [1, 2, 3, 4, 5],
-  "pity": { "iron-wall": 3 },
-  "streak": { "current": 2, "best": 5, "lastWinDay": "2026-11-26" },
+  "claimedSeriesRewards": ["iron-wall"],
+  "streak": { "current": 2, "best": 5, "lastWinDay": "2026-11-27" },
   "stats": { "wins": 14, "losses": 9, "byMode": { "quick-duel": { "wins": 10, "losses": 6 } } },
-  "receipts": [ { "matchId": "…", "mode": "quick-duel", "result": "win", "rewards": {…}, "at": "…" } ] // last 50, for idempotency
+  "receipts": [ { "matchId": "…", "mode": "quick-duel", "result": "win", "rewards": {…}, "at": "…" } ]
 }
 ```
 
-- **Derived ownership.** Owned = Starter Deck ∪ every-profile packs ∪ chosen kits ∪ `opened`. When
-  `packs.json` moves a card between packs, nothing breaks, because ownership is by `catalogId`. A card
-  newly added to the Orientation Kit is granted automatically. A card that leaves the catalog is ignored.
-- **Versioning.** `schema` bumps get pure migration functions (`v1 → v2`), each tested. An unknown future
-  schema is never overwritten; the app opens read-only and offers export.
-- **Write-ahead rewards.** Match rewards and pack results are saved before any animation. A match pays
-  out once per `matchId` (hash of setup and seed).
-- **Backups.** After every successful write the previous good state goes to `paper-fu-career-v1-backup`.
-  Every state carries a checksum, and if the primary fails to parse, the backup is restored with a toast.
+- **Derived ownership and unlocks.** Owned cards = Starter Deck ∪ Orientation Kit ∪ chosen kits ∪
+  `opened`. Unlocked Characters and Bosses = starting ∪ rewards of every level up to the current one ∪
+  rewards of completed series. None of these are stored, so when `packs.json` moves a card or a
+  Character, saves follow automatically. Only choices (kits) and random results (`opened`) are stored.
+- **Versioning.** `schema` bumps get pure, tested migration functions. An unknown future schema is never
+  overwritten; the app opens read-only and offers export.
+- **Write-ahead rewards.** Match rewards and pack results are saved before any animation, and each
+  `matchId` pays once.
+- **Backups.** The previous good state goes to `paper-fu-career-v1-backup` after every write, with a
+  checksum. A corrupt primary is restored from the backup with a toast.
 - **Export code.** `PFC1.` + base64url(deflate-raw(JSON)) with a CRC32 suffix. `opened` is encoded as one
-  bitset per catalog prefix (`ATK`, `DEF`, …) indexed by the stable catalog number, which keeps a full
-  collection under about 150 characters. It is offered as copy text, a QR code and a "Download Dojo
-  Record" `.json` file.
-- **Import merges, never overwrites**: union of `opened` and kits, maximum of Merit, sum of unspent
-  wallets only when the profile IDs differ (decision 14). Importing can never lose cards.
+  bitset per catalog prefix, which keeps a full collection under about 150 characters. Offered as copy
+  text, a QR code and a "Download Dojo Record" `.json` file.
+- **Import merges, never overwrites**: union of `opened` and kits, the higher Merit, and unspent wallets
+  added together only when the profile IDs differ. Importing can never lose progress.
 - **Persistence.** Call `navigator.storage.persist()` after the first pack. Prompt to export after the first
   pack and every 10 packs. Safari deletes script-written storage after 7 days without a visit unless the
-  site is installed to the home screen, so the export nudge says so on iOS.
-- **Trust model.** Anyone can edit their own localStorage. That is fine: a collection is personal progress,
-  not a ranking, and under the pooled model an inflated collection gives no PvP advantage.
+  site is installed to the home screen, so the iOS prompt says so.
+- **Trust model.** Anyone can edit their own localStorage. A collection is personal progress, not a
+  ranking, and under the pooled model it gives no PvP advantage.
 
 ## How a forker defines their own packs
 
-1. Edit `content/packs.json`: rename series, move `{ catalogId, name, rarity }` lines, change slots,
-   earn rates or levels. Keep `$schema` so editors autocomplete.
-2. Run `npm run packs:check`. It reports every unassigned, duplicated, unknown or renamed card,
-   arithmetic that does not add up, a starter pool too thin to play, an uncompletable Combo, and track or
-   earn rules that name a missing mode, belt, currency or pack.
-3. To switch collections off, set `collection.enabled: false`. Every collectible card is then available
-   to everyone and packs are ignored (the same as Open Dojo).
-4. A forker adding new cards to `cards.json` must place them in a pack, or the check fails. That is
-   deliberate, so a card is never silently unobtainable.
+1. Edit `content/packs.json`: rename series, move `{ catalogId, name }` lines between packs, change which
+   Characters and Bosses start unlocked, move unlock rewards between levels, change earn rates or the
+   curve.
+2. Run `npm run packs:check`. It reports unassigned, duplicated, unknown or renamed cards; a starter pool
+   too thin to play; an uncompletable Combo; Characters or Bosses that are never unlocked; a starting
+   roster that cannot play a mode; and earn rules or rewards that name a missing mode, belt, currency or
+   pack.
+3. To skip progression entirely, set `"unlockEverything": true`.
+4. New cards added to `cards.json` must be placed in a pack (and new Characters or Bosses given an unlock),
+   or the check fails, so nothing is silently unobtainable.
 
 ## Modes and tables
 
-The pool is resolved before the match and passed into setup. Modes differ only in rewards.
+| Mode | Card pool | Fighters / Bosses | Rewards |
+| --- | --- | --- | --- |
+| Quick Duel (vs computer) | Your collection | You: your unlocked Characters; computer: any | Standard |
+| Standard Clash 2–6 | Your collection | Same | Winner takes the win reward; others take the loss reward plus 10 Merit per opponent beyond the first |
+| Tag Team (incl. 2v2) | Union of human seats | Three from your unlocked Characters | Standard; both winning teammates earn the win |
+| Boss Blitz solo / co-op | Union of human seats | Bosses from the union of your unlocked Bosses | Beating the Boss is a win; Merit ×1 / ×1.25 / ×1.5 for Rival / Mini-Boss / Final Boss |
+| Online PvP (lockstep) | Union of both manifests | Each player from their own unlocks | Standard, recorded by each browser |
+| Local hot-seat | This device's collection | This device's unlocks | Merit only |
+| Open Dojo (any mode) | Full catalog | Everything | None |
 
-| Mode | Pool | Rewards |
-| --- | --- | --- |
-| Quick Duel (vs bot) | Your collection; the bot shares it | Standard |
-| Standard Clash 2–6 (bots) | Your collection | Winner takes the win reward; others take the loss reward plus 10 Merit per opponent beyond the first |
-| Tag Team (incl. 2v2) | Union of human seats | Standard; both winning teammates earn the win |
-| Boss Blitz solo / co-op | Union of human seats; Boss decks unaffected | Beating the Boss is a win; Merit ×1 / ×1.25 / ×1.5 for Rival / Mini-Boss / Final Boss |
-| Online PvP (lockstep) | Union of both manifests | Standard, recorded by each browser for itself |
-| Local hot-seat | This device's collection | Merit only |
-| Open Dojo (any mode) | Full catalog | None |
-
-**Lockstep setup.** During pairing each browser sends its collection manifest (the same bitset as the
-export code, about 100 bytes) in the invite or reply code. Both compute
-`resolveMatchPools(packs, cards, [manifestA, manifestB])`, which sorts and dedupes, so the order of
-arrival does not matter. The resulting `pools` and the `packsRevision` go into `setup` and into the state
-hash. If the two sides run different `packsRevision`s, they still agree, because the pools are explicit
-catalog IDs; the hash catches any real mismatch as a "Paperwork Discrepancy".
+**Lockstep setup.** During pairing each browser sends its manifest (owned-card bitset plus unlocked
+Boss list, about 100 bytes) in the invite or reply code. Both compute
+`resolveMatchPools(packs, cards, [manifestA, manifestB])`, which sorts and dedupes, so arrival order does
+not matter. The pools, the chosen rosters and `packsRevision` go into `setup` and the state hash. A real
+mismatch shows as a "Paperwork Discrepancy".
 
 ## Implementation phases
 
 Each phase ends green on `npm run verify`.
 
-0. **Proposal (this change).** `content/packs.json`, its schema, `scripts/check-packs.mjs`,
-   `tests/packs-data.test.mjs`, this plan. `stepMatches` is exported from `engine/combo-runtime.mjs` for
-   the Combo check, with no behaviour change.
-1. **Approve the data.** Settle the decisions below, adjust membership by hand, set `status: "approved"`.
-   Register `content/packs.json` in `sourcePolicy.authoritativeFiles`, have `game:generate` emit
-   `app/data/packs.json` (plus a `catalogId → pack/rarity` index), and extend `check-generated-game-data`
-   to fail on drift. *Tests:* generated-equality, index completeness.
-2. **Engine pools.** `Game` and `BossBlitzGame` accept `config.pools = { market, combo, location }` (catalog
-   ID lists). When pools are absent, the full catalog is used, so simulations and the Quick Duel
-   fingerprint do not move. Setup records the pools. A new pure, framework-free module
-   `engine/collection.mjs` provides `ownedCards`, `resolveMatchPools`, `openBooster(packs, state, rng)`,
-   `applyMatchResult(packs, state, receipt)` and `levelFor(merit)`. *Tests:* the fingerprint is unchanged
-   without pools; pools restrict the decks; union is order-independent; replays carry pools; booster rolls
-   are deterministic per seed and serial, never duplicate, fall back between tiers and honour pity; rewards
-   are idempotent per match ID; level-ups grant exactly once. *Simulation:* add `--pool orientation`
-   (and orientation + one kit) to `simulate` and `simulate:modes`; check game length, round-limit rate
-   and win-rate spread against full-catalog runs.
+0. **Data and checker (done).** `content/packs.json`, its schema, `scripts/check-packs.mjs`,
+   `tests/packs-data.test.mjs`, this plan.
+1. **Generated data.** Register `content/packs.json` in `sourcePolicy.authoritativeFiles`, have
+   `game:generate` emit `app/data/packs.json` with `catalogId → pack` and `catalogId → unlock`
+   indexes, and extend `check-generated-game-data` to fail on drift.
+2. **Engine pools.** `Game` and `BossBlitzGame` accept `config.pools = { market, combo, location, bosses }`
+   (catalog ID lists), applied through the existing `marketPool()` hook and the Combo, Location and Boss
+   deck builders. With no pools, the full catalog is used, so simulations and fingerprints do not move.
+   Setup records the pools. A pure module `engine/collection.mjs` provides `ownedCards`, `unlockedRoster`,
+   `resolveMatchPools`, `openBooster(packs, state, rng)`, `applyMatchResult(packs, state, receipt)` and
+   `levelFor(merit)`. *Tests:* fingerprint unchanged without pools; pools restrict decks; union is
+   order-independent; replays carry pools; packs are deterministic per seed and serial and never repeat a
+   card; a series' last pack is short; rewards and unlocks are granted exactly once; series completion
+   unlocks its Character. *Simulation:* `--pool orientation` (and orientation plus one kit) in
+   `simulate` and `simulate:modes`, compared with full-catalog runs for game length and win-rate spread.
 3. **Career storage.** `app/career-store.ts`: schema v1, migrations, backup key, checksums, export/import
    codes, merge. All pure functions, tested in Node.
-4. **Career UI** (both themes designed together, 44 px targets, reduced motion honoured): a Collection
-   page behind the Field Agent menu (owned and unowned by series, binder favourites, "Found in"), the
-   kit choice at onboarding, a pack-opening screen (instant reveal under reduced motion; haptics only as
-   an extra), a level track with Diplomas, a post-match reward receipt, and the Career / Open Dojo toggle
-   in match setup. The card inspector shows series and rarity.
-5. **Gameplay wiring.** Pass pools into matches. This belongs on the engine-driven mat (One Engine
-   phase 3), which keeps `app/playtest.tsx` out of it (decision 16).
-6. **PvP.** Manifest exchange in the pairing codes; pools and `packsRevision` in setup and the state hash.
-7. **Tuning.** Revisit earn rates, the curve and the Dojo Box cap from play data and simulations.
+4. **Career UI** (both themes designed together, 44 px targets, reduced motion honoured): a Collection page
+   behind the Field Agent menu (cards by series, Characters and Bosses with how to unlock each), the kit
+   choice at onboarding, pack opening (instant reveal under reduced motion; haptics only as an extra), the
+   level track with Diplomas, a post-match receipt, locked fighters shown with their unlock level in
+   fighter select, and the Career / Open Dojo toggle in match setup.
+5. **Gameplay wiring** on the engine-driven mat (One Engine phase 3), so `app/playtest.tsx` stays out of it.
+6. **PvP.** Manifest exchange in the pairing codes; pools, rosters and `packsRevision` in setup and the
+   state hash.
+7. **Tuning** from play data and simulations.
 
-## Decisions for the owner
+## Decisions
 
-1. **Collection model.** *Recommend:* pooled dojo, a shared Market, Combo and Location pool built from the
-   union of seated collections.
-2. **Open Dojo.** *Recommend:* always one toggle away in match setup, earns nothing, used by tests and
-   simulations. New profiles default to Career after onboarding.
-3. **What is collectible.** *Recommend:* the 500-card main pool (Techniques, Items, Combos, Locations).
-   The Starter Deck, all 41 Characters and the Boss cards stay free for everyone. Locking fighters would
-   take away what players already enjoy, and Tag Team needs three.
-4. **Starter packs.** *Recommend:* everyone gets the 100-card Orientation Kit and chooses one of three
-   20-card Starter Kits; the other two arrive at levels 5 and 9.
-5. **Booster structure.** *Recommend:* 8 themed series of about 42 cards, 5-card packs, and the player
-   chooses which unlocked series to open with each ticket.
-6. **Rarity.** *Recommend:* four tiers (Plain Paper 50%, Carbon Copy 30%, Brass Seal 15%, Black Ink 5%)
-   that set discovery order, not power. Approve or rename the tier names.
-7. **Duplicates.** *Recommend:* none (binary ownership); packs roll only unowned cards; a completed
-   collection turns tickets into Merit.
-8. **Earn rates.** *Recommend:* win = 1 ticket, loss = 1 stub (3 stubs = 1 ticket), plus small daily,
-   streak and Master bonuses, aiming at about 75 matches to complete the collection.
-9. **Career naming.** *Recommend:* Merit / Clearance Level / Diplomas in Belt colors, 30 levels. It never
-   uses "Belt", "XP" or "Stripe".
-10. **Series gating.** *Recommend:* 4 series open at level 1; Counter Culture, Stockroom Hustle, Combo
-    Theory and Red Tape Riot unlock at levels 4, 6, 8 and 10.
-11. **Rewards by table.** *Recommend:* bots and online PvP pay in full, hot-seat pays Merit only, Open Dojo
-    pays nothing; a match needs 3 completed rounds; no anti-cheat.
-12. **Characters and Bosses.** *Recommend:* keep them all available. If more track rewards are wanted
-    later, add cosmetic fighter variants or a Boss-defeat stamp book rather than locks.
-13. **Market dilution.** *Recommend:* start uncapped (bring everything you own); add an optional Dojo Box
-    cap only if simulations or play show large collections play worse.
-14. **Storage and recovery.** *Recommend:* localStorage with a backup key, `storage.persist()`, export
-    codes, QR and file download, and merge-only import. No cloud sync, since the site has no server.
-15. **Per-card set field.** *Recommend:* none now. If Phase 2 card redesign prints a set symbol, generate
-    it from `packs.json` rather than authoring it in `cards.json`.
-16. **When collections reach the mat.** *Recommend:* build data, engine pools, storage and the
-    Collection page now, and switch real matches to Career pools once the mat runs on the engine (One
-    Engine phase 3), instead of patching the market setup in `app/playtest.tsx`.
-17. **Membership review.** *Recommend:* a designer pass over the proposed lists (especially the Orientation
-    Kit and each series' two Black Ink cards) before setting `status: "approved"`.
+### Answered by the owner (Nov 27)
+
+- Approved: shared-pool collections, Open Dojo, Orientation Kit plus one of three Starter Kits (the others
+  at levels 5 and 9), 8 themed series of 5-card packs with the series chosen by the player, the earn
+  rates, Merit / Clearance Level / Diplomas, series gating (4 open, the rest at 4/6/8/10), rewards by
+  table type, and localStorage with backup and export/import codes.
+- **No rarity.** Tiers, odds and pity are removed from the data, schema, checker and plan.
+- **No duplicates**: every pack holds only new cards. A finished collection turns tickets into Merit.
+- **Free of money, always**, but Characters and Bosses unlock over time (the section above).
+
+### Decided here (small calls the owner asked us to make)
+
+1. **Starting roster:** 12 Characters (4 per Starter Kit style) and 5 Bosses covering every stage. Big
+   enough for Tag Team and real choice, small enough that unlocks matter.
+2. **Unlock sources:** Characters from Clearance Levels 2–22 (one each) and from completing each series;
+   Bosses at levels 3, 6, 9, 13 and 17. Packs never contain Characters or Bosses, so a pack is always 5
+   cards.
+3. **Computer opponents may field any Character** (`computerOpponents: "any"`). It keeps six-seat Clash
+   varied and previews upcoming fighters. Switch to `"unlocked"` in the data if that feels like a spoiler.
+4. **Boss Blitz pool:** the union of the unlocked Bosses of the humans at the table, like cards.
+5. **Short last pack:** a series' last pack holds just the remaining 2 or 3 cards. The alternative,
+   topping up from another series, would break "you chose this series".
+6. **No Market cap ("Dojo Box") for now.** Bring everything you own; revisit only if simulations show
+   large collections play worse.
+7. **No per-card set field in `cards.json`.** If a printed set symbol ever appears, it is generated from
+   `packs.json`.
+8. **Collections reach real matches on the engine-driven mat** (One Engine phase 3); data, storage and the
+   Collection page can land before that.
+9. **Membership lists:** the script's first pass stands. Rebalance any time by moving lines; the checker
+   keeps it consistent.
+
+### Still waiting on the owner
+
+None.

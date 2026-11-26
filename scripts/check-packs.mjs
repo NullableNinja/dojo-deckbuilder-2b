@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 // Validates content/packs.json: its schema shape, pack membership against content/cards.json,
-// rarity and booster arithmetic, starter-pool health, Combo coherence, earn rules and the
-// Clearance Level track. Run directly (`npm run packs:check`) or import checkPacks() in tests.
+// starting and unlockable Characters and Bosses, starter-pool health, Combo coherence, earn rules
+// and the Clearance Level track. Run directly (`npm run packs:check`) or import checkPacks() in tests.
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stepMatches } from "../engine/combo-runtime.mjs";
 
 const ZONES = ["High", "Mid", "Low"];
-const SHARE_EPSILON = 1e-9;
 const SCHEMA_KEYWORDS = new Set(["$ref", "type", "const", "enum", "minLength", "pattern", "minimum", "maximum", "exclusiveMinimum", "minItems", "uniqueItems", "items", "required", "properties", "additionalProperties"]);
 const SCHEMA_METADATA_KEYWORDS = new Set(["$schema", "$id", "$defs", "title", "description", "$comment"]);
 const CARD_MATCHING_REQUIREMENTS = new Set(["orderedSequence", "currentCardMatches", "priorCardMatches", "equippedCardMatches", "playedCardHistory"]);
@@ -80,26 +79,24 @@ function resolveRef(root, ref) {
 
 const countBy = (items, keyOf) => items.reduce((counts, item) => counts.set(keyOf(item), (counts.get(keyOf(item)) ?? 0) + 1), new Map());
 const duplicates = (values) => [...countBy(values, (value) => value)].filter(([, count]) => count > 1).map(([value]) => value);
-const sum = (values) => values.reduce((total, value) => total + value, 0);
 const cardZones = (card) => (String(card.zone).trim() === "Any" ? ZONES : String(card.zone ?? "").split(/,\s*/).filter((zone) => ZONES.includes(zone)));
 
 function context(inputs) {
   const { packs, cards } = inputs;
   const cardsById = new Map(cards.map((card) => [card.catalogId, card]));
   const collectible = cards.filter((card) => packs.collection.collectibleDecks.includes(card.deck));
-  const rarityById = new Map(packs.rarities.map((rarity) => [rarity.id, rarity]));
   const packById = new Map(packs.packs.map((pack) => [pack.id, pack]));
   const everyProfilePacks = packs.packs.filter((pack) => pack.kind === "starter" && pack.grant === "every-profile");
   const cardsOf = (pack) => pack.cards.map((entry) => cardsById.get(entry.catalogId)).filter(Boolean);
   const starterDeck = (inputs.game.definition.starterDeck ?? []).map((entry) => cardsById.get(entry.catalogId)).filter(Boolean);
   const alwaysOwned = [...starterDeck, ...everyProfilePacks.flatMap(cardsOf)];
-  return { ...inputs, cardsById, collectible, rarityById, packById, everyProfilePacks, cardsOf, alwaysOwned };
+  return { ...inputs, cardsById, collectible, packById, everyProfilePacks, cardsOf, alwaysOwned };
 }
 
 function checkUniqueIds(ctx, fail) {
   const { packs } = ctx;
   const groups = {
-    rarity: packs.rarities, pack: packs.packs, currency: packs.earnRules.currencies, slot: packs.boosterRules.slots,
+    pack: packs.packs, currency: packs.earnRules.currencies,
     diploma: packs.levelTrack.diplomas, "match pool": packs.collection.matchPools, bonus: packs.earnRules.bonuses,
   };
   for (const [label, items] of Object.entries(groups)) for (const id of duplicates(items.map((item) => item.id))) fail(`duplicate ${label} id "${id}"`);
@@ -107,39 +104,31 @@ function checkUniqueIds(ctx, fail) {
 
 function checkCollection(ctx, fail) {
   const { packs, cards, game } = ctx;
-  const { collectibleDecks, alwaysAvailableDecks, matchPools } = packs.collection;
+  const { collectibleDecks, alwaysAvailableDecks, unlockableDecks, matchPools } = packs.collection;
   if (packs.rulesVersion !== game.rulesVersion) fail(`rulesVersion ${packs.rulesVersion} does not match content/dojo-game.json (${game.rulesVersion})`);
   const catalogDecks = new Set(cards.map((card) => card.deck));
-  for (const deck of [...collectibleDecks, ...alwaysAvailableDecks]) if (!catalogDecks.has(deck)) fail(`unknown deck "${deck}"`);
-  for (const deck of collectibleDecks) if (alwaysAvailableDecks.includes(deck)) fail(`deck "${deck}" is both collectible and always available`);
-  for (const deck of catalogDecks) if (!collectibleDecks.includes(deck) && !alwaysAvailableDecks.includes(deck)) fail(`deck "${deck}" is neither collectible nor always available`);
+  const classified = [...collectibleDecks, ...alwaysAvailableDecks, ...unlockableDecks];
+  for (const deck of classified) if (!catalogDecks.has(deck)) fail(`unknown deck "${deck}"`);
+  for (const deck of duplicates(classified)) fail(`deck "${deck}" is listed under more than one of collectible, always available and unlockable`);
+  for (const deck of catalogDecks) if (!classified.includes(deck)) fail(`deck "${deck}" is not listed as collectible, always available or unlockable`);
+  const unlockableKinds = Object.values(packs.unlockables).map((kind) => kind.deck);
+  for (const deck of unlockableKinds) if (!unlockableDecks.includes(deck)) fail(`unlockables deck "${deck}" is not in collection.unlockableDecks`);
+  for (const deck of unlockableDecks) if (!unlockableKinds.includes(deck)) fail(`unlockable deck "${deck}" has no unlockables entry`);
   const pooledDecks = matchPools.flatMap((pool) => pool.decks);
   for (const deck of duplicates(pooledDecks)) fail(`deck "${deck}" appears in more than one match pool`);
   for (const deck of collectibleDecks) if (!pooledDecks.includes(deck)) fail(`collectible deck "${deck}" belongs to no match pool`);
   for (const deck of pooledDecks) if (!collectibleDecks.includes(deck)) fail(`match pool deck "${deck}" is not collectible`);
 }
 
-function checkRarities(ctx, fail) {
-  const eligible = ctx.packs.rarities.filter((rarity) => rarity.boosterEligible);
-  if (!eligible.length) fail("no booster-eligible rarity");
-  if (Math.abs(sum(eligible.map((rarity) => rarity.targetShare)) - 1) > SHARE_EPSILON) fail("booster-eligible rarity targetShare values must total 1");
-  for (const rarity of ctx.packs.rarities) if (!rarity.boosterEligible && rarity.targetShare !== 0) fail(`rarity "${rarity.id}" is not booster-eligible, so its targetShare must be 0`);
-}
-
-function checkBoosterRules(ctx, fail) {
-  const rules = ctx.packs.boosterRules;
-  const isEligible = (id) => ctx.rarityById.get(id)?.boosterEligible === true;
-  if (sum(rules.slots.map((slot) => slot.count)) !== rules.cardsPerPack) fail(`booster slot counts must total cardsPerPack (${rules.cardsPerPack})`);
-  for (const slot of rules.slots) {
-    for (const rarity of Object.keys(slot.weights)) if (!isEligible(rarity)) fail(`slot "${slot.id}" weights unknown or non-booster rarity "${rarity}"`);
-    const total = sum(Object.values(slot.weights));
-    if (Math.abs(total - 100) > SHARE_EPSILON) fail(`slot "${slot.id}" weights total ${total}, expected 100`);
+function checkBoosterSizes(ctx, fail) {
+  const { cardsPerPack } = ctx.packs.boosterRules;
+  for (const pack of ctx.packs.packs.filter((candidate) => candidate.kind === "booster")) {
+    if (pack.cards.length < cardsPerPack) fail(`booster "${pack.id}" has ${pack.cards.length} cards, fewer than one pack of ${cardsPerPack}`);
   }
-  if (!isEligible(rules.pity.rarity)) fail(`pity rarity "${rules.pity.rarity}" is not a booster rarity`);
 }
 
 function checkMembership(ctx, fail) {
-  const { packs, cardsById, collectible, rarityById } = ctx;
+  const { packs, cardsById, collectible } = ctx;
   const entries = packs.packs.flatMap((pack) => pack.cards.map((entry) => ({ ...entry, pack })));
   for (const entry of entries) {
     const card = cardsById.get(entry.catalogId);
@@ -147,15 +136,11 @@ function checkMembership(ctx, fail) {
     if (!card) { fail(`${where} is not in content/cards.json`); continue; }
     if (card.name !== entry.name) fail(`${where} is named "${card.name}" in cards.json, not "${entry.name}"`);
     if (!packs.collection.collectibleDecks.includes(card.deck)) fail(`${where} is in ${card.deck}, which is not collectible`);
-    const rarity = rarityById.get(entry.rarity);
-    if (!rarity) fail(`${where} has unknown rarity "${entry.rarity}"`);
-    else if (entry.pack.kind === "booster" && !rarity.boosterEligible) fail(`${where} is in a booster but has non-booster rarity "${entry.rarity}"`);
-    else if (entry.pack.kind === "starter" && rarity.boosterEligible) fail(`${where} is in a starter pack but has booster rarity "${entry.rarity}"`);
   }
   for (const id of duplicates(entries.map((entry) => entry.catalogId))) {
     fail(`${id} is assigned more than once (${entries.filter((entry) => entry.catalogId === id).map((entry) => entry.pack.id).join(", ")})`);
   }
-  if (!packs.collection.enabled) return;
+  if (packs.unlockEverything) return;
   const assigned = new Set(entries.map((entry) => entry.catalogId));
   for (const card of collectible) if (!assigned.has(card.catalogId)) fail(`${card.catalogId} (${card.name}) is collectible but in no pack`);
 }
@@ -167,6 +152,8 @@ function checkPackFields(ctx, fail) {
     if (pack.kind === "booster" && (pack.grant || pack.choiceGroup)) fail(`booster "${pack.id}" cannot have a grant or choiceGroup`);
     if (pack.grant === "choose-one" && !pack.choiceGroup) fail(`starter pack "${pack.id}" is choose-one but has no choiceGroup`);
     if (pack.grant === "every-profile" && pack.choiceGroup) fail(`starter pack "${pack.id}" is every-profile and cannot have a choiceGroup`);
+    if (pack.completionReward && pack.kind !== "booster") fail(`starter pack "${pack.id}" cannot have a completionReward`);
+    if (pack.completionReward) checkReward(ctx, pack.completionReward, `${pack.id} completionReward`, fail);
     for (const path of pack.themeBuildPaths) if (!knownBuildPaths.has(path)) fail(`pack "${pack.id}" theme build path "${path}" is used by no card`);
   }
   for (const [group, members] of choiceGroups(ctx.packs)) {
@@ -179,20 +166,6 @@ function choiceGroups(packs) {
   const groups = new Map();
   for (const pack of packs.packs.filter((candidate) => candidate.choiceGroup)) groups.set(pack.choiceGroup, [...(groups.get(pack.choiceGroup) ?? []), pack]);
   return groups;
-}
-
-function checkBoosterRarityMix(ctx, fail) {
-  const eligible = ctx.packs.rarities.filter((rarity) => rarity.boosterEligible);
-  const tolerance = ctx.packs.boosterRules.rarityTolerance;
-  for (const pack of ctx.packs.packs.filter((candidate) => candidate.kind === "booster")) {
-    const counts = countBy(pack.cards, (entry) => entry.rarity);
-    for (const rarity of eligible) {
-      const count = counts.get(rarity.id) ?? 0;
-      if (!count) fail(`booster "${pack.id}" has no ${rarity.id} cards, so its slots and pity rule cannot be honoured`);
-      const share = count / pack.cards.length;
-      if (Math.abs(share - rarity.targetShare) > tolerance + SHARE_EPSILON) fail(`booster "${pack.id}" is ${(share * 100).toFixed(1)}% ${rarity.id}; target ${(rarity.targetShare * 100).toFixed(1)}% ± ${(tolerance * 100).toFixed(1)}%`);
-    }
-  }
 }
 
 function checkStarterPool(ctx, fail) {
@@ -269,8 +242,8 @@ function checkLevelTrack(ctx, fail) {
     if (index > 0 && diploma.fromLevel <= diplomas[index - 1].fromLevel) fail(`diploma "${diploma.id}" must start after "${diplomas[index - 1].id}"`);
     if (diploma.fromLevel > levels.length) fail(`diploma "${diploma.id}" starts beyond the final level`);
   });
-  const rewards = [...levels.flatMap((entry) => entry.rewards.map((reward) => ({ reward, where: `level ${entry.level}` }))), ...levelTrack.afterFinalLevel.rewards.map((reward) => ({ reward, where: "afterFinalLevel" }))];
-  rewards.forEach(({ reward, where }) => checkLevelReward(ctx, reward, where, fail));
+  const rewards = trackRewards(ctx.packs);
+  rewards.forEach(({ reward, where }) => checkReward(ctx, reward, where, fail));
   const unlocks = rewards.filter(({ reward }) => reward.kind === "unlock-booster").map(({ reward }) => reward.pack);
   for (const pack of ctx.packs.packs.filter((candidate) => candidate.kind === "booster")) {
     const times = unlocks.filter((id) => id === pack.id).length;
@@ -282,12 +255,74 @@ function checkLevelTrack(ctx, fail) {
   }
 }
 
-function checkLevelReward(ctx, reward, where, fail) {
-  const needs = { "booster-ticket": ["count"], "unlock-booster": ["pack"], "starter-kit-choice": ["choiceGroup"], cosmetic: ["id"], title: ["id"] }[reward.kind];
+const trackRewards = (packs) => [
+  ...packs.levelTrack.levels.flatMap((entry) => entry.rewards.map((reward) => ({ reward, where: `level ${entry.level}` }))),
+  ...packs.levelTrack.afterFinalLevel.rewards.map((reward) => ({ reward, where: "afterFinalLevel" })),
+];
+
+const allRewards = (packs) => [
+  ...trackRewards(packs),
+  ...packs.packs.filter((pack) => pack.completionReward).map((pack) => ({ reward: pack.completionReward, where: `${pack.id} completionReward` })),
+];
+
+const REWARD_FIELDS = {
+  "booster-ticket": ["count"], "unlock-booster": ["pack"], "starter-kit-choice": ["choiceGroup"],
+  "unlock-character": ["catalogId", "name"], "unlock-boss": ["catalogId", "name"], cosmetic: ["id"], title: ["id"],
+};
+const UNLOCK_KINDS = { "unlock-character": "characters", "unlock-boss": "bosses" };
+
+function checkReward(ctx, reward, where, fail) {
+  const needs = REWARD_FIELDS[reward.kind];
   for (const field of needs) if (!(field in reward)) fail(`${where}: ${reward.kind} reward needs "${field}"`);
   for (const field of Object.keys(reward)) if (field !== "kind" && !needs.includes(field)) fail(`${where}: ${reward.kind} reward does not take "${field}"`);
   if (reward.kind === "unlock-booster" && ctx.packById.get(reward.pack)?.kind !== "booster") fail(`${where}: "${reward.pack}" is not a booster`);
   if (reward.kind === "starter-kit-choice" && !choiceGroups(ctx.packs).has(reward.choiceGroup)) fail(`${where}: unknown choice group "${reward.choiceGroup}"`);
+  if (UNLOCK_KINDS[reward.kind] && reward.catalogId) checkCardRef(ctx, reward, ctx.packs.unlockables[UNLOCK_KINDS[reward.kind]].deck, where, fail);
+}
+
+function checkCardRef(ctx, ref, deck, where, fail) {
+  const card = ctx.cardsById.get(ref.catalogId);
+  if (!card) return fail(`${where}: ${ref.catalogId} is not in content/cards.json`);
+  if (card.name !== ref.name) fail(`${where}: ${ref.catalogId} is named "${card.name}" in cards.json, not "${ref.name}"`);
+  if (card.deck !== deck) fail(`${where}: ${ref.catalogId} is in ${card.deck}, not ${deck}`);
+}
+
+// Every Character and Boss Profile is available from the start or unlocked by exactly one reward,
+// and the starting sets are enough to play every mode.
+function checkUnlockables(ctx, fail) {
+  const { unlockables } = ctx.packs;
+  const rewards = allRewards(ctx.packs);
+  for (const [kind, entry] of Object.entries(unlockables)) {
+    entry.starting.forEach((ref) => checkCardRef(ctx, ref, entry.deck, `unlockables.${kind}.starting`, fail));
+    const unlockKind = Object.keys(UNLOCK_KINDS).find((rewardKind) => UNLOCK_KINDS[rewardKind] === kind);
+    const sources = [
+      ...entry.starting.map((ref) => ({ id: ref.catalogId, where: "starting" })),
+      ...rewards.filter(({ reward }) => reward.kind === unlockKind).map(({ reward, where }) => ({ id: reward.catalogId, where })),
+    ];
+    for (const id of duplicates(sources.map((source) => source.id))) fail(`${id} is made available more than once (${sources.filter((source) => source.id === id).map((source) => source.where).join(", ")})`);
+    if (ctx.packs.unlockEverything) continue;
+    const available = new Set(sources.map((source) => source.id));
+    for (const card of ctx.cards.filter((candidate) => candidate.deck === entry.deck)) if (!available.has(card.catalogId)) fail(`${card.catalogId} (${card.name}) is neither starting nor unlocked by any reward`);
+  }
+  checkStartingRosters(ctx, fail);
+}
+
+function checkStartingRosters(ctx, fail) {
+  const modes = ctx.game.definition.modes ?? [];
+  const largestRoster = Math.max(1, ...modes.map((mode) => mode.roster?.size ?? 1));
+  const characters = ctx.packs.unlockables.characters.starting;
+  if (characters.length < largestRoster) fail(`only ${characters.length} starting Characters; the largest roster needs ${largestRoster}`);
+  const bosses = ctx.packs.unlockables.bosses.starting.map((ref) => ctx.cardsById.get(ref.catalogId)).filter(Boolean);
+  for (const mode of modes.filter((candidate) => candidate.boss?.stages?.length)) {
+    const fits = mode.boss.stages.map((stage) => bosses.filter((boss) => (boss.tags ?? []).includes(stage.stageFit)));
+    if (!hasDistinctAssignment(fits)) fail(`mode "${mode.id}" cannot field a different starting Boss Profile for every stage (${mode.boss.stages.map((stage) => stage.stageFit).join(", ")})`);
+  }
+}
+
+/** True when each slot can take a different candidate (a tiny bipartite matching by backtracking). */
+function hasDistinctAssignment(candidatesPerSlot, used = new Set(), slot = 0) {
+  if (slot === candidatesPerSlot.length) return true;
+  return candidatesPerSlot[slot].some((candidate) => !used.has(candidate) && hasDistinctAssignment(candidatesPerSlot, new Set([...used, candidate]), slot + 1));
 }
 
 function summarize(ctx) {
@@ -296,7 +331,7 @@ function summarize(ctx) {
     kind: pack.kind,
     cards: pack.cards.length,
     subtypes: Object.fromEntries(countBy(ctx.cardsOf(pack), (card) => card.subtype)),
-    rarities: Object.fromEntries(countBy(pack.cards, (entry) => entry.rarity)),
+    completionReward: pack.completionReward?.name ?? null,
   }));
 }
 
@@ -307,7 +342,7 @@ export function checkPacks(inputs) {
   const ctx = context(inputs);
   const errors = [];
   const fail = (message) => errors.push(message);
-  for (const check of [checkUniqueIds, checkCollection, checkRarities, checkBoosterRules, checkMembership, checkPackFields, checkBoosterRarityMix, checkStarterPool, checkComboCoherence, checkEarnRules, checkLevelTrack]) check(ctx, fail);
+  for (const check of [checkUniqueIds, checkCollection, checkBoosterSizes, checkMembership, checkPackFields, checkUnlockables, checkStarterPool, checkComboCoherence, checkEarnRules, checkLevelTrack]) check(ctx, fail);
   return { errors, summary: summarize(ctx) };
 }
 
@@ -320,8 +355,9 @@ function main() {
     process.exit(1);
   }
   const collectible = summary.reduce((total, pack) => total + pack.cards, 0);
-  console.log(`content/packs.json (${inputs.packs.status}) is valid: ${summary.length} packs, ${collectible} collectible cards each assigned once.`);
-  for (const pack of summary) console.log(`  ${pack.kind.padEnd(8)} ${pack.id.padEnd(18)} ${String(pack.cards).padStart(3)} cards  ${JSON.stringify(pack.rarities)}`);
+  const { characters, bosses } = inputs.packs.unlockables;
+  console.log(`content/packs.json (${inputs.packs.status}) is valid: ${summary.length} packs, ${collectible} collectible cards each assigned once; ${characters.starting.length} starting Characters, ${bosses.starting.length} starting Boss Profiles.`);
+  for (const pack of summary) console.log(`  ${pack.kind.padEnd(8)} ${pack.id.padEnd(18)} ${String(pack.cards).padStart(3)} cards${pack.completionReward ? `  completion: ${pack.completionReward}` : ""}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

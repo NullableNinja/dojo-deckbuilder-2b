@@ -34,9 +34,9 @@ None open right now.
 | 14 | Clock In, Block Out | Requires a Reversal step. | Owner | Done |
 | 17–21 | Weapons in hand | Replace rather than block, always with a warning; player picks; restriction checked on equip; only subtype Weapon uses Hands; Fast Belts everywhere. | Owner | Done |
 | 22 | Steal the Belt, Friendly Fire | Engine variants for Clash and Tag Team, from the house-rule text. Friendly Fire: each fighter may attack a teammate once per round; that Attack earns no XP, task credit, KO reward, Tempo or Combo trigger. | Owner (spec: Claude) | To do |
-| 23–34 | Packs and progression | Shared-pool collections, Open Dojo, Orientation Kit plus Starter Kits, 8 themed series, packs only contain new cards, earn rates, Merit / Clearance Levels / Diplomas, series gating, rewards by table type, local saves with export codes. | Owner | Plan being revised |
-| 25 | What is free | Everything is free of money, always; extra Bosses and new Characters unlock over time. | Owner | Plan being revised |
-| 28, 35 | Rarity | None. | Owner | Plan being revised |
+| 23–34 | Packs and progression | Shared-pool collections, Open Dojo, Orientation Kit plus Starter Kits, 8 themed series, packs only contain new cards, earn rates, Merit / Clearance Levels / Diplomas, series gating, rewards by table type, local saves with export codes. | Owner | Done (plan + `content/packs.json`, approved) |
+| 25 | What is free | Everything is free of money, always. 12 Characters and 5 Bosses at the start; the rest unlock through Clearance Levels and completed series. | Owner | Done (plan) |
+| 28, 35 | Rarity | None. | Owner | Done |
 | 36 | Prevention to 0 damage | It's a Block (no damage dealt), not a Hit. | Claude | Done (engine already) |
 | 37 | Off-turn Focus | Rulebook: a card played outside your own turn generates no printed Focus, Defense cards included. | Claude | To do |
 | 38 | Attack and Defense XP | Always, Hit or Block. | Claude | Done |
