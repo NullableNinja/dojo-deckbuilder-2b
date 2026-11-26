@@ -41,13 +41,25 @@ Fixed on Nov 26 (tests in `tests/core-rules-engine.test.mjs`):
 These change simulation results. The Quick Duel fingerprint moved from `332033cbde805616ccff17b0` to
 `340f87ee9f34a97de97560d1`, and solo Boss Blitz dropped from ~85% to ~62% player wins.
 
+Also fixed on Nov 26 (tests in `tests/engine-table-options.test.mjs`; the fingerprint did not move):
+
+- **Weapon two-Hand limit.** `definition.equipment.weaponHands` gives a fighter two Hands; a Weapon
+  occupies its printed Hands. When a Weapon does not fit, the legal actions offer one equip per set of
+  equipped Weapons it would replace, and those are discarded first ("Replacing an occupied slot
+  discards the old Equipment first"). A `noTwoHandedWeapon` restriction on equipped gear forbids
+  two-handed Weapons.
+- **Table options.** Tempo, Locations, Open Market, a balanced opening Market and house rules are
+  declared in `definition.tableOptions` and passed as `new Game(data, { table: { ... } })`. Market
+  Scramble and Fast Belts are executable house-rule variants. `game.tableOptions` exposes the resolved
+  options and `setup.table` records them for replays.
+
 Still open (the parity work in Phase 1 will find the rest):
 
 - **Reversal window**: after a successful block the defender may counter with a Reversal. The mat has
   it; the engine does not.
-- **Weapon two-Hand limit**: enforced by the mat (`equipment-hand-limit.ts`), absent in the engine.
-- **House rules**: tempo, locations, open market, balanced opening market and the belt-threshold house
-  rules are mat settings. They belong in `content/dojo-game.json` as named variants the engine reads.
+- **Tempo needs a faster fighter**: the rulebook and the mat grant Tempo only against a slower opposing
+  fighter, and allow it on a Defense (+1 Guard). The engine spends it on the first Attack of the round
+  regardless of Speed. Fixing it will move the fingerprint.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
 - **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
 - **Rich combat records**: the mat's stage, impact readout and VFX need the attack breakdown and

@@ -235,9 +235,9 @@ export class BossBlitzGame extends Game {
 
   firstThisRound(player, key) { const usage = player.effectUsage.round; if (usage[key]) return false; usage[key] = true; return true; }
 
-  playCard(player, card) {
+  playCard(player, card, options = {}) {
     const subtype = card?.subtype; const phase = this.phase;
-    const played = super.playCard(player, card);
+    const played = super.playCard(player, card, options);
     if (!played || player.isBoss) return played;
     const boss = this.boss;
     if (this.profileResolver === "boss.profile.kataDefense" && subtype === "Kata" && this.firstThisRound(player, "bossKata")) this.addStatus(boss, { action: "modifyDefense", amount: 1, duration: "endOfRound", sourceId: "profile" });
