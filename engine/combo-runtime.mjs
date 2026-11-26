@@ -5,9 +5,12 @@
 const lower = (value) => String(value ?? "").trim().toLocaleLowerCase();
 const tagsOf = (card) => (card?.tags ?? []).map(lower);
 const hasTag = (card, tag) => tagsOf(card).some((value) => value === lower(tag) || value.includes(lower(tag)));
-const isAttack = (card) => Boolean(card) && (lower(card.subtype) === "attack" || lower(card.cardType) === "attack" || hasTag(card, "attack"));
-const isDefense = (card) => Boolean(card) && (lower(card.subtype) === "defense" || lower(card.cardType) === "defense" || hasTag(card, "defense") || hasTag(card, "block"));
-const isKata = (card) => Boolean(card) && (lower(card.subtype) === "kata" || lower(card.cardType) === "kata" || hasTag(card, "kata"));
+// Starter cards print their family in details.Type (Basic Jab is a Starter "Attack"); the rulebook's
+// Standard Starter Deck lists them as Attacks, Defenses and Katas, so they count as those families.
+const printedType = (card) => lower(card?.details?.Type);
+const isAttack = (card) => Boolean(card) && (lower(card.subtype) === "attack" || lower(card.cardType) === "attack" || printedType(card) === "attack" || hasTag(card, "attack"));
+const isDefense = (card) => Boolean(card) && (lower(card.subtype) === "defense" || lower(card.cardType) === "defense" || printedType(card) === "defense" || hasTag(card, "defense") || hasTag(card, "block"));
+const isKata = (card) => Boolean(card) && (lower(card.subtype) === "kata" || lower(card.cardType) === "kata" || printedType(card) === "kata" || hasTag(card, "kata"));
 const isConsumable = (card) => Boolean(card) && (lower(card.subtype) === "consumable" || lower(card.cardType) === "consumable" || hasTag(card, "consumable"));
 const isEquipment = (card) => Boolean(card) && (["weapon", "gear", "defense equipment", "equipment"].includes(lower(card.subtype)) || hasTag(card, "equipment") || hasTag(card, "weapon"));
 const isJunk = (card) => Boolean(card) && (lower(card.subtype) === "junk" || lower(card.cardType) === "junk" || hasTag(card, "junk"));
@@ -52,9 +55,21 @@ function cardsForFacts(data, facts = []) {
 
 function historyEntries(context) {
   return [
-    ...context.priorPlayed.map((fact) => ({ card: fact.card, zone: fact.zone ?? "", current: false })),
-    ...(context.currentCard ? [{ card: context.currentCard, zone: context.currentZone, current: true }] : []),
+    ...context.priorPlayed.map((fact) => ({ card: fact.card, zone: fact.zone ?? "", hit: fact.hit, current: false })),
+    ...(context.currentCard ? [{ card: context.currentCard, zone: context.currentZone, hit: context.currentAttackHit, current: true }] : []),
   ];
+}
+
+/** Played-card facts for this turn, with each Attack's Hit result joined from the attack history (in order). */
+function playedWithHits(turnPlayed, turnAttacks) {
+  const remaining = [...turnAttacks];
+  return turnPlayed.map((fact) => {
+    if (!isAttack(fact.card)) return fact;
+    const index = remaining.findIndex((attack) => attack.cardId === fact.cardId);
+    if (index < 0) return fact;
+    const [attack] = remaining.splice(index, 1);
+    return { ...fact, hit: Boolean(attack.hit) };
+  });
 }
 
 function blockHistoryMatches(requirement, context) {
@@ -81,6 +96,8 @@ function requirementSatisfied(requirement, context) {
         while (cursor < entries.length) {
           const entry = entries[cursor++];
           if (!stepMatches(step, entry.card, entry.zone)) continue;
+          // "If the first Attack Hits": a step may require that its Attack Hit.
+          if (step.hit != null && Boolean(entry.hit) !== step.hit) continue;
           matched = true;
           finalWasCurrent = entry.current;
           break;
@@ -179,7 +196,7 @@ export function comboContext(data, player, currentCard, currentZone, event = {})
   ];
   const startingHand = facts.startingHandIds.map((id) => cardFor(data, id)).filter(Boolean);
   return {
-    priorPlayed: [...turnPlayed],
+    priorPlayed: playedWithHits(turnPlayed, turnAttacks),
     turnPlayed: facts.turnPlayed,
     turnAttacks,
     roundAttacks,

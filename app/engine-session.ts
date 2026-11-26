@@ -45,7 +45,7 @@ export type SessionSetup = {
   /** How well computer seats play: "student" | "certified" | "master" (engine/difficulty.mjs). */
   difficulty?: string;
 };
-export type TableOptions = { tempo?: boolean; locations?: boolean; openMarket?: boolean; balancedMarket?: boolean; houseRules?: string[] };
+export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[] };
 export type Decision = { kind: "action"; action: EngineAction } | { kind: "choice"; optionId: string };
 export type SavedSession = { format: 1; setup: SessionSetup; decisions: Decision[] };
 export type BotPolicy = { chooseAction(game: EngineGame, legal: EngineAction[]): EngineAction; chooseChoice(game: EngineGame, pending: EnginePending): { optionId: string } };

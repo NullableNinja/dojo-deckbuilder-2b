@@ -15,8 +15,7 @@
  *   zones, which Defense and Reaction to spend, and buys the best set of cards for its deck.
  *
  * Every chosen option is first tried on a private copy of the table, and one that would break
- * the table's invariants is swapped for a safe alternative. (Today that keeps Reaction Items
- * in hand: the engine files a played Reaction in both `played` and `discard`.)
+ * the table's invariants is swapped for a safe alternative.
  *
  * Randomness is deterministic and replay-safe: it is derived from the seeded engine RNG state
  * without advancing it, so a game recorded as setup + decisions replays move for move.
@@ -28,15 +27,15 @@ export const DIFFICULTIES = ["student", "certified", "master"];
 
 const PROFILES = {
   student: {
-    level: "student", skipDefenseChance: 0.28, reactionChance: 0.5, shuffledAttacks: true, readsOpponent: false,
+    level: "student", skipDefenseChance: 0.28, reactionChance: 0.5, shuffledAttacks: true, readsOpponent: false, peeksAtHand: false,
     defenseStyle: "biggest", market: "sticker-price", learnComboChance: 0.5, activatesEquipment: false, choosesTargets: false, lookahead: false, randomUpkeep: true,
   },
   certified: {
-    level: "certified", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true,
+    level: "certified", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true, peeksAtHand: false,
     defenseStyle: "efficient", market: "balanced", learnComboChance: 1, combosWithLeftoverFocus: true, activatesEquipment: true, choosesTargets: true, lookahead: false,
   },
   master: {
-    level: "master", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true,
+    level: "master", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true, peeksAtHand: true,
     defenseStyle: "efficient", market: "planned", learnComboChance: 1, combosWithLeftoverFocus: true, activatesEquipment: true, choosesTargets: true, lookahead: true,
   },
 };
@@ -129,8 +128,13 @@ function blockEstimate(game, defender, defenseCard, attacker, attackCard, zone, 
   return Math.max(0, defender.def + printed + guardCard + equipmentDefense(game, defender, zone) + game.statusValue(defender, "modifyGuard") + game.statusValue(defender, "modifyDefense") + extraDefense - piercing);
 }
 
-/** The best guard a defender's hand offers in a zone (peeking, as the mat's computer does). */
+// Whether the policy making the current decision may look at an opponent's hidden hand. Only Master
+// peeks (owner decision 48); Student and Certified judge zones from public information only.
+let peekAtHand = true;
+
+/** The best guard a defender's hand offers in a zone; 0 when the deciding policy plays blind. */
 function bestGuardInZone(game, defender, zone) {
+  if (!peekAtHand) return 0;
   const guards = defender.hand.filter((card) => isDefenseCard(card) && coversZone(card, zone)).map((card) => guard(card) + printedGuardBonus(game, card));
   return guards.length ? Math.max(...guards) : 0;
 }
@@ -148,7 +152,7 @@ function openZone(game, attacker, defender, zones) {
 
 function attackScore(game, attacker, defender, card) {
   const zone = openZone(game, attacker, defender, zonesFor(card));
-  const coverage = defender.hand.filter((candidate) => isDefenseCard(candidate) && coversZone(candidate, zone)).length;
+  const coverage = peekAtHand ? defender.hand.filter((candidate) => isDefenseCard(candidate) && coversZone(candidate, zone)).length : 0;
   return attackPower(card) + printedAttackBonus(game, card) + printedPiercing(game, card) - coverage * 0.35 - zoneCover(game, defender, zone) * 0.25;
 }
 
@@ -380,6 +384,9 @@ function yellAction(game, player, legal, profile) {
 function ascendAction(game, player, legal, profile) {
   const promote = legal.find((action) => action.type === "promote");
   if (promote) return promote;
+  // Ascend-timed Consumables (purchase discounts, a Market reveal) are used before buying.
+  const ascendCard = legal.find((action) => action.type === "play-card");
+  if (ascendCard) return ascendCard;
   const recover = legal.find((action) => action.type === "recover-training-stripe");
   if (recover) return recover;
   // A Combo is a long-term investment; Master only learns one with Focus no purchase needs.
@@ -428,20 +435,40 @@ function efficientDefense(game, pending, defender, attacker, attackCard, defense
   return (ranked.find((entry) => entry.block >= attack) ?? ranked.at(-1)).card.instanceId;
 }
 
+/** How much a Reaction or Consumable softens an incoming Attack, from its printed effects. */
+function reactionValue(game, defender, card) {
+  let value = card.subtype === "Reaction Item" ? 0.5 : 0;
+  for (const effect of allEffects(game, card).filter((candidate) => ["onAttackDeclared", "onPlay"].includes(candidate.trigger))) {
+    const meanings = new Set([effectAction(effect), String(effect.effect ?? "").split(".").pop()]);
+    const amount = num(effect.amount);
+    if (["preventDamage", "reactionDefense", "modifyDefense", "modifyDefenseContribution"].some((meaning) => meanings.has(meaning))) value += Math.max(0, amount);
+    else if (meanings.has("modifyAttackPower") && effect.target === "opponent") value += Math.max(0, -amount);
+    else if (meanings.has("untargetable")) value += 10;
+    else if (meanings.has("heal") && defender.hp <= defender.maxHp / 2) value += amount * 0.5;
+  }
+  return value;
+}
+
 function reactionChoice(game, pending, profile) {
   const defender = game.players[pending.playerId];
+  const reactions = cardsAmong(defender.hand, pending);
+  const activations = optionIds(pending).filter((id) => id.startsWith("activate:"));
+  if ((!reactions.length && !activations.length) || chance(game, `reaction:${pending.cardId ?? pending.window}`) >= profile.reactionChance) return "pass";
+  // An after-Block Reaction ("after you Block an Attack") only adds to the Block.
+  if (pending.window === "after-block") return maxBy(reactions, (card) => cardWorth(game, card))?.instanceId ?? "pass";
   const attacker = game.players[pending.attackerId];
   const attackCard = game.cardByInstance(pending.attackerId, pending.cardId);
-  const reactions = cardsAmong(defender.hand, pending);
-  if (!reactions.length || !attacker || !attackCard || chance(game, `reaction:${pending.cardId}`) >= profile.reactionChance) return "pass";
+  if (!attacker || !attackCard) return "pass";
   if (profile.lookahead) {
     const planned = bestBySimulation(game, defender.id, optionIds(pending), (sim, optionId) => sim.resolveChoice({ optionId }));
     if (planned) return planned;
   }
   const bestBlock = Math.max(blockEstimate(game, defender, null, attacker, attackCard, pending.zone), ...cardsAmong(defender.hand, { options: pending.defenseOptions ?? [] }).map((card) => blockEstimate(game, defender, card, attacker, attackCard, pending.zone)));
-  const threat = attackEstimate(game, attacker, attackCard) - bestBlock - game.statusValue(defender, "preventDamage");
+  const threat = attackEstimate(game, attacker, attackCard, pending.reactionAttackModifier ?? 0) - bestBlock - game.statusValue(defender, "preventDamage") - (pending.reactionPrevention ?? 0) - (pending.reactionDefense ?? 0);
   const lastChance = !attacker.hand.some((card) => card.instanceId !== pending.cardId && isAttackCard(card));
-  return threat > 0 || lastChance ? maxBy(reactions, (card) => cardWorth(game, card)).instanceId : "pass";
+  if (threat <= 0 && !lastChance) return "pass";
+  const best = maxBy(reactions.filter((card) => reactionValue(game, defender, card) > 0), (card) => reactionValue(game, defender, card));
+  return best?.instanceId ?? activations[0] ?? "pass";
 }
 
 function attackZoneChoice(game, pending, profile) {
@@ -515,6 +542,11 @@ function structuredChoice(game, pending) {
   if (ids.includes("attack") && ids.includes("defense")) return stillAttacking ? "attack" : "defense";
   if (ids.includes("counter")) return "counter";
   if (ids.includes("accept")) return "accept";
+  // "Discard 1 card or choose another legal target": switch targets when possible, else give up the least useful card.
+  const retarget = ids.find((id) => id.startsWith("retarget:"));
+  if (retarget) return retarget;
+  const discards = cardsAmong(player.hand, { options: ids.filter((id) => id.startsWith("discard:")).map((id) => ({ id: id.slice("discard:".length) })) });
+  if (discards.length) return `discard:${minBy(discards, (card) => handWorth(game, player, card)).instanceId}`;
   if (ZONES.every((zone) => ids.includes(zone))) {
     if (pending.targetPlayerId !== undefined && pending.targetPlayerId !== null && pending.targetPlayerId !== player.id) return maxBy(ZONES, (zone) => zoneCover(game, player, zone));
     const foe = defenderFor(game, player);
@@ -587,17 +619,25 @@ function guarded(choose, fallback) {
   try { return choose(); } catch { return fallback(); }
 }
 
+function withPeek(profile, decide) {
+  const previous = peekAtHand;
+  peekAtHand = Boolean(profile.peeksAtHand);
+  try { return decide(); } finally { peekAtHand = previous; }
+}
+
 function buildPolicy(profile, { verifyChoices }) {
   return Object.freeze({
     level: profile.level,
     chooseAction(game, legalActions) {
-      return guarded(() => legalActionOrDefault(game, legalActions, chooseActionFor(game, legalActions, profile)), () => game.defaultAction(legalActions));
+      return withPeek(profile, () => guarded(() => legalActionOrDefault(game, legalActions, chooseActionFor(game, legalActions, profile)), () => game.defaultAction(legalActions)));
     },
     chooseChoice(game, pendingChoice = game.getPendingChoice()) {
-      const pending = pendingChoice ?? game.pendingChoice;
-      const choice = guarded(() => chooseChoiceFor(game, pending, profile), () => null);
-      if (!isOfferedChoice(pending, choice)) return game.defaultChoice();
-      return verifyChoices && pending.options.length > 1 ? guarded(() => safeChoice(game, pending, choice), () => choice) : choice;
+      return withPeek(profile, () => {
+        const pending = pendingChoice ?? game.pendingChoice;
+        const choice = guarded(() => chooseChoiceFor(game, pending, profile), () => null);
+        if (!isOfferedChoice(pending, choice)) return game.defaultChoice();
+        return verifyChoices && pending.options.length > 1 ? guarded(() => safeChoice(game, pending, choice), () => choice) : choice;
+      });
     },
   });
 }

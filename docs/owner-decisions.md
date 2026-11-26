@@ -1,109 +1,66 @@
-# Decisions waiting on the owner
+# Decision log
 
-Collected while moving every rule onto the shared engine (Nov 26–27, 2026). Each item lists what
-the engine does **right now** (the provisional choice) so the game keeps working until you decide.
-Reply with the item numbers you want changed; everything not mentioned stays as is.
+The owner has given standing approval for small design and rules calls (Nov 26, 2026): follow the
+rulebook first, keep the tone, decide, and record it here so any line can be rolled back. Only big,
+hard-to-reverse questions go to the owner. Those are listed at the top.
 
-## A. Quick Duel on the engine
+## Big questions for the owner
 
-1. **Difficulty.** The old mat's Student / Certified / Grandmaster also changed the computer's HP
-   (20 / 25 / 35) and gave Grandmaster +1 stats. The engine mat currently plays every opponent at the
-   rulebook's 25 HP and only changes how well the computer plays. *Keep difficulty as skill only, or
-   make the HP/stat handicap a named table option?*
-2. **Quick Duel Location pool.** The old mat used 12 named Locations for Quick Duel; the engine draws
-   from every Location. *Restrict Quick Duel to a list in `content/dojo-game.json`, or use them all?*
-3. **Tempo needs a faster fighter.** The rulebook and old mat give Tempo only against a slower
-   opponent and allow it on a Defense (+1 Guard); the engine spends it on the first Attack of the round
-   regardless of Speed. *Fix to the rulebook?* (Changes balance numbers.)
-4. **Tempo switched off** means "no fighter ever has Tempo" (also turns off "if you have Tempo" card
-   conditions). *Or only remove the +1 bonus, as the old mat did?*
-5. **Locations switched off** keeps a fixed Tournament Mat (which has its own rule) in play. *Or no
-   Location at all?*
-6. **Open Market** is really an art-readiness filter (20 Weapons without art). *Drop the option once
-   their art lands?*
-7. **Piercing** ignores all Defense in the engine; the rulebook says it ignores Armor only. *Fix?*
+None open right now.
 
-## B. Reversals
+## How the small calls are made
 
-8. A Reversal spends the defender's unused Tempo. *OK?*
-9. A Reversal uses up "next Attack" power and piercing bonuses. *OK?*
-10. Declining a Reversal window keeps your once-per-round Reversal for a later Block. *OK?*
-11. Temporary Tattoo Pass "if you do not make a Reversal" = this Block's window closed without one. *OK?*
-12. **Witness Protection Stance** has no effect as written (its protection ends before anyone can
-    Reverse you). *Should it last until the end of your next turn?*
-13. Green Counter-Signature and Rental Chair Recoil read as Reversal bonuses but their data says "next
-    Attack": the engine gives the bonus to a Reversal if you make one, otherwise to your next Attack. *OK?*
-14. **Clock In, Block Out** says "your Reversal" but its requirements have no Reversal step, so it
-    also fires on normal attacks. *Add a Reversal step to its canonical requirements?*
-15. A Reversal does not count as "an Attack this turn" (turn counters, "two attacks hit this turn",
-    impact Focus) but does count for the Honor-scoped exams. *OK?*
-16. Tag Team: if the attacker was swapped out before the window opens, the window is void. *OK?*
+1. **The rulebook (`content/rules.json`) wins over old mat behaviour.**
+2. **The Golden Rule:** a card's specific text beats the general rules. When a card and a chapter disagree
+   only because one of them is out of date, the newer, more detailed source wins, and the other is
+   corrected so they agree.
+3. **Fair and readable beats clever:** no hidden handicaps, no hidden information used against the player,
+   and every automatic decision is shown in the fight log.
+4. **Printed cards are not edited to settle a contradiction**: their text is part of the card art. The
+   rulebook gets a filed ruling (DDB-RUL-1xx) and the engine follows it.
 
-## C. Weapons and table options
+## Decided
 
-17. A Weapon that doesn't fit **replaces** equipped Weapons (rulebook: "Replacing an occupied slot
-    discards the old Equipment first"); the old mat blocked it instead. *Replace or block?*
-18. The player picks which Weapon(s) to replace among the smallest sets that free enough Hands. *OK?*
-19. A "no two-handed Weapon" restriction is checked only when equipping a Weapon. *OK?*
-20. Only subtype Weapon uses Hands; a Weapon with no printed Hands uses 1. *OK?*
-21. Fast Belts applies in every mode (including Black Belt Victory and Boss Blitz). *OK?*
-22. House rules only have a Quick Duel status. *Should Steal the Belt and Friendly Fire get rules for
-    Clash and Tag Team?* (Skipped until there's a spec.)
-
-## D. Packs and progression (proposal in `docs/packs-and-progression-plan.md`, data in `content/packs.json`)
-
-23. **Collection model:** every card owned by anyone at the table goes into one shared Market for
-    that match (fair, and works for peer-to-peer play). *Approve?*
-24. **Open Dojo** (full catalog, earns nothing) is always one toggle away. *Approve?*
-25. Only the 500 main-pool cards are collectible; starters, all Characters and Bosses stay free. *Approve?*
-26. Everyone gets the Orientation Kit and picks one of three Starter Kits; the other two unlock at
-    levels 5 and 9. *Approve?*
-27. Eight themed booster series, 5-card packs; you choose which unlocked series to open. *Approve?*
-28. Rarity names and odds: Plain Paper 50%, Carbon Copy 30%, Brass Seal 15%, Black Ink 5%; rarity is
-    about how soon you find a card, not power. *Approve or rename?*
-29. No duplicates: packs only roll cards you don't own; once complete, tickets turn into Merit. *Approve?*
-30. Earn rates: a win = 1 Booster Ticket, a loss = 1 Ticket Stub (3 stubs = 1 ticket), plus small
-    daily/streak/Master/promotion bonuses; about 75 matches to complete. *Approve?*
-31. Career naming: Merit, Clearance Level 1–30, Diplomas (never "Belt" or "XP"). *Approve?*
-32. Four series open at the start; the rest unlock at levels 4, 6, 8, 10. *Approve?*
-33. Rewards by table type: vs computer and online pay fully, local hot-seat pays Merit only, Open Dojo
-    pays nothing; a match must reach round 3 to pay; no anti-cheat. *Approve?*
-34. Storage: this browser only, with backup and export/import codes (no accounts). *Approve?*
-35. The pack membership lists are a first pass by script. *Please review them, especially the
-    Orientation Kit and each series' Black Ink cards, before they go live.*
-
-## E. Rules questions from the parity audit (`docs/engine-parity-audit.md` §18–19)
-
-36. **Prevented damage.** If prevention reduces a strike to 0, is it a Hit (old mat) or a Block
-    (engine)? This decides on-Hit effects, exam and Combo Hit counts, and whether a Reversal can follow.
-37. **Off-turn Focus.** The rulebook says a Defense played on the opponent's turn generates no Focus;
-    both runtimes currently grant it. *Follow the rulebook?*
-38. **Attack and Defense XP** are awarded whether you Hit or Block (rulebook, old mat). The engine's
-    data names (`attackXpOnHit`, `defenseXpOnBlock`) say otherwise. *Confirm "always".*
-39. **Starter Attacks** (Basic Jab, Basic Body Kick, Basic Shin Kick, Wild Swing) don't count as
-    Attacks for Combos in either runtime. *Should they?*
-40. **Equipment readies** at its controller's Initiate (rulebook) or at Honor (old mat)?
-41. **Optional Tempo.** The rulebook says using Tempo is optional; both runtimes apply it
-    automatically. *Offer it as a choice?*
-42. **Quick Duel Speed ties and round cap.** Adopt the referee rotation (DDB-RUL-112) and full
-    tiebreak list (DDB-RUL-102) for Quick Duel too?
-43. **Combo limits.** Can a Combo with no printed limit fire more than once a round?
-44. **"If the first … Hit" Combos** (e.g. Swan Song) have no Hit requirement in the data. *Add them?*
-45. **Reaction Items**: destroyed or discarded after use? (Card text says "Destroy this".)
-46. **Damage bonuses after a Hit.** Can a Location or Character damage bonus turn a 0-damage strike
-    into a Hit?
-47. **Combo offer.** The old mat showed one shared Combo offer; the rulebook (and engine) reveal the
-    top Combo for each player during their own Ascend. *Engine follows the rulebook; OK?*
-
-## F. Computer opponents (`engine/difficulty.mjs`)
-
-48. Certified and Master **read your hand** when choosing attacks and zones, as the old mat's
-    computer did. *Keep, or make them play blind for fairness?*
-49. **Difficulty and handicaps** (see item 1): skill only, or also HP/stat handicaps?
-
-## G. Switching over
-
-50. **When should Quick Duel default to the shared engine?** It's playable now as "Shared engine
-    (beta)" in Quick Duel setup. The audit's high-priority gaps are being fixed. My recommendation is
-    to switch the default once those land and a few full games feel right to you, then delete the old
-    mat's rules code.
+| # | Topic | Decision | Who | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Difficulty | Computer skill only (Student / Certified / Master); every opponent has rulebook HP and stats. | Claude (owner asked) | Done |
+| 2 | Quick Duel Locations | Every Location is in play. | Owner | Done |
+| 3 | Tempo | Rulebook: only against a slower fighter; +1 Guard on a Defense. | Owner | Done |
+| 4 | Tempo switched off | No fighter has Tempo. | Kept | Done |
+| 5 | Locations switched off | No Location at all, no scene changes. | Owner | Done |
+| 6 | Open Market option | Removed once the missing Weapon art arrived. | Owner | Done |
+| 7 | Piercing | Ignores Armor only. | Owner | Done |
+| 8–11, 13, 15, 16 | Reversal details | As implemented (Tempo spent; next-Attack bonuses used; declining keeps the once-per-round Reversal; Tattoo Pass reading; bonus to the Reversal if made; not "an Attack this turn"; void if the attacker swapped). | Owner | Done |
+| 12 | Witness Protection Stance | Protection lasts until the end of your next turn. | Owner | To do |
+| 14 | Clock In, Block Out | Requires a Reversal step. | Owner | Done |
+| 17–21 | Weapons in hand | Replace rather than block, always with a warning; player picks; restriction checked on equip; only subtype Weapon uses Hands; Fast Belts everywhere. | Owner | Done |
+| 22 | Steal the Belt, Friendly Fire | Engine variants for Clash and Tag Team, from the house-rule text. Friendly Fire: each fighter may attack a teammate once per round; that Attack earns no XP, task credit, KO reward, Tempo or Combo trigger. | Owner (spec: Claude) | To do |
+| 23–34 | Packs and progression | Shared-pool collections, Open Dojo, Orientation Kit plus Starter Kits, 8 themed series, packs only contain new cards, earn rates, Merit / Clearance Levels / Diplomas, series gating, rewards by table type, local saves with export codes. | Owner | Done (plan + `content/packs.json`, approved) |
+| 25 | What is free | Everything is free of money, always. 12 Characters and 5 Bosses at the start; the rest unlock through Clearance Levels and completed series. | Owner | Done (plan) |
+| 28, 35 | Rarity | None. | Owner | Done |
+| 36 | Prevention to 0 damage | It's a Block (no damage dealt), not a Hit. | Claude | Done (engine already) |
+| 37 | Off-turn Focus | Rulebook: a card played outside your own turn generates no printed Focus, Defense cards included. | Claude | To do |
+| 38 | Attack and Defense XP | Always, Hit or Block. | Claude | Done |
+| 39 | Starter Attacks in Combos | They are Attacks (the rulebook lists them as Attacks). | Claude | Done |
+| 40 | Equipment readies | At its controller's Initiate (rulebook). | Claude | Done |
+| 41 | Optional Tempo | Stays automatic: it's never worse to use it, and fewer prompts keep turns fast. | Claude | Kept |
+| 42 | Quick Duel ties and round cap | Rulebook: referee-marker Speed ties (DDB-RUL-112) and the full tiebreak list (DDB-RUL-102), same as every other mode. | Claude | To do |
+| 43 | Combo limits | Once per round unless the card says otherwise. | Claude | Kept |
+| 44 | "If the first … Hit" Combos | Seven Combos now require the earlier Attack(s) to Hit (Swan Song, Body Shop Special, One-Two-Oh-No, …). | Claude | Done |
+| 45 | Reaction Items | Destroyed after use (as printed). | Claude | Done |
+| 46 | Damage bonus and Hits | A bonus can't turn a 0-damage strike into a Hit. | Claude | Kept |
+| 47 | Combo offer | Each player reveals their own offer in Ascend (rulebook). | Claude | Done |
+| 48 | Computer and your hand | Student and Certified play without looking at your hand; Master still reads the table (it is the "Bad decision" difficulty). | Claude | Done |
+| 50 | Switching Quick Duel to the shared engine | Switch the default once the remaining engine merge is in and a full browser game passes; the classic mat stays one click away until the old rules code is deleted. | Claude | Pending merge |
+| 51 | Boss Stage cards | Printed cards stay as they are (the text is on the card art); ruling DDB-RUL-116 says the Stage card's "Boss Character" means the stage's Boss Profile. | Claude | Done |
+| 52 | Boss Defense | Golden Rule: the printed cards win. Boss Guard reduces the matching Attack's damage (DDB-RUL-117); chapter 14 and the engine now say so. | Claude | Done |
+| 53 | Final Boss KO | Golden Rule: the Final Boss Stage card wins, so the normal +2 KO XP (DDB-RUL-118); Rival and Mini-Boss still give 5. | Claude | Done |
+| 54 | Stage-clear heal | Capped at max HP. | Claude | Kept |
+| 55 | Challenge Boss Blitz | Yes: a "Choose your Bosses" option in Boss Blitz setup. | Claude | Backlog |
+| 56 | Boss Speed ties, Clipwell | Players win ties; "active player" = the player the Boss is attacking. | Claude | Kept |
+| 57 | Missing Weapon art | Imported from the main repo; all 597 cards have art. | Owner | Done |
+| 58–61, 63 | Combat details | As implemented (Armor text decides; Guard bonuses need a Defense card; Piercing leaves Weapon/Gear DEF; Tempo checked at declaration; "next round" Speed ends at Honor). | Claude | Kept |
+| 62 | Two-handed Weapons | A Weapon with `Hands: 2` counts as Two-Handed for card text. | Claude | To do |
+| 64 | XP anti-loop rule | Implement the rulebook's once-per-physical-card-per-round XP limit. | Claude | Backlog |
+| 65–71 | Combo / Character / Market details | As implemented (Gramma Uppercut automatic; "temporary" bonus list; off-turn "first time" abilities; Three Squirrels counts your own turn; Swan Wing lasts the turn; Belt Collector counting; Aisle Map ends). | Claude | Kept |
+| 72 | Ronin Reroll | Automate it. | Claude | Backlog |
