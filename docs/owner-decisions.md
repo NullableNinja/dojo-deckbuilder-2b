@@ -44,7 +44,7 @@ None open right now.
 | 39 | Starter Attacks in Combos | They are Attacks (the rulebook lists them as Attacks). | Claude | Done |
 | 40 | Equipment readies | At its controller's Initiate (rulebook). | Claude | Done |
 | 41 | Optional Tempo | Stays automatic: it's never worse to use it, and fewer prompts keep turns fast. | Claude | Kept |
-| 42 | Quick Duel ties and round cap | Rulebook: referee-marker Speed ties (DDB-RUL-112) and the full tiebreak list (DDB-RUL-102), same as every other mode. | Claude | To do |
+| 42 | Quick Duel ties and round cap | Rulebook: referee-marker Speed ties (DDB-RUL-112) and the full tiebreak list (DDB-RUL-102), same as every other mode. | Claude | Done |
 | 43 | Combo limits | Once per round unless the card says otherwise. | Claude | Kept |
 | 44 | "If the first … Hit" Combos | Seven Combos now require the earlier Attack(s) to Hit (Swan Song, Body Shop Special, One-Two-Oh-No, …). | Claude | Done |
 | 45 | Reaction Items | Destroyed after use (as printed). | Claude | Done |
@@ -60,7 +60,7 @@ None open right now.
 | 56 | Boss Speed ties, Clipwell | Players win ties; "active player" = the player the Boss is attacking. | Claude | Kept |
 | 57 | Missing Weapon art | Imported from the main repo; all 597 cards have art. | Owner | Done |
 | 58–61, 63 | Combat details | As implemented (Armor text decides; Guard bonuses need a Defense card; Piercing leaves Weapon/Gear DEF; Tempo checked at declaration; "next round" Speed ends at Honor). | Claude | Kept |
-| 62 | Two-handed Weapons | A Weapon with `Hands: 2` counts as Two-Handed for card text. | Claude | To do |
+| 62 | Two-handed Weapons | A Weapon with `Hands: 2` counts as Two-Handed for card text. | Claude | Done |
 | 64 | XP anti-loop rule | Implement the rulebook's once-per-physical-card-per-round XP limit. | Claude | Backlog |
 | 65–71 | Combo / Character / Market details | As implemented (Gramma Uppercut automatic; "temporary" bonus list; off-turn "first time" abilities; Three Squirrels counts your own turn; Swan Wing lasts the turn; Belt Collector counting; Aisle Map ends). | Claude | Kept |
 | 72 | Ronin Reroll | Automate it. | Claude | Backlog |

@@ -156,11 +156,11 @@ test("round cap ranks by conscious fighters, then total HP (DDB-RUL-102)", () =>
   assert.equal(game.rankByTiebreakers([left, right]).id, right.id);
 });
 
-test("Speed ties: Quick Duel keeps seat order; other modes pass the referee marker", () => {
+test("Speed ties pass the referee marker in every mode, Quick Duel included (DDB-RUL-112)", () => {
   const clash = new Game(data, { seed: 31, mode: "standard-clash", players: 3 });
   clash.referee = 2;
   assert.deepEqual(clash.players.map((player) => clash.seatTiebreak(player)), [1, 2, 0]);
   const duel = new Game(data, { seed: 31 });
   duel.referee = 1;
-  assert.deepEqual(duel.players.map((player) => duel.seatTiebreak(player)), [0, 1]);
+  assert.deepEqual(duel.players.map((player) => duel.seatTiebreak(player)), [1, 0]);
 });

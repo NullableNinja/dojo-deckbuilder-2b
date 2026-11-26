@@ -24,6 +24,9 @@ const cardType = (card) => card.subtype === "Kata" ? "Kata" : isAttack(card) ? "
 const cardIsKind = (card, kind) => kind === "Attack" ? isAttack(card) : kind === "Defense" ? isDefense(card) : cardType(card) === kind;
 const PERMANENT_EQUIPMENT = ["Weapon", "Gear", "Defense Equipment"];
 const zones = ["High", "Mid", "Low"];
+// A card's tags, plus "Two-Handed" for a Weapon whose printed Hands is 2 or more (decision 62):
+// no Weapon prints that tag, but Location text refers to two-handed Weapons.
+const printedTags = (card) => card ? [...(card.tags ?? []), ...(card.subtype === "Weapon" && num(card.stats?.Hands) >= 2 ? ["Two-Handed"] : [])] : [];
 // "That Attack deals 0 damage": prevention large enough to stop any strike.
 const ALL_DAMAGE = 999;
 
@@ -1069,7 +1072,7 @@ export class Game {
       ownTurn: context.player.id === this.activePlayer,
       firstMatchingPerRound: !this.hasUsedEffect(context.player, effect, "round"),
       firstMatchingPerTurn: !this.hasUsedEffect(context.player, effect, "turn"),
-      equipmentTagAny: context.sourceCard?.tags ?? context.attackCard?.tags ?? [],
+      equipmentTagAny: printedTags(context.sourceCard ?? context.attackCard),
       xpSourceAny: context.xpFromLegalAttackOrDefense ? ["Attack", "Defense"] : [],
       isKoXp: Boolean(context.isKoXp),
       kataGrantedFlowThisAttack: Boolean(context.player.nextAttackFlow),
@@ -2959,7 +2962,7 @@ export class Game {
 
   hide(player) { player.targetId = null; player.taggedThisTurn = false; player.equippedThisInitiate = false; player.noEquipThisTurn = false; const incomingDamage = player.turnStats.damageTaken ?? 0; const benchedGear = this.benchedEquipment(player); for (const card of new Set([...player.played, ...player.equipment])) if (!benchedGear.has(card)) this.applyCardEffects(player, card, "onHide", { opponent: this.opponentOf(player), incomingDamage }); player.lastTurnWasHit = false; player.dealtCombatDamageLastTurn = Boolean(player.turnStats.dealtCombatDamageThisTurn); player.anyZoneGrant = null; player.nextAttackAnyZone = false; player.lastTurnAttacked = Boolean(player.turnStats.attacked); player.lastTurnWasBlocked = Boolean(player.turnStats.blocked); player.discard.push(...player.hand, ...player.played.filter((card) => !player.equipment.includes(card) && !this.benchedEquipment(player).has(card))); player.hand = []; player.played = [...player.equipment, ...this.benchedEquipment(player)]; player.focus = 0; player.badHabitFocusUsed = false; player.practiceUsed = false; player.nextAttackPower = 0; player.tempSpeed = 0; this.expireStatuses(player, "endOfTurn"); this.resolveDelayedDamage(player); this.closeComboTurn(player); this.draw(player, this.definition.turn.handSize + this.beltRewardAmount(player, "hand-size")); this.emit({ type: "hide", player: player.id, handSize: player.hand.length }); }
 
-  checkWinner() { if (!this.legacyQuickDuel) return this.checkModeWinner(); const alive = this.players.filter((player) => player.hp > 0); if (alive.length === 1) { this.winner = alive[0].id; this.reason = "knockout"; const winner = alive[0]; if (winner.beltIndex >= 7) { winner.examProgress.koWhileBrown = true; this.checkBeltExam(winner); } } else if (this.roundLimitReached) { this.winner = this.players[0].hp === this.players[1].hp ? this.rng.pick([0, 1]) : this.players[0].hp > this.players[1].hp ? 0 : 1; this.reason = "round-limit"; } if (this.winner !== null) { this.status = "complete"; this.clearChoices(); this.lastPresentedChoice = null; } return this.winner !== null; }
+  checkWinner() { if (!this.legacyQuickDuel) return this.checkModeWinner(); const alive = this.players.filter((player) => player.hp > 0); if (alive.length === 1) { this.winner = alive[0].id; this.reason = "knockout"; const winner = alive[0]; if (winner.beltIndex >= 7) { winner.examProgress.koWhileBrown = true; this.checkBeltExam(winner); } } else if (this.roundLimitReached) { this.winner = this.rankByTiebreakers(this.players).id; /* DDB-RUL-102: the mode's full tiebreak list */ this.reason = "round-limit"; } if (this.winner !== null) { this.status = "complete"; this.clearChoices(); this.lastPresentedChoice = null; } return this.winner !== null; }
 
   defaultAction(legal) {
     const player = this.players[this.activePlayer];
@@ -3137,7 +3140,8 @@ export class Game {
     return [...targets].sort((left, right) => left.hp - right.hp || left.def - right.def || distance(left) - distance(right))[0];
   }
 
-  seatTiebreak(player) { return this.legacyQuickDuel ? player.id : (player.id - this.referee + this.playerCount) % this.playerCount; }
+  // DDB-RUL-112: Speed ties go to the seat nearest the passing referee marker, in every mode.
+  seatTiebreak(player) { return (player.id - this.referee + this.playerCount) % this.playerCount; }
 
   // ---- Knockout procedure (Ch. 16) and mode victory ----------------------------------
   knockoutCandidates() { return this.players.filter((player) => !player.eliminated && player.hp <= 0); }
