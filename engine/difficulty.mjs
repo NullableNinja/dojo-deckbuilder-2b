@@ -28,15 +28,15 @@ export const DIFFICULTIES = ["student", "certified", "master"];
 
 const PROFILES = {
   student: {
-    level: "student", skipDefenseChance: 0.28, reactionChance: 0.5, shuffledAttacks: true, readsOpponent: false,
+    level: "student", skipDefenseChance: 0.28, reactionChance: 0.5, shuffledAttacks: true, readsOpponent: false, peeksAtHand: false,
     defenseStyle: "biggest", market: "sticker-price", learnComboChance: 0.5, activatesEquipment: false, choosesTargets: false, lookahead: false, randomUpkeep: true,
   },
   certified: {
-    level: "certified", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true,
+    level: "certified", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true, peeksAtHand: false,
     defenseStyle: "efficient", market: "balanced", learnComboChance: 1, combosWithLeftoverFocus: true, activatesEquipment: true, choosesTargets: true, lookahead: false,
   },
   master: {
-    level: "master", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true,
+    level: "master", skipDefenseChance: 0, reactionChance: 1, shuffledAttacks: false, readsOpponent: true, peeksAtHand: true,
     defenseStyle: "efficient", market: "planned", learnComboChance: 1, combosWithLeftoverFocus: true, activatesEquipment: true, choosesTargets: true, lookahead: true,
   },
 };
@@ -129,8 +129,13 @@ function blockEstimate(game, defender, defenseCard, attacker, attackCard, zone, 
   return Math.max(0, defender.def + printed + guardCard + equipmentDefense(game, defender, zone) + game.statusValue(defender, "modifyGuard") + game.statusValue(defender, "modifyDefense") + extraDefense - piercing);
 }
 
-/** The best guard a defender's hand offers in a zone (peeking, as the mat's computer does). */
+// Whether the policy making the current decision may look at an opponent's hidden hand. Only Master
+// peeks (owner decision 48); Student and Certified judge zones from public information only.
+let peekAtHand = true;
+
+/** The best guard a defender's hand offers in a zone; 0 when the deciding policy plays blind. */
 function bestGuardInZone(game, defender, zone) {
+  if (!peekAtHand) return 0;
   const guards = defender.hand.filter((card) => isDefenseCard(card) && coversZone(card, zone)).map((card) => guard(card) + printedGuardBonus(game, card));
   return guards.length ? Math.max(...guards) : 0;
 }
@@ -148,7 +153,7 @@ function openZone(game, attacker, defender, zones) {
 
 function attackScore(game, attacker, defender, card) {
   const zone = openZone(game, attacker, defender, zonesFor(card));
-  const coverage = defender.hand.filter((candidate) => isDefenseCard(candidate) && coversZone(candidate, zone)).length;
+  const coverage = peekAtHand ? defender.hand.filter((candidate) => isDefenseCard(candidate) && coversZone(candidate, zone)).length : 0;
   return attackPower(card) + printedAttackBonus(game, card) + printedPiercing(game, card) - coverage * 0.35 - zoneCover(game, defender, zone) * 0.25;
 }
 
@@ -587,17 +592,25 @@ function guarded(choose, fallback) {
   try { return choose(); } catch { return fallback(); }
 }
 
+function withPeek(profile, decide) {
+  const previous = peekAtHand;
+  peekAtHand = Boolean(profile.peeksAtHand);
+  try { return decide(); } finally { peekAtHand = previous; }
+}
+
 function buildPolicy(profile, { verifyChoices }) {
   return Object.freeze({
     level: profile.level,
     chooseAction(game, legalActions) {
-      return guarded(() => legalActionOrDefault(game, legalActions, chooseActionFor(game, legalActions, profile)), () => game.defaultAction(legalActions));
+      return withPeek(profile, () => guarded(() => legalActionOrDefault(game, legalActions, chooseActionFor(game, legalActions, profile)), () => game.defaultAction(legalActions)));
     },
     chooseChoice(game, pendingChoice = game.getPendingChoice()) {
-      const pending = pendingChoice ?? game.pendingChoice;
-      const choice = guarded(() => chooseChoiceFor(game, pending, profile), () => null);
-      if (!isOfferedChoice(pending, choice)) return game.defaultChoice();
-      return verifyChoices && pending.options.length > 1 ? guarded(() => safeChoice(game, pending, choice), () => choice) : choice;
+      return withPeek(profile, () => {
+        const pending = pendingChoice ?? game.pendingChoice;
+        const choice = guarded(() => chooseChoiceFor(game, pending, profile), () => null);
+        if (!isOfferedChoice(pending, choice)) return game.defaultChoice();
+        return verifyChoices && pending.options.length > 1 ? guarded(() => safeChoice(game, pending, choice), () => choice) : choice;
+      });
     },
   });
 }

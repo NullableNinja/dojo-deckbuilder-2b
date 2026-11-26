@@ -40,16 +40,16 @@ None open right now.
 | 36 | Prevention to 0 damage | It's a Block (no damage dealt), not a Hit. | Claude | Done (engine already) |
 | 37 | Off-turn Focus | Rulebook: a card played outside your own turn generates no printed Focus, Defense cards included. | Claude | To do |
 | 38 | Attack and Defense XP | Always, Hit or Block. | Claude | Done |
-| 39 | Starter Attacks in Combos | They are Attacks (the rulebook lists them as Attacks). | Claude | To do |
+| 39 | Starter Attacks in Combos | They are Attacks (the rulebook lists them as Attacks). | Claude | Done |
 | 40 | Equipment readies | At its controller's Initiate (rulebook). | Claude | Done |
 | 41 | Optional Tempo | Stays automatic: it's never worse to use it, and fewer prompts keep turns fast. | Claude | Kept |
 | 42 | Quick Duel ties and round cap | Rulebook: referee-marker Speed ties (DDB-RUL-112) and the full tiebreak list (DDB-RUL-102), same as every other mode. | Claude | To do |
 | 43 | Combo limits | Once per round unless the card says otherwise. | Claude | Kept |
-| 44 | "If the first … Hit" Combos | Add the Hit requirement to the data (Swan Song and similar). | Claude | To do |
+| 44 | "If the first … Hit" Combos | Seven Combos now require the earlier Attack(s) to Hit (Swan Song, Body Shop Special, One-Two-Oh-No, …). | Claude | Done |
 | 45 | Reaction Items | Destroyed after use (as printed). | Claude | Done |
 | 46 | Damage bonus and Hits | A bonus can't turn a 0-damage strike into a Hit. | Claude | Kept |
 | 47 | Combo offer | Each player reveals their own offer in Ascend (rulebook). | Claude | Done |
-| 48 | Computer and your hand | Student and Certified play without looking at your hand; Master still reads the table (it is the "Bad decision" difficulty). | Claude | To do |
+| 48 | Computer and your hand | Student and Certified play without looking at your hand; Master still reads the table (it is the "Bad decision" difficulty). | Claude | Done |
 | 50 | Switching Quick Duel to the shared engine | Switch the default once the remaining engine merge is in and a full browser game passes; the classic mat stays one click away until the old rules code is deleted. | Claude | Pending merge |
 | 51 | Boss Stage cards | Correct the Rival and Mini-Boss text to say "Boss Profile" (chapter 14). | Claude | To do |
 | 52 | Boss Defense | Rulebook math (Guard added to the Boss's Defense); the six Boss Defense cards' text is corrected to match. | Claude | To do |
