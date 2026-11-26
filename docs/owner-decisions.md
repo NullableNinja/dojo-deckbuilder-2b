@@ -12,8 +12,8 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 | 2 | Quick Duel uses every Location. | Done (engine default) |
 | 3 | Tempo follows the rulebook: only against a slower fighter, and usable on a Defense for +1 Guard. | Done |
 | 4 | "Tempo off" means no fighter has Tempo (unchanged; owner unsure). | Unchanged |
-| 5 | Locations off means no Location at all. | To do |
-| 6 | Drop the Open Market option once the missing Weapon art lands. | Waiting on art |
+| 5 | Locations off means no Location at all. | Done |
+| 6 | Drop the Open Market option once the missing Weapon art lands. | Done (art imported from the main repo) |
 | 7 | Piercing ignores Armor only. | Done |
 | 8–11 | Reversal choices as implemented (Tempo spent, next-Attack bonuses used, declining keeps the once-per-round Reversal, Temporary Tattoo Pass reading). | Kept |
 | 12 | Witness Protection Stance lasts until the end of your next turn. | To do |
@@ -151,10 +151,9 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 
 ## I. Weapon art
 
-57. The 20 Weapons without art (`DDB-WPN-CORE-046`–`065`) are not in `dojo-deckbuilder-2a` yet. Its
-    only branch, `main`, was last updated Nov 23 and its weapons folder matches ours exactly. *Push
-    the new files to 2a (or tell me where they are) and I'll bring them over without touching anything
-    else.*
+57. ~~Missing Weapon art~~ **Done:** the 20 Weapons' art, source PNGs and editable downloads came from
+    the main repo (`NullableNinja/dojo-deckbuilder`); only missing files were copied. All 597 cards now
+    have art.
 
 ## J. Combat math (engine fixes, Nov 26)
 
