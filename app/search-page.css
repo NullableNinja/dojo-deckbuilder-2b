@@ -1,0 +1,18 @@
+/* Search desk: recent and suggested searches as paper tabs, and highlighted matches. */
+
+@layer components {
+  .search-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
+  .search-chip-row > span { min-width: 112px; color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .search-chip { min-height: 40px; border: 1px solid var(--pf-line-strong); border-bottom: 3px solid var(--pf-line-strong); border-radius: 6px 6px 2px 2px; padding: 0 14px; color: var(--pf-ink); background: var(--pf-surface); font: 700 14px/1 var(--pf-label); letter-spacing: .05em; text-transform: uppercase; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+  .search-chip:hover { border-color: var(--pf-action); transform: translateY(-2px); }
+  .search-chip.is-recent { border-bottom-color: var(--pf-brass); }
+  .search-chip-clear { min-height: 40px; border: 0; padding: 0 6px; color: var(--pf-muted); background: none; font-size: 12px; text-decoration: underline; cursor: pointer; }
+  .search-result-card mark { border-radius: 2px; padding: 0 2px; color: var(--pf-ink); background: color-mix(in srgb, var(--pf-brass) 42%, transparent); }
+}
+
+@layer responsive {
+  @media (max-width: 600px) {
+    .search-chip-row > span { min-width: 100%; }
+    .search-chip, .search-chip-clear { min-height: 44px; }
+  }
+}
