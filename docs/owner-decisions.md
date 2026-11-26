@@ -4,6 +4,23 @@ Collected while moving every rule onto the shared engine (Nov 26–27, 2026). Ea
 the engine does **right now** (the provisional choice) so the game keeps working until you decide.
 Reply with the item numbers you want changed; everything not mentioned stays as is.
 
+## Answered (Nov 26)
+
+| # | Decision | Status |
+| --- | --- | --- |
+| 1 | Difficulty is computer skill only (Student / Certified / Master); every opponent has rulebook HP and stats. No hidden handicaps, which also keeps online play fair. (Owner: "your best judgement".) | Done in the engine table |
+| 2 | Quick Duel uses every Location. | Done (engine default) |
+| 3 | Tempo follows the rulebook: only against a slower fighter, and usable on a Defense for +1 Guard. | In progress |
+| 4 | "Tempo off" means no fighter has Tempo (unchanged; owner unsure). | Unchanged |
+| 5 | Locations off means no Location at all. | To do |
+| 6 | Drop the Open Market option once the missing Weapon art lands. | Waiting on art |
+| 7 | Piercing ignores Armor only. | In progress |
+| 8–11 | Reversal choices as implemented (Tempo spent, next-Attack bonuses used, declining keeps the once-per-round Reversal, Temporary Tattoo Pass reading). | Kept |
+| 12 | Witness Protection Stance lasts until the end of your next turn. | To do |
+| 13 | Reversal-or-next-Attack bonuses as implemented. | Kept |
+| 14 | Clock In, Block Out gets a Reversal step in its requirements. | In progress |
+| 15 | A Reversal doesn't count as "an Attack this turn" but counts for Honor-scoped exams. | Kept |
+
 ## A. Quick Duel on the engine
 
 1. **Difficulty.** The old mat's Student / Certified / Grandmaster also changed the computer's HP
