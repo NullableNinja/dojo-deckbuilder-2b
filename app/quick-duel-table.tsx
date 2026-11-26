@@ -160,7 +160,8 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     const action = primaryAction(legal, card);
     if (!action) return;
     const variants = legal.filter((candidate) => candidate.type === action.type && candidate.cardId === card.instanceId);
-    if (variants.length > 1) { setEquipChoices(variants); return; }
+    // Equipping over a full set of Hands discards Weapons; always ask first (owner decision 17).
+    if (variants.length > 1 || variants.some((candidate) => candidate.replaceCardIds?.length)) { setEquipChoices(variants); return; }
     if (action.type === "play-attack") setSelectedId((current) => current === card.instanceId ? null : card.instanceId!);
     else act(action);
   };
@@ -218,7 +219,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     </footer>
 
     {deskView && <AscendDesk game={game} view={deskView} legal={legal} onView={setDeskView} onAct={act} onInspect={setInspected} onClose={() => setDeskView(null)} onFinish={pass && phase === "player-ascend" ? () => act(pass) : null} />}
-    {equipChoices && <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="equip-choice-title"><span className="eyebrow">Two Hands, no more</span><h2 id="equip-choice-title">Make room for {findInstance(game, equipChoices[0].cardId!)?.name}</h2><p>Your Hands are full. Choose which equipped Weapon to discard first.</p><div className="effect-choice-options">{equipChoices.map((action, index) => <button type="button" autoFocus={index === 0} key={(action.replaceCardIds ?? []).join("+") || index} onClick={() => { setEquipChoices(null); act(action); }}><span>REPLACE</span><b>{(action.replaceCardIds ?? []).map((id) => findInstance(game, id)?.name ?? "Weapon").join(" + ")}</b><small>Discarded to free its Hands</small></button>)}<button type="button" onClick={() => setEquipChoices(null)}><span>CANCEL</span><b>Keep my Weapons</b><small>Do not equip</small></button></div></section></div>}
+    {equipChoices && <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="equip-choice-title"><span className="eyebrow">Two Hands, no more</span><h2 id="equip-choice-title">Make room for {findInstance(game, equipChoices[0].cardId!)?.name}</h2><p>Your Hands are full. Equipping this Weapon discards {equipChoices.length > 1 ? "the Weapon you choose" : "the Weapon below"} first (rulebook: replacing an occupied slot discards the old Equipment).</p><div className="effect-choice-options">{equipChoices.map((action, index) => <button type="button" autoFocus={index === 0} key={(action.replaceCardIds ?? []).join("+") || index} onClick={() => { setEquipChoices(null); act(action); }}><span>DISCARD AND EQUIP</span><b>{(action.replaceCardIds ?? []).map((id) => findInstance(game, id)?.name ?? "Weapon").join(" + ")}</b><small>Discarded to free its Hands</small></button>)}<button type="button" onClick={() => setEquipChoices(null)}><span>CANCEL</span><b>Keep my Weapons</b><small>Do not equip</small></button></div></section></div>}
     {dialogChoice && <ChoiceDialog game={game} pending={dialogChoice} onChoose={choose} />}
     {logOpen && <div className="playtest-inspector-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setLogOpen(false)}><section className="fight-log-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="fight-log-title"><button className="modal-close" onClick={() => setLogOpen(false)} aria-label="Close fight log">×</button><span className="eyebrow">Department receipt</span><h2 id="fight-log-title">Fight log</h2><ol>{log.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ol></section></div>}
     {inspected && <Suspense fallback={null}><CardInspector card={inspected as never} imageUrl={artistUrl(inspected) ?? cardPlaceholderUrl} saved={false} positionLabel="Quick Duel card" onToggleSaved={() => undefined} onClose={() => setInspected(null)} /></Suspense>}
@@ -276,6 +277,7 @@ function primaryAction(legal: EngineAction[], card: EngineCard) {
 
 function actionHint(action: EngineAction | null) {
   if (!action) return undefined;
+  if (action.replaceCardIds?.length) return "Swap Weapon";
   return ({ "play-attack": "Attack", "play-card": "Play", practice: "Practice", "bad-habit-focus": "+1 Focus" } as Record<string, string>)[action.type];
 }
 
