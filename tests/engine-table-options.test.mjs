@@ -85,6 +85,7 @@ function firstAttackPower(table) {
   const [attacker, defender] = [advanceTo(game, "Yell"), game.players[1]];
   attacker.hand = [game.cardInstance(starterAttack)];
   defender.hand = [];
+  attacker.speed = defender.speed + 1; // Tempo needs the faster fighter
   assert.ok(game.applyAction({ type: "play-attack", playerId: 0, cardId: attacker.hand[0].instanceId, targetId: 1 }));
   if (game.pendingChoice) game.resolveChoice({ optionId: "pass" });
   return { attack: game.events.findLast((event) => event.type === "attack").attack, attacker };
