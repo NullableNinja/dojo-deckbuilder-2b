@@ -25,9 +25,9 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 | 18–21 | Weapon replacement choice, two-handed restriction timing, Hands counting, Fast Belts in every mode: as implemented. | Kept |
 | 22 | Steal the Belt and Friendly Fire get rules for Clash and Tag Team. | To do (draft spec first) |
 | 23–24 | Shared-pool collections and Open Dojo. | Approved |
-| 25 | Everything is free of money, always; but extra Bosses and new Characters unlock over time. | Plan being revised |
+| 25 | Everything is free of money, always; but extra Bosses and new Characters unlock over time. | Done in `content/packs.json`: 12 starting Characters and 5 starting Bosses; the rest unlock through Clearance Levels and completed series |
 | 26–27 | Orientation Kit + Starter Kits; 8 themed series, packs only ever contain new cards, no duplicates. | Approved |
-| 28, 35 | No rarity tiers at all. | Plan being revised |
+| 28, 35 | No rarity tiers at all; the membership lists stand as a first pass and can be rebalanced any time. | Done (rarity removed from data, checker and plan) |
 | 29–34 | Tickets become Merit when complete; earn rates; Merit / Clearance Levels / Diplomas; series gating; rewards by table type; local storage with export codes. | Approved |
 
 

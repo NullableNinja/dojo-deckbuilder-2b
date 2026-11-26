@@ -22,12 +22,12 @@ test("every collectible card is assigned to exactly one pack", () => {
   const collectible = cards.filter((card) => packs.collection.collectibleDecks.includes(card.deck)).map((card) => card.catalogId).sort();
   const assigned = packs.packs.flatMap((candidate) => candidate.cards.map((entry) => entry.catalogId)).sort();
   assert.deepEqual(assigned, collectible);
-  assert.equal(packs.status, "proposal");
+  assert.equal(packs.status, "approved");
 });
 
 test("a card assigned twice is reported", () => {
   const inputs = fresh();
-  firstBooster(inputs).cards.push({ ...pack(inputs, "orientation").cards[0], rarity: "common" });
+  firstBooster(inputs).cards.push({ ...pack(inputs, "orientation").cards[0] });
   assertFlags(inputs, /assigned more than once/);
 });
 
@@ -47,30 +47,60 @@ test("unknown Catalog IDs, renamed cards and non-collectible cards are reported"
   assertFlags(renamed, /is named ".*" in cards.json/);
 
   const starterCard = fresh();
-  firstBooster(starterCard).cards.push({ catalogId: "DDB-STA-CORE-002", name: "Basic Body Kick", rarity: "common" });
+  firstBooster(starterCard).cards.push({ catalogId: "DDB-STA-CORE-002", name: "Basic Body Kick" });
   assertFlags(starterCard, /which is not collectible/);
 });
 
-test("rarity arithmetic is enforced", () => {
-  const weights = fresh();
-  weights.packs.boosterRules.slots[0].weights = { common: 60, uncommon: 30 };
-  assertFlags(weights, /weights total 90, expected 100/);
+test("packs carry no rarity, and every booster holds at least one pack", () => {
+  const rarity = fresh();
+  firstBooster(rarity).cards[0].rarity = "common";
+  assertFlags(rarity, /unexpected property "rarity"/);
 
-  const slots = fresh();
-  slots.packs.boosterRules.cardsPerPack += 1;
-  assertFlags(slots, /slot counts must total cardsPerPack/);
+  const tiny = fresh();
+  firstBooster(tiny).cards.splice(4);
+  assertFlags(tiny, /fewer than one pack of 5/);
+});
 
-  const shares = fresh();
-  shares.packs.rarities.find((rarity) => rarity.id === "common").targetShare = 0.6;
-  assertFlags(shares, /targetShare values must total 1/);
+test("every Character and Boss Profile starts available or is unlocked exactly once", () => {
+  const { packs, cards } = fresh();
+  const rewards = [...packs.levelTrack.levels.flatMap((level) => level.rewards), ...packs.packs.map((candidate) => candidate.completionReward).filter(Boolean)];
+  for (const [kind, rewardKind] of [["characters", "unlock-character"], ["bosses", "unlock-boss"]]) {
+    const { deck, starting } = packs.unlockables[kind];
+    const available = [...starting.map((ref) => ref.catalogId), ...rewards.filter((reward) => reward.kind === rewardKind).map((reward) => reward.catalogId)].sort();
+    assert.deepEqual(available, cards.filter((card) => card.deck === deck).map((card) => card.catalogId).sort(), kind);
+  }
 
-  const lopsided = fresh();
-  for (const entry of firstBooster(lopsided).cards) entry.rarity = "common";
-  assertFlags(lopsided, /has no legendary cards/);
+  const forgotten = fresh();
+  for (const level of forgotten.packs.levelTrack.levels) level.rewards = level.rewards.filter((reward) => reward.catalogId !== "DDB-CHR-CORE-024");
+  assertFlags(forgotten, /DDB-CHR-CORE-024 \(Master Mimen\) is neither starting nor unlocked/);
 
-  const issuedInBooster = fresh();
-  firstBooster(issuedInBooster).cards[0].rarity = "core";
-  assertFlags(issuedInBooster, /non-booster rarity "core"/);
+  const twice = fresh();
+  twice.packs.levelTrack.levels[1].rewards.push({ kind: "unlock-boss", catalogId: "DDB-BPR-CORE-002", name: "Captain Cone, Prophet of the Double-Parked Path" });
+  assertFlags(twice, /DDB-BPR-CORE-002 is made available more than once/);
+
+  const wrongDeck = fresh();
+  wrongDeck.packs.levelTrack.levels[1].rewards.push({ kind: "unlock-character", catalogId: "DDB-BPR-CORE-001", name: "Archive of Practical Fighting Wisdom, Now Upright" });
+  assertFlags(wrongDeck, /is in Boss Profile Deck, not Character Deck/);
+});
+
+test("the starting roster covers every mode", () => {
+  const fewFighters = fresh();
+  fewFighters.packs.unlockables.characters.starting.splice(2);
+  assertFlags(fewFighters, /only 2 starting Characters; the largest roster needs 3/);
+
+  const noFinalBoss = fresh();
+  const byId = new Map(noFinalBoss.cards.map((card) => [card.catalogId, card]));
+  noFinalBoss.packs.unlockables.bosses.starting = noFinalBoss.packs.unlockables.bosses.starting.filter((ref) => !byId.get(ref.catalogId).tags.includes("Final Boss"));
+  assertFlags(noFinalBoss, /cannot field a different starting Boss Profile for every stage/);
+});
+
+test("unlockEverything is the single switch that turns packs and unlocks off", () => {
+  const open = fresh();
+  open.packs.unlockEverything = true;
+  firstBooster(open).cards.pop();
+  for (const level of open.packs.levelTrack.levels) level.rewards = level.rewards.filter((reward) => reward.kind !== "unlock-character" && reward.kind !== "unlock-boss");
+  for (const candidate of open.packs.packs) delete candidate.completionReward;
+  assert.deepEqual(errorsOf(open), []);
 });
 
 test("the starter pool must play a full game and its Combos must be completable", () => {
