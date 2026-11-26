@@ -41,17 +41,26 @@ Fixed on Nov 26 (tests in `tests/core-rules-engine.test.mjs`):
 These change simulation results. The Quick Duel fingerprint moved from `332033cbde805616ccff17b0` to
 `340f87ee9f34a97de97560d1`, and solo Boss Blitz dropped from ~85% to ~62% player wins.
 
+Also fixed on Nov 26 (tests in `tests/engine-reversal.test.mjs`):
+
+- **Reversal window.** After a Defense card Blocks, the defender gets a `reversal` choice (once per
+  round) and the chosen Attack resolves through the normal pipeline against the original attacker, who
+  may defend. Reversals earn no Focus, draw no Flow card, cannot trigger another Reversal and stay out
+  of the owner's turn sequence. "If played as a Reversal" conditions now read the timing, not the
+  card's Reversal tag, and "your Reversal against that attacker gets +X" text arms a bonus only a
+  Reversal consumes.
+- **Rich combat records.** The `attack` event carries `zone`, `reversal` and a `breakdown` of labelled
+  Attack and Defense parts plus prevented damage and piercing.
+
+The Quick Duel fingerprint moved from `340f87ee9f34a97de97560d1` to `d9c357ef5dba71bf9e18ca19`.
+
 Still open (the parity work in Phase 1 will find the rest):
 
-- **Reversal window**: after a successful block the defender may counter with a Reversal. The mat has
-  it; the engine does not.
 - **Weapon two-Hand limit**: enforced by the mat (`equipment-hand-limit.ts`), absent in the engine.
 - **House rules**: tempo, locations, open market, balanced opening market and the belt-threshold house
   rules are mat settings. They belong in `content/dojo-game.json` as named variants the engine reads.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
 - **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
-- **Rich combat records**: the mat's stage, impact readout and VFX need the attack breakdown and
-  modifier notes per exchange. The engine's `attack` event needs to carry them.
 - **Interfere** is not modelled (no current card uses it).
 
 ## Phases
