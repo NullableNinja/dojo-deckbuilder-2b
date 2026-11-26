@@ -144,3 +144,18 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
     only branch, `main`, was last updated Nov 23 and its weapons folder matches ours exactly. *Push
     the new files to 2a (or tell me where they are) and I'll bring them over without touching anything
     else.*
+
+## J. Combat math (engine fixes, Nov 26)
+
+58. **Armor whose text restates its Guard.** Kote: Guard 2, "+2 DEF against High and Mid Attacks from
+    Weapons". The engine lets the text decide (2 Guard only against Weapons); the old mat added both.
+59. **Guard bonuses need a Defense card.** "+X Guard" from a Location or status applies only when you
+    play a Defense card, and a card's Guard never drops below 0 (Strip-Mall McDojo −1). *OK?*
+60. **Piercing vs Weapon/Gear DEF** (e.g. Fan +1 DEF): not Armor, so Piercing doesn't remove it. *OK?*
+61. **When Tempo is checked:** when the Attack is declared, before the card's own Speed changes; ties
+    give no Tempo. *OK?*
+62. **"Two-handed Weapons" Location text**: no Weapon has a Two-Handed tag; only `Hands: 2`. *Should
+    Hands 2 count as Two-Handed?*
+63. **"−X Speed next round"** is currently "until the next Honor", so it never changes next round's
+    turn order. *Should it last through the next round's Honor (affecting initiative)?*
+64. **XP anti-loop rule** (each physical card earns XP once per round) isn't implemented yet. *Keep it?*
