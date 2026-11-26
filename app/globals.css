@@ -497,8 +497,6 @@
   .rule-article p, .rule-bullets { color: var(--pf-ink-soft); font-size: 13px; line-height: 1.72; }
   .rule-bullets { padding-left: 22px; }
   .rule-bullets li + li { margin-top: 8px; }
-  .rule-callout { margin-block: 17px; border-left: 5px solid var(--pf-brass); padding: 14px 17px; color: var(--pf-blue); background: var(--pf-brass-soft); }
-  .rule-callout p { margin: 0; color: inherit; font-weight: 800; }
   .table-scroll { overflow-x: auto; }
   .rule-table { width: 100%; border-collapse: collapse; font-size: 11px; }
   .rule-table th { padding: 11px; color: #fffaf0; background: var(--pf-blue); text-align: left; }
@@ -1497,7 +1495,6 @@
   .story-panels i { color: var(--pf-muted); font-size: 12px; font-style: normal; }
   .story-cta { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 28px; }
   .story-cta h2 { margin: 0; color: var(--pf-ink); font: 700 30px/1.15 var(--pf-display); }
-  .chapter-nav { position: static; max-height: none; overflow: visible; }
   .rule-section-picker { margin: 0 0 28px; border: 1px solid var(--pf-line); background: var(--pf-surface); }
   .rule-section-picker summary { min-height: 48px; padding: 14px; color: var(--pf-ink); font-weight: 700; cursor: pointer; }
   .rule-section-picker .rule-section-nav { margin: 0; border-top: 1px solid var(--pf-line); padding: 12px; }

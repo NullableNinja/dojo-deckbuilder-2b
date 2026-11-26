@@ -20,6 +20,7 @@ import { PAPER_FU_TOAST_EVENT, type PaperFuToastDetail } from "./paper-fu-events
 import { paperScrollBehavior, ToastContext, usePaperToast, type ToastInput, type ToastKind } from "./paper-toast-context";
 import { SectionHeader } from "./section-header";
 import { CardLibrary } from "./card-library";
+import { RulesReader } from "./rules-reader";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
@@ -226,7 +227,6 @@ const GOLDEN_RULE = ruleChapters.flatMap((chapter) => [...chapter.intro, ...chap
   .find((text) => text.startsWith("THE GOLDEN RULE\n"))
   ?.replace("THE GOLDEN RULE\n", "") ?? "When a card directly contradicts this rulebook, the card wins.";
 
-const displayRuleNumber = (chapter: RuleChapter) => String(ruleChapters.findIndex((entry) => entry.id === chapter.id) + 1).padStart(2, "0");
 
 const initialAccent = (): AccentKey => readUserPreferences().accent;
 const initialDisplayName = (): string => readUserPreferences().displayName;
@@ -235,32 +235,6 @@ const OFFICIAL_RULINGS = rulesData.officialRulings;
 
 const cardImageUrl = (card: CardEntry) => card.image ? CARD_IMAGE_URLS[card.image] ?? card.image : COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId] ?? cardPlaceholderUrl;
 const hasCardArt = (card: CardEntry) => Boolean(card.image || COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId]);
-
-function RuleTable({ rows }: { rows: (string | number)[][] }) {
-  if (!rows.length) return null;
-  if (rows.length === 1 || (rows[0]?.length === 1 && rows.length <= 2)) {
-    return <aside className="rule-callout">{rows.flat().filter(Boolean).map((cell, index) => <p key={index}>{cell}</p>)}</aside>;
-  }
-  const [head, ...body] = rows;
-  return <div className="table-scroll"><table className="rule-table"><thead><tr>{head.map((cell, index) => <th scope="col" key={index}>{cell}</th>)}</tr></thead><tbody>{body.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td data-label={String(head[cellIndex] ?? "")} key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;
-}
-
-function RuleBlocks({ blocks }: { blocks: RuleBlock[] }) {
-  const content: ReactNode[] = [];
-  let bullets: string[] = [];
-  const flush = () => {
-    if (!bullets.length) return;
-    content.push(<ul className="rule-bullets" key={`bullets-${content.length}`}>{bullets.map((bullet, index) => <li key={index}>{bullet}</li>)}</ul>);
-    bullets = [];
-  };
-  blocks.forEach((block, index) => {
-    if (block.kind === "bullet") return void bullets.push(block.text);
-    flush();
-    content.push(block.kind === "table" ? <RuleTable rows={block.rows} key={`table-${index}`} /> : <p key={`p-${index}`}>{block.text}</p>);
-  });
-  flush();
-  return <>{content}</>;
-}
 
 function BrandMark() {
   // Origami shuriken: the same mark as public/favicon.svg.
@@ -518,67 +492,6 @@ function QuickStartView({ goTo }: { goTo: (view: ViewId) => void }) {
     <section className="combat-primer paper-stack quickstart-step-block"><div className="combat-copy"><span className="eyebrow">Combat</span><h2>Attack a zone. Let everybody interfere.</h2><ol>{COMBAT_SEQUENCE.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="formula-card"><span>Final combat formula</span><p>{COMBAT_FORMULA_TEXT}</p></div><CombatExample /></section>
     <section className="quick-footer-card paper-stack"><div><span className="eyebrow">The whole game</span><h2>Fight → focus → stronger cards → belt tasks → win.</h2><p>Need every edge case? The complete online rulebook stays one click away.</p></div><button className="button primary" onClick={() => goTo("rules")}>Open the full rules</button></section>
     {selectedMode && <DetailModal eyebrow={`${selectedMode.players} · ${selectedMode.fighters}`} title={selectedMode.title} onClose={() => setSelectedMode(null)} accent={selectedMode.id === "tag-team" ? "green" : "red"}><p className="modal-lede">{selectedMode.detail}</p><div className="modal-win"><span>How to win</span><strong>{selectedMode.win}</strong></div>{selectedMode.notes.length > 0 && <ul className="modal-list">{selectedMode.notes.map((note) => <li key={note}>{note}</li>)}</ul>}</DetailModal>}
-  </main>;
-}
-
-function RulesView({ initialChapterId = "", initialSectionId = "" }: { initialChapterId?: string; initialSectionId?: string }) {
-  const [selectedId, setSelectedId] = useState(() => ruleChapters.some((chapter) => chapter.id === initialChapterId) ? initialChapterId : ruleChapters[0]?.id ?? "");
-  const [query, setQuery] = useState("");
-  const [activeSectionId, setActiveSectionId] = useState(initialSectionId);
-  useEffect(() => {
-    setSelectedId(ruleChapters.some((chapter) => chapter.id === initialChapterId) ? initialChapterId : ruleChapters[0]?.id ?? "");
-  }, [initialChapterId]);
-  const selected = ruleChapters.find((chapter) => chapter.id === selectedId) ?? ruleChapters[0];
-  const selectedIndex = ruleChapters.findIndex((chapter) => chapter.id === selected.id);
-  useEffect(() => {
-    const sectionIds = selected.sections.map((section) => section.id);
-    if (!sectionIds.length) { setActiveSectionId(""); return; }
-    setActiveSectionId((current) => initialSectionId && sectionIds.includes(initialSectionId) ? initialSectionId : sectionIds.includes(current) ? current : sectionIds[0]);
-    const sections = sectionIds.map((id) => document.getElementById(id)).filter((node): node is HTMLElement => node instanceof HTMLElement);
-    if (!sections.length || !("IntersectionObserver" in window)) return;
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) setActiveSectionId(visible[0].target.id);
-    }, { rootMargin: "-18% 0px -68% 0px", threshold: 0 });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [initialSectionId, selected.id]);
-  useEffect(() => {
-    if (!initialSectionId || query) return;
-    const frame = window.requestAnimationFrame(() => document.getElementById(initialSectionId)?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-    return () => window.cancelAnimationFrame(frame);
-  }, [initialSectionId, query, selected.id]);
-  const matches = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    if (!term) return [];
-    return ruleChapters.flatMap((chapter) => {
-      const sections = chapter.sections.filter((entry) => JSON.stringify(entry).toLocaleLowerCase().includes(term));
-      const overview = JSON.stringify([chapter.title, chapter.intro]).toLocaleLowerCase().includes(term);
-      return [...(overview ? [{ chapter, section: undefined }] : []), ...sections.map((section) => ({ chapter, section }))];
-    });
-  }, [query]);
-  const chooseChapter = (id: string) => {
-    setSelectedId(id);
-    setQuery("");
-    navigate({ page: "rules", chapterId: id });
-    window.requestAnimationFrame(() => document.getElementById("rule-reader")?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  const chooseSection = (id: string) => {
-    setActiveSectionId(id);
-    navigate({ page: "rules", chapterId: selected.id, sectionId: id });
-    window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  const chooseSearchResult = (chapterId: string, sectionId?: string) => {
-    setQuery("");
-    navigate({ page: "rules", chapterId, sectionId });
-    if (!sectionId) window.requestAnimationFrame(() => document.getElementById("rule-reader")?.scrollIntoView({ behavior: paperScrollBehavior(), block: "start" }));
-  };
-  return <main className="rules-page shell page-shell">
-    <SectionHeader eyebrow="Official game guide" title="Full rules." intro="Find a chapter, search a term, and get back to the table." art={headerRulesUrl} />
-        <div className="rules-toolbar"><label className="search-box large"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all rules—Flow, Tempo, KO, Combo…" aria-label="Search all rules" />{query && <button onClick={() => setQuery("")} aria-label="Clear rules search">×</button>}</label><span className="source-badge">{ruleChapters.length} focused chapters · filed for table use</span></div>
-    <label className="mobile-chapter-picker"><span>Jump to a chapter</span><select value={selected.id} onChange={(event) => chooseChapter(event.target.value)}>{ruleChapters.map((chapter) => <option value={chapter.id} key={chapter.id}>{displayRuleNumber(chapter)} · {chapter.title}</option>)}</select></label>
-    {query ? <section className="rule-search-results" aria-live="polite"><h2>{matches.length} matching section{matches.length === 1 ? "" : "s"}</h2>{matches.length ? matches.map(({ chapter, section }) => <button key={`${chapter.id}-${section?.id ?? "overview"}`} onClick={() => chooseSearchResult(chapter.id, section?.id)}><span>Chapter {displayRuleNumber(chapter)} · {chapter.title}</span><h3>{section?.title ?? "Chapter overview"}</h3><p>Open this match</p></button>) : <div className="empty-state"><strong>No rule found.</strong><p>Try a shorter term or search the Card Library for printed card text.</p></div>}</section> :
-      <div className="rules-layout" id="rule-reader"><aside className="chapter-nav" aria-label="Rule chapters"><span>Contents</span>{ruleChapters.map((chapter) => <button aria-current={chapter.id === selected.id ? "page" : undefined} className={chapter.id === selected.id ? "active" : ""} onClick={() => chooseChapter(chapter.id)} key={chapter.id}><b>{displayRuleNumber(chapter)}</b><span>{chapter.title}</span></button>)}{selected.sections.length > 0 && <nav className="chapter-subsection-nav" aria-label={`${selected.title} sections`}><span>In this chapter</span>{selected.sections.map((section) => <button type="button" aria-current={activeSectionId === section.id ? "location" : undefined} className={activeSectionId === section.id ? "active" : ""} onClick={() => chooseSection(section.id)} key={section.id}>{section.title}</button>)}</nav>}</aside><article className="rule-article paper-stack"><header><span>Chapter {displayRuleNumber(selected)}</span><h1>{selected.title}</h1></header>{selected.sections.length > 0 && <details className="rule-section-picker"><summary>Sections in this chapter</summary><nav className="rule-section-nav" aria-label={`${selected.title} sections`}>{selected.sections.map((section) => <button type="button" aria-current={activeSectionId === section.id ? "location" : undefined} className={activeSectionId === section.id ? "active" : ""} onClick={() => chooseSection(section.id)} key={section.id}>{section.title}</button>)}</nav></details>}<RuleBlocks blocks={selected.intro} />{selected.sections.map((section) => <section id={section.id} key={section.id}><h2>{section.title}</h2><RuleBlocks blocks={section.content} /></section>)}<footer className="chapter-footer"><span>End of Chapter {displayRuleNumber(selected)}</span>{ruleChapters[selectedIndex + 1] && <button onClick={() => chooseChapter(ruleChapters[selectedIndex + 1].id)}>Next: {ruleChapters[selectedIndex + 1].title} →</button>}</footer></article></div>}
   </main>;
 }
 
@@ -962,13 +875,12 @@ export default function CompanionApp() {
     setTheme(next);
     pushToast({ kind: "stamp", eyebrow: "Lighting cue", title: next === "dark" ? "After-hours dojo" : "Daylight dojo", message: next === "dark" ? "Ink, brass, and quiet focus." : "Paper, pigment, and open play." });
   };
-  const routeKey = view === "rules"
-    ? `rules-${route.page === "rules" ? route.chapterId ?? "" : ""}-${route.page === "rules" ? route.sectionId ?? "" : ""}`
-    : view === "rulings"
-      ? "rulings"
-      : view === "glossary"
-        ? `glossary-${route.page === "glossary" ? route.term ?? "" : ""}`
-        : view;
+  // The Rules reader keeps its own state (search, hovercards, paragraph marks) across chapters and sections.
+  const routeKey = view === "rulings"
+    ? "rulings"
+    : view === "glossary"
+      ? `glossary-${route.page === "glossary" ? route.term ?? "" : ""}`
+      : view;
 
   return <ToastContext.Provider value={pushToast}><div className="site-frame">
     <header className={`site-header${route.page === "playtest" ? " site-header--gameplay" : ""}`}><div className="header-inner shell">
@@ -998,7 +910,7 @@ export default function CompanionApp() {
       {globalResults.length > 0 ? renderGlobalResults("global-results", "dojo-global-results") : <div className="search-palette-empty">{globalSearch.trim().length >= 2 ? <p>No matching filing number. Try a shorter search.</p> : <><span>Try a filing</span><div>{["Basic Jab", "Tempo", "Combo", "Belt", "Reaction"].map((hint) => <button type="button" key={hint} onClick={() => { setGlobalSearch(hint); searchInputRef.current?.focus(); }}>{hint}</button>)}</div></>}</div>}
       <footer className="search-palette-foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
     </div></div>}
-    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesView initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} />}{route.page === "cards" && <CardLibrary cardId={route.cardId} headerArt={headerCardsUrl} imageUrlFor={cardImageUrl} hasArt={hasCardArt} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryView initialQuery={route.term ?? ""} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
+    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesReader initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} headerArt={headerRulesUrl} />}{route.page === "cards" && <CardLibrary cardId={route.cardId} headerArt={headerCardsUrl} imageUrlFor={cardImageUrl} hasArt={hasCardArt} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryView initialQuery={route.term ?? ""} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
     <nav className="thumb-bar" aria-label="Quick navigation">{MOBILE_BOTTOM_NAVIGATION.map((item) => { const active = navigationItemIsActive(item, route); return <button type="button" key={item.page} className={`thumb-bar-item${item.page === "playtest" ? " is-play" : ""}${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)}><span aria-hidden="true">{item.mobileBottomIcon}</span><b>{item.shortLabel}</b></button>; })}</nav>
     <footer className="site-footer"><div className="shell footer-inner"><div className="brand footer-brand"><BrandMark /><span><b>DOJO</b><em>PAPER-FU // DECKBUILDER</em></span></div><p>Build your deck. Earn your belt. File the incident.</p><span>Filed with the Department. Probably correctly.</span></div></footer>
     {scrollProgress > .2 && <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: paperScrollBehavior() })} aria-label="Back to top"><span aria-hidden="true">↑</span><b>Top</b></button>}

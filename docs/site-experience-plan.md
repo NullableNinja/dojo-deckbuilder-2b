@@ -16,8 +16,8 @@ Ideas are ranked by delight per effort: **A** is cheap and loud, **B** is worth 
 Every content page shares the same frame: a navy section header with a taped "visual evidence" photo,
 then the page body on a paper desk. That frame is handsome but identical everywhere, so after the first
 visit nothing on the page is new. Dark mode holds up on every page (graphite surfaces, warm ember and
-brass); the only theme drift found was in components that hard-code `#fffaf0` text on `--pf-blue`, which
-turns light-on-light in dark mode where `--pf-blue` is a light grey (rule tables).
+brass). The Rules reader also re-mounted on every chapter and section click (the app shell keyed the
+view on the section), which reset search and replayed the page entrance animation.
 
 ## Card Library (`#cards`)
 
