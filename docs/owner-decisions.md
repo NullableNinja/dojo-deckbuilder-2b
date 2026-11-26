@@ -10,11 +10,11 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
 | --- | --- | --- |
 | 1 | Difficulty is computer skill only (Student / Certified / Master); every opponent has rulebook HP and stats. No hidden handicaps, which also keeps online play fair. (Owner: "your best judgement".) | Done in the engine table |
 | 2 | Quick Duel uses every Location. | Done (engine default) |
-| 3 | Tempo follows the rulebook: only against a slower fighter, and usable on a Defense for +1 Guard. | In progress |
+| 3 | Tempo follows the rulebook: only against a slower fighter, and usable on a Defense for +1 Guard. | Done |
 | 4 | "Tempo off" means no fighter has Tempo (unchanged; owner unsure). | Unchanged |
 | 5 | Locations off means no Location at all. | To do |
 | 6 | Drop the Open Market option once the missing Weapon art lands. | Waiting on art |
-| 7 | Piercing ignores Armor only. | In progress |
+| 7 | Piercing ignores Armor only. | Done |
 | 8–11 | Reversal choices as implemented (Tempo spent, next-Attack bonuses used, declining keeps the once-per-round Reversal, Temporary Tattoo Pass reading). | Kept |
 | 12 | Witness Protection Stance lasts until the end of your next turn. | To do |
 | 13 | Reversal-or-next-Attack bonuses as implemented. | Kept |
