@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "packs.schema.json",
+  "title": "Dojo Deckbuilder packs and progression",
+  "description": "Shape of content/packs.json: collection rules, rarity tiers, booster rules, earn rules, the Clearance Level track and pack membership. scripts/check-packs.mjs validates this shape and the cross-file rules a schema cannot express. Only a small keyword set is used (type, enum, const, required, properties, additionalProperties, items, minItems, uniqueItems, pattern, minimum, maximum, exclusiveMinimum, minLength, $ref) so the checker needs no dependency.",
+  "type": "object",
+  "required": ["schemaVersion", "status", "rulesVersion", "packsRevision", "description", "collection", "rarities", "boosterRules", "earnRules", "levelTrack", "packs"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "status": { "enum": ["proposal", "approved"] },
+    "rulesVersion": { "type": "string", "pattern": "^v\\d+\\.\\d+$" },
+    "packsRevision": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "collection": { "$ref": "#/$defs/collection" },
+    "rarities": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/rarity" } },
+    "boosterRules": { "$ref": "#/$defs/boosterRules" },
+    "earnRules": { "$ref": "#/$defs/earnRules" },
+    "levelTrack": { "$ref": "#/$defs/levelTrack" },
+    "packs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pack" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "deckName": { "type": "string", "minLength": 1 },
+    "catalogId": { "type": "string", "pattern": "^DDB-[A-Z]{3}-CORE-\\d{3}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "positiveInteger": { "type": "integer", "minimum": 1 },
+    "share": { "type": "number", "minimum": 0, "maximum": 1 },
+    "grants": {
+      "description": "Currency id to amount.",
+      "type": "object",
+      "additionalProperties": { "type": "number", "minimum": 0 }
+    },
+    "collection": {
+      "type": "object",
+      "required": ["enabled", "ownership", "collectibleDecks", "alwaysAvailableDecks", "matchPools", "poolModel", "openDojo", "minimumStarterPool"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "description": "false turns collections off: every collectible card is available to everyone and packs are ignored." },
+        "ownership": { "enum": ["binary"], "description": "Owning a card means it may appear in your matches. There are no copies." },
+        "collectibleDecks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/deckName" } },
+        "alwaysAvailableDecks": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/deckName" } },
+        "matchPools": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "decks"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "decks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/deckName" } }
+            }
+          }
+        },
+        "poolModel": { "enum": ["union-of-seated-collections", "host-collection", "intersection-of-seated-collections"] },
+        "openDojo": {
+          "type": "object",
+          "required": ["available", "rewards", "summary"],
+          "additionalProperties": false,
+          "properties": {
+            "available": { "type": "boolean" },
+            "rewards": { "enum": ["none", "merit-only", "full"] },
+            "summary": { "type": "string" }
+          }
+        },
+        "minimumStarterPool": {
+          "description": "What the cards granted to every profile must contain, so a brand-new collection still plays a full game.",
+          "type": "object",
+          "required": ["subtypes", "attackZones", "defenseZones"],
+          "additionalProperties": false,
+          "properties": {
+            "subtypes": { "type": "object", "additionalProperties": { "$ref": "#/$defs/nonNegativeInteger" } },
+            "attackZones": { "type": "array", "uniqueItems": true, "items": { "enum": ["High", "Mid", "Low"] } },
+            "defenseZones": { "type": "array", "uniqueItems": true, "items": { "enum": ["High", "Mid", "Low"] } }
+          }
+        }
+      }
+    },
+    "rarity": {
+      "type": "object",
+      "required": ["id", "name", "boosterEligible", "targetShare", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "boosterEligible": { "type": "boolean" },
+        "targetShare": { "$ref": "#/$defs/share" },
+        "summary": { "type": "string" }
+      }
+    },
+    "boosterRules": {
+      "type": "object",
+      "required": ["cardsPerPack", "rarityTolerance", "slots", "duplicates", "tierFallback", "pity", "completedBooster", "completedCollection", "randomness"],
+      "additionalProperties": false,
+      "properties": {
+        "cardsPerPack": { "$ref": "#/$defs/positiveInteger" },
+        "rarityTolerance": { "$ref": "#/$defs/share" },
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "count", "weights"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "count": { "$ref": "#/$defs/positiveInteger" },
+              "weights": { "description": "Rarity id to percent; must total 100.", "type": "object", "additionalProperties": { "type": "number", "exclusiveMinimum": 0 } }
+            }
+          }
+        },
+        "duplicates": { "enum": ["unowned-only"] },
+        "tierFallback": { "enum": ["nearest-unowned-tier-prefer-higher", "nearest-unowned-tier-prefer-lower"] },
+        "pity": {
+          "type": "object",
+          "required": ["rarity", "guaranteedByPack", "scope"],
+          "additionalProperties": false,
+          "properties": {
+            "rarity": { "$ref": "#/$defs/id" },
+            "guaranteedByPack": { "$ref": "#/$defs/positiveInteger" },
+            "scope": { "enum": ["per-booster", "global"] }
+          }
+        },
+        "completedBooster": { "enum": ["cannot-be-chosen"] },
+        "completedCollection": {
+          "type": "object",
+          "required": ["ticketConvertsToMerit"],
+          "additionalProperties": false,
+          "properties": { "ticketConvertsToMerit": { "$ref": "#/$defs/nonNegativeInteger" } }
+        },
+        "randomness": { "enum": ["seeded-per-profile"] }
+      }
+    },
+    "earnRules": {
+      "type": "object",
+      "required": ["currencies", "matchResults", "bonuses", "difficultyMeritMultipliers", "modes", "tables", "eligibility"],
+      "additionalProperties": false,
+      "properties": {
+        "currencies": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "summary"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string" },
+              "exchangeRate": { "$ref": "#/$defs/positiveInteger" },
+              "exchangesFor": { "$ref": "#/$defs/id" }
+            }
+          }
+        },
+        "matchResults": {
+          "type": "object",
+          "required": ["win", "loss"],
+          "additionalProperties": false,
+          "properties": { "win": { "$ref": "#/$defs/grants" }, "loss": { "$ref": "#/$defs/grants" } }
+        },
+        "bonuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "when", "grants"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "when": { "enum": ["first-win-local-day", "every-third-consecutive-win", "each-in-match-belt-promotion", "win-against-master-difficulty"] },
+              "grants": { "$ref": "#/$defs/grants" }
+            }
+          }
+        },
+        "difficultyMeritMultipliers": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } },
+        "modes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["mode", "summary"],
+            "additionalProperties": false,
+            "properties": {
+              "mode": { "$ref": "#/$defs/id" },
+              "summary": { "type": "string" },
+              "extraMeritPerOpponent": { "$ref": "#/$defs/nonNegativeInteger" },
+              "stageMeritMultipliers": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }
+            }
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "rewards"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "enum": ["vs-bots", "online-lockstep", "local-hot-seat", "open-dojo"] },
+              "rewards": { "enum": ["none", "merit-only", "full"] }
+            }
+          }
+        },
+        "eligibility": {
+          "type": "object",
+          "required": ["minimumCompletedRounds", "concessionBeforeMinimum", "oneRewardPerMatchId"],
+          "additionalProperties": false,
+          "properties": {
+            "minimumCompletedRounds": { "$ref": "#/$defs/nonNegativeInteger" },
+            "concessionBeforeMinimum": { "enum": ["no-reward", "loss-reward"] },
+            "oneRewardPerMatchId": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "levelReward": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["booster-ticket", "unlock-booster", "starter-kit-choice", "cosmetic", "title"] },
+        "count": { "$ref": "#/$defs/positiveInteger" },
+        "pack": { "$ref": "#/$defs/id" },
+        "choiceGroup": { "$ref": "#/$defs/id" },
+        "id": { "type": "string", "pattern": "^[a-z-]+:[a-z0-9-]+$" }
+      }
+    },
+    "levelTrack": {
+      "type": "object",
+      "required": ["name", "currency", "summary", "diplomas", "levels", "afterFinalLevel"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "currency": { "$ref": "#/$defs/id" },
+        "summary": { "type": "string" },
+        "diplomas": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "belt", "fromLevel"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "type": "string", "minLength": 1 },
+              "belt": { "$ref": "#/$defs/id" },
+              "fromLevel": { "$ref": "#/$defs/positiveInteger" }
+            }
+          }
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["level", "meritTotal", "rewards"],
+            "additionalProperties": false,
+            "properties": {
+              "level": { "$ref": "#/$defs/positiveInteger" },
+              "meritTotal": { "$ref": "#/$defs/nonNegativeInteger" },
+              "rewards": { "type": "array", "items": { "$ref": "#/$defs/levelReward" } }
+            }
+          }
+        },
+        "afterFinalLevel": {
+          "type": "object",
+          "required": ["meritPerReward", "rewards"],
+          "additionalProperties": false,
+          "properties": {
+            "meritPerReward": { "$ref": "#/$defs/positiveInteger" },
+            "rewards": { "type": "array", "items": { "$ref": "#/$defs/levelReward" } }
+          }
+        }
+      }
+    },
+    "packCard": {
+      "type": "object",
+      "required": ["catalogId", "name", "rarity"],
+      "additionalProperties": false,
+      "properties": {
+        "catalogId": { "$ref": "#/$defs/catalogId" },
+        "name": { "type": "string", "minLength": 1, "description": "Must match cards.json; kept for readable diffs when rebalancing." },
+        "rarity": { "$ref": "#/$defs/id" }
+      }
+    },
+    "pack": {
+      "type": "object",
+      "required": ["id", "kind", "name", "tagline", "description", "themeBuildPaths", "cards"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["starter", "booster"] },
+        "grant": { "enum": ["every-profile", "choose-one"], "description": "Starter packs only: granted to every new profile, or chosen from a choice group." },
+        "choiceGroup": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "tagline": { "type": "string" },
+        "description": { "type": "string" },
+        "themeBuildPaths": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "cards": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/packCard" } }
+      }
+    }
+  }
+}

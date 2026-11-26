@@ -36,7 +36,7 @@ function directStepMatches(step, card, zone = "") {
   return true;
 }
 
-function stepMatches(step, card, zone = "") {
+export function stepMatches(step, card, zone = "") {
   return (step.alternatives ?? []).length
     ? (step.alternatives ?? []).some((alternative) => directStepMatches(alternative, card, zone))
     : directStepMatches(step, card, zone);
