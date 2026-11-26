@@ -286,6 +286,7 @@ function healthTier(hp: number, maxHp: number) {
 
 function dockLabel(game: EngineGame, phase: MatPhase, selected: EngineCard | null, handChoice: EnginePending | null) {
   if (handChoice) return handChoice.kind === "defense" ? `Defend ${handChoice.zone ?? ""} or take it` : handChoice.kind === "reversal" ? "Counter or decline" : "React or pass";
+  if (game.pendingChoice?.playerId === HUMAN) return "Make your decision";
   if (phase === "player-initiate") return "Equipment first";
   if (phase === "player-yell") return selected ? `${selected.name} selected` : `${game.players[HUMAN].attackCount ?? 0} attack${game.players[HUMAN].attackCount === 1 ? "" : "s"} played`;
   if (phase === "player-ascend") return `${game.players[HUMAN].focus} Focus to spend`;

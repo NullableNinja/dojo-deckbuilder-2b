@@ -46,7 +46,11 @@ function setConditionValue(game, player, opponent, context, effect, condition) {
     if (expected) while (player.hand.length >= opponent.hand.length) opponent.hand.push(game.cardInstance(player.character));
     else while (player.hand.length < opponent.hand.length) player.hand.push(game.cardInstance(player.character));
   }
-  else if (["alternateZone", "attackZone", "incomingZones", "attackZones", "incomingAttackZone"].includes(kind)) context.zone = Array.isArray(expected) ? expected[0] : expected;
+  else if (["alternateZone", "attackZone", "incomingZones", "attackZones", "incomingAttackZone", "defenseZone"].includes(kind)) context.zone = Array.isArray(expected) ? expected[0] : expected;
+  else if (kind === "firstLowAttackThisTurn") { context.zone = expected ? "Low" : context.zone; context.firstAttackInZoneThisTurn = Boolean(expected); }
+  else if (kind === "equipmentTagAny") context.sourceCard = { ...context.sourceCard, tags: [...new Set([...(context.sourceCard?.tags ?? []), ...(Array.isArray(expected) ? expected : [expected])])] };
+  else if (kind === "isSlowest") { if (expected) opponent.speed = player.speed + 1; }
+  else if (kind === "selfSpeedAtLeast") player.speed = Math.max(player.speed, atLeast);
   else if (kind === "armedEquipmentZoneMatched") context.sourceCard.zone = context.zone;
   else if (kind === "sourceExhausted") {
     if (expected) { if (!player.equipment.includes(context.sourceCard)) player.equipment.push(context.sourceCard); if (!player.exhaustedEquipment.includes(context.sourceCard.instanceId)) player.exhaustedEquipment.push(context.sourceCard.instanceId); }

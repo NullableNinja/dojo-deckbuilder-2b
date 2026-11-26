@@ -506,6 +506,7 @@
       ],
       "handSize": 7,
       "tempoAttackPower": 1,
+      "tempoDefenseGuard": 1,
       "tempoUsesPerRound": 1,
       "focusExpiresAt": "next-own-Hide"
     },
@@ -622,8 +623,8 @@
         "summary": "A Character's Green Ability (its effects in the character.green. resolver namespace) unlocks immediately upon reaching Green Belt."
       },
       "xpPerHonor": 1,
-      "attackXpOnHit": 1,
-      "defenseXpOnBlock": 1,
+      "xpPerLegalAttack": 1,
+      "xpPerLegalDefense": 1,
       "quickDuelUsesFullBeltRewards": false,
       "beltCheckAction": {
         "usesPerTurn": 1,
@@ -741,7 +742,7 @@
         "type": "boolean",
         "label": "Tempo",
         "default": true,
-        "description": "Every fighter refreshes Tempo at Honor and spends it on their first Attack of the round for +1 Attack Power. Off: no fighter ever has Tempo."
+        "description": "Every fighter refreshes Tempo at Honor. Once per round, a fighter faster than the opposing fighter spends it for +1 Attack Power on an Attack or +1 Guard on a Defense card. Off: no fighter ever has Tempo."
       },
       {
         "id": "locations",
