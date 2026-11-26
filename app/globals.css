@@ -576,12 +576,8 @@
   .rulings-shared-search > span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .1em; text-align: right; text-transform: uppercase; }
   .ruling-list-section { margin-top: 44px; }
   .ruling-list { display: grid; gap: 9px; }
-  .ruling-list article { display: grid; grid-template-columns: 45px 1fr auto; gap: 14px; align-items: start; border: 1px solid var(--pf-line); padding: 17px; background: var(--pf-surface-raised); }
-  .ruling-list article > span { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; font-weight: 900; }
-  .ruling-list article div > b { color: var(--pf-blue); font-family: var(--pf-mono); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
   .ruling-list h3 { margin: 6px 0; color: var(--pf-ink); font-family: var(--pf-display); font-size: 22px; text-transform: uppercase; }
   .ruling-list p { margin: 0; color: var(--pf-muted); font-size: 11px; line-height: 1.5; }
-  .ruling-list article > strong { border: 1px solid var(--pf-guard); padding: 6px 8px; color: var(--pf-guard); font-family: var(--pf-mono); font-size: 8px; text-transform: uppercase; }
   .house-grid, .glossary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
   .house-grid button, .glossary-grid button { min-height: 205px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--pf-line); padding: 19px; color: var(--pf-ink); background: var(--pf-surface-raised); text-align: left; cursor: pointer; }
   .house-grid button > span, .glossary-grid button > span { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; }
@@ -1292,8 +1288,6 @@
     .card-body { padding: 10px; }
     .card-body h3 { font-size: 18px; }
     .binder-strip { align-items: start; flex-direction: column; gap: 7px; }
-    .ruling-list article { grid-template-columns: 30px 1fr; }
-    .ruling-list article > strong { grid-column: 2; width: fit-content; }
     .priority-panel ol, .judge-procedure ol { grid-template-columns: 1fr; }
     .detail-modal { max-height: calc(100vh - 28px); padding: 23px 18px; }
     .modal-heading { grid-template-columns: 1fr; }

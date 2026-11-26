@@ -1,0 +1,32 @@
+/* Rulings & Variants: official rulings as docket slips with a filed stamp, topic chips and citations. */
+
+@layer components {
+  .docket-topics { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 18px 0 20px; }
+  .docket-topics > span { margin-right: 6px; color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .docket-topics button { min-height: 40px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--pf-line-strong); border-radius: 999px; padding: 0 14px; color: var(--pf-ink-soft); background: var(--pf-surface-raised); font: 700 14px/1 var(--pf-label); letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+  .docket-topics button small { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; font-weight: 400; }
+  .docket-topics button:hover { border-color: var(--pf-blue); color: var(--pf-ink); }
+  .docket-topics button[aria-pressed="true"] { border-color: var(--pf-blue); color: var(--pf-on-blue); background: var(--pf-blue); }
+  .docket-topics button[aria-pressed="true"] small { color: inherit; opacity: .75; }
+
+  .ruling-list.docket { gap: 16px; }
+  .ruling-list .docket-slip { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: start; margin-top: 12px; border: 1px solid var(--pf-line); border-left: 0; border-radius: 0 6px 6px 0; padding: 20px 20px 18px 30px; background: radial-gradient(circle at 0 10px, transparent 5px, var(--pf-surface-raised) 5.5px) 0 0 / 100% 20px repeat-y; box-shadow: 4px 5px 0 var(--pf-line); }
+  .ruling-list .docket-slip::before { content: ""; position: absolute; top: 0; bottom: 0; left: 14px; border-left: 2px dashed var(--pf-line-strong); }
+  .docket-tab { position: absolute; top: -13px; left: 30px; border: 1px solid var(--pf-line); border-bottom: 0; border-radius: 5px 5px 0 0; padding: 4px 10px 3px; color: var(--pf-blue); background: var(--pf-surface-raised); font: 700 12px/1 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+  .docket-body small { color: var(--pf-action); font-family: var(--pf-mono); font-size: 10px; letter-spacing: .06em; }
+  .ruling-list .docket-body h3 { margin: 6px 0 6px; font-size: 22px; line-height: 1.05; }
+  .ruling-list .docket-body p { color: var(--pf-ink-soft); font-size: 15px; line-height: 1.55; }
+  .docket-side { display: grid; justify-items: center; gap: 12px; }
+  .ruling-list .docket-stamp { display: grid; gap: 3px; border: 3px double var(--pf-action); border-radius: 4px; padding: 7px 10px; color: var(--pf-action); background: transparent; font: 400 13px/1 var(--pf-impact); letter-spacing: .03em; text-align: center; text-transform: uppercase; transform: rotate(-7deg); }
+  .docket-stamp small { order: -1; font: 700 10px/1 var(--pf-label); letter-spacing: .2em; }
+  .docket-cite { min-width: 64px; min-height: 40px; border: 1px solid var(--pf-line-strong); border-radius: 3px; color: var(--pf-blue); background: var(--pf-surface); font: 700 13px/1 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+  .docket-cite:hover { border-color: var(--pf-action); color: var(--pf-action); }
+}
+
+@layer responsive {
+  @media (max-width: 600px) {
+    .ruling-list .docket-slip { grid-template-columns: 1fr; padding: 22px 16px 16px 28px; }
+    .docket-side { grid-auto-flow: column; justify-content: space-between; align-items: center; }
+    .docket-topics button { min-height: 44px; }
+  }
+}

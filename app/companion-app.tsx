@@ -24,6 +24,7 @@ import { RulesReader } from "./rules-reader";
 import { DetailModal } from "./detail-modal";
 import { GlossaryPage } from "./glossary-page";
 import { QuickstartSetup } from "./quickstart-setup";
+import "./rulings-docket.css";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
@@ -234,6 +235,7 @@ const initialAccent = (): AccentKey => readUserPreferences().accent;
 const initialDisplayName = (): string => readUserPreferences().displayName;
 const initialAvatar = (): AvatarKey => readUserPreferences().avatar;
 const OFFICIAL_RULINGS = rulesData.officialRulings;
+const RULING_TOPICS = [...new Set(OFFICIAL_RULINGS.map((entry) => entry.tag))].sort();
 
 const cardImageUrl = (card: CardEntry) => card.image ? CARD_IMAGE_URLS[card.image] ?? card.image : COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId] ?? cardPlaceholderUrl;
 const hasCardArt = (card: CardEntry) => Boolean(card.image || COMPLETE_CARD_URLS_BY_CATALOG_ID[card.catalogId]);
@@ -483,7 +485,19 @@ function RulingsView({ initialTab = "official", initialQuery = "" }: { initialTa
     setSelected(initialTab === "house" && initialQuery ? rulesData.houseRules.find((entry) => normalizeSearchQuery(entry.name) === normalizeSearchQuery(initialQuery)) ?? null : null);
   }, [initialTab, initialQuery]);
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const rulings = OFFICIAL_RULINGS.filter((entry) => !normalizedQuery || Object.values(entry).join(" ").toLocaleLowerCase().includes(normalizedQuery));
+  const [topic, setTopic] = useState("");
+  const pushToast = usePaperToast();
+  const rulings = OFFICIAL_RULINGS.filter((entry) => (!topic || entry.tag === topic) && (!normalizedQuery || Object.values(entry).join(" ").toLocaleLowerCase().includes(normalizedQuery)));
+  const copyCitation = async (entry: OfficialRuling) => {
+    const url = `${window.location.origin}${window.location.pathname}#rulings/official/${encodeURIComponent(entry.id)}`;
+    const citation = `${entry.id} · ${entry.title}: ${entry.ruling} (${url})`;
+    try {
+      await navigator.clipboard.writeText(citation);
+      pushToast({ kind: "success", eyebrow: "Citation filed", title: `${entry.id} copied`, message: "Paste it into the group chat. Argument over.", duration: 2600 });
+    } catch {
+      pushToast({ kind: "note", eyebrow: "Copy this citation", title: entry.id, message: url, duration: 6000 });
+    }
+  };
   const variants = rulesData.houseRules.filter((entry) => !normalizedQuery || `${entry.name} ${entry.rule} ${entry.summary ?? ""} ${entry.notes ?? ""}`.toLocaleLowerCase().includes(normalizedQuery));
   const selectedSupport = selected ? rulesData.houseRules.find((entry) => entry.name === selected.name) ?? null : null;
   const chooseTab = (next: RulingsTab) => {
@@ -515,7 +529,13 @@ function RulingsView({ initialTab = "official", initialQuery = "" }: { initialTa
     <div className="rulings-shared-search"><label className="search-box large"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === "official" ? "Search official rulings…" : "Search house rules…"} aria-label={tab === "official" ? "Search official rulings" : "Search house rules"} />{query && <button onClick={() => setQuery("")} aria-label="Clear guidance search">×</button>}</label><span>{visibleCount} of {tab === "official" ? OFFICIAL_RULINGS.length : rulesData.houseRules.length} shown</span></div>
     {tab === "official" ? <>
       <section className="priority-panel"><div><span className="eyebrow">Rule priority</span><h2>When two things disagree</h2><p>Use this order. Stop as soon as the conflict is resolved.</p></div><ol>{RULE_PRIORITY.map((rule, index) => <li key={rule}><span>{index + 1}</span>{rule}</li>)}</ol></section>
-      <section className="ruling-list-section"><div className="rulings-heading"><div><span className="eyebrow">Official clarifications</span><h2>{OFFICIAL_RULINGS.length} current rulings</h2></div></div>{rulings.length ? <div className="ruling-list">{rulings.map(({ id, filed, tag, title, ruling }, index) => <article key={id}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{tag}</b><h3>{title}</h3><p>{ruling}</p></div><strong>{id} · {filed}</strong></article>)}</div> : <div className="empty-state"><strong>No official ruling found.</strong><p>Try a shorter term or switch to House Rules for optional variants.</p></div>}</section>
+      <section className="ruling-list-section"><div className="rulings-heading"><div><span className="eyebrow">Official clarifications</span><h2>{OFFICIAL_RULINGS.length} current rulings</h2></div></div>
+        <div className="docket-topics" role="group" aria-label="Settle a dispute by topic"><span>Settle a dispute about</span>{["", ...RULING_TOPICS].map((entry) => <button type="button" key={entry || "all"} aria-pressed={topic === entry} onClick={() => setTopic(entry)}>{entry || "Anything"}<small>{entry ? OFFICIAL_RULINGS.filter((ruling) => ruling.tag === entry).length : OFFICIAL_RULINGS.length}</small></button>)}</div>
+        {rulings.length ? <div className="ruling-list docket">{rulings.map((entry) => <article className="docket-slip" key={entry.id}>
+          <span className="docket-tab">{entry.tag}</span>
+          <div className="docket-body"><small>{entry.id}</small><h3>{entry.title}</h3><p>{entry.ruling}</p></div>
+          <div className="docket-side"><strong className="docket-stamp" aria-label={entry.filed}>{entry.filed.replace(/^Filed\s*/i, "")}<small>Filed</small></strong><button type="button" className="docket-cite" onClick={() => void copyCitation(entry)} aria-label={`Copy citation for ${entry.id}`}>Cite</button></div>
+        </article>)}</div> : <div className="empty-state"><strong>No official ruling found.</strong><p>Try a shorter term, pick another topic, or switch to House Rules for optional variants.</p></div>}</section>
       <section className="judge-procedure"><div><span className="step-stamp">?</span><h2>The two-minute table judge</h2></div><ol>{TABLE_JUDGE_STEPS.map((step) => <li key={step}>{step}</li>)}</ol></section>
     </> : <>
       <section className="house-grid">{variants.map((entry, index) => { const support = entry; return <button className="paper-stack interactive-paper" onClick={() => navigate({ page: "rulings", tab: "house", query: entry.name })} key={entry.name}><span>{String(index + 1).padStart(2, "0")}</span><small>{entry.category}</small><h2>{entry.name}</h2><p>{entry.summary || entry.rule}</p>{support?.quickDuel.status === "supported" && <span className="variant-playtest-badge">Quick Duel option</span>}<b>Open full variant →</b></button>; })}</section>
