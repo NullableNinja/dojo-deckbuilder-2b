@@ -34,12 +34,12 @@ points you to another card, and the page cannot express "you do not own this yet
 | Rank | Idea | Notes |
 | --- | --- | --- |
 | A | **Card of the Day dossier** | A date-seeded featured card in an ink folder with a "Today's filing" stamp and one-click Dossier. Gives the page a front door. |
-| A | **Rarity seals on every tile** | Plain Paper, Carbon Copy, Brass Seal and Black Ink from `content/packs.json`, drawn as paper primitives (plain tab, offset carbon, brass wax seal, black ink seal). Brass and Black Ink get a foil sheen on hover. |
+| A | **Origin tags on every tile** | Where a card comes from: starter kit, booster series, fighter or boss roster, or standard issue, drawn as paper primitives. There is no rarity (owner decision): every card is equal and unlocks only set the order. A laminate gloss passes over every printed card on hover. |
 | A | **"Filed" stamp moment** | Saving to the Binder thumps a FILED stamp onto the Dossier card; removing it shows a "withdrawn" ink mark. Instant under reduced motion. |
-| A | **Collection ledger + series filters** | A ledger of the eight booster series and the starter kits with progress bars; clicking a series filters the grid. Rarity chips filter too. |
-| B | **Sealed-envelope state (preview)** | Unowned cards render as sealed manila envelopes that still show name, series and rarity. Default is **Open Dojo** (everything owned, clearly labelled); a "Preview new recruit" toggle shows what a level-1 profile would see. Nothing is ever really locked. Ownership is read from one module (`app/collection.ts`) so it can be wired to the career store later. |
+| A | **Collection ledger + series filters** | A ledger of the eight booster series and the starter kits with progress bars; clicking a series filters the grid. The Fighter roster and Boss profiles have their own rows. |
+| B | **Sealed-envelope state (preview)** | Unowned pack cards render as sealed manila envelopes and unowned fighters and bosses as classified personnel files; both still show name and source. Default is **Open Dojo** (everything owned, clearly labelled); a "Preview new recruit" toggle shows what a level-1 profile would see. Nothing is ever really locked. Ownership is read from one module (`app/collection.ts`) so it can be wired to the career store later. |
 | B | **Related filings in the Dossier** | Up to six cards that share a series, build path or tag, as clickable thumbnails. |
-| B | **Dossier provenance strip** | "Found in Iron Wall · Brass Seal" plus owned/sealed status. |
+| B | **Dossier provenance strip** | "Found in Iron Wall packs" or "Joins the fighter roster by playing", plus on-loan, issued or sealed status. |
 | B | **Pull a random file** | A shuffle button that opens a random card in the current filter. |
 | C | Card back flip on first open, booster-opening preview, binder export as a printable contact sheet. |
 
@@ -109,7 +109,7 @@ through a 16-chapter manual and no reward for finishing.
 ## Search (`#search`) and Settings (behind the Field Agent menu)
 
 Search already has a strong hero. **A:** recent searches as paper tabs, and a "Try: Flow, Reversal,
-Brass Seal" suggestion row. Settings: **A:** a live "ID badge" preview that updates as you choose name,
+Market Mercy" suggestion row. Settings: **A:** a live "ID badge" preview that updates as you choose name,
 avatar and accent; **B:** a "certified" stamp when a preference saves.
 
 ## Play (`#playtest`) setup
@@ -119,7 +119,7 @@ Home VS card for the chosen fighters.
 
 ## Build order
 
-1. Card Library (this change set): collection module, rarity seals, ledger and series filters, preview
+1. Card Library (this change set): collection module, origin tags, ledger and series filters, preview
    sealed envelopes, Card of the Day, Dossier provenance, related filings and the Filed stamp.
 2. Full Rules: reader chrome fixes, Certified Reader stamps, notices and exhibits, paragraph search,
    glossary hovercards, pocket reference, section permalinks.
@@ -127,11 +127,10 @@ Home VS card for the chosen fighters.
 
 ## Decisions for the owner
 
-1. **Rarity art.** The four seals are drawn in CSS from existing tokens. Approve them, or commission
-   illustrated seals for Phase 2 card faces.
-2. **Preview toggle.** The "Preview new recruit" toggle shows sealed envelopes before progression exists.
-   Keep it public as a teaser, or hide it until Clearance Levels ship.
-3. **Card of the Day.** Seeded by the local date across the whole catalog (Characters and Bosses
-   included). Restrict it to collectible cards if preferred.
-4. **Glossary hovercards.** Which terms are too common to underline (the current skip list is Attack,
-   Defense, Damage, Draw, Discard, Round, Hit, Printed, Ready, Slot, Tag, Combo, Equip, Equipment, Destroy).
+Small design calls were made directly (the owner gave creative blessing). The genuinely open ones:
+
+1. **Who a new profile starts with.** The recruit preview issues the first three fighters in catalog
+   order as a placeholder, because no starting roster exists yet. The career plan should name the real
+   starting fighters (and whether any Boss Profile starts unlocked).
+2. **Preview toggle visibility.** "Preview new recruit" is public today as a teaser of unlocks. Keep it,
+   or hide it until unlocks ship.

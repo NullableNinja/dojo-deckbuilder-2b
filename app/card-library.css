@@ -1,4 +1,4 @@
-/* Card Library: Card of the Day, collection ledger, rarity seals, sealed envelopes and the dealt grid.
+/* Card Library: Card of the Day, collection ledger, origin tags, sealed envelopes and the dealt grid.
    Designed for light and dark together: every color is a token from app/globals.css. */
 
 @layer components {
@@ -46,57 +46,48 @@
   .collection-pack-name { min-width: 0; display: grid; gap: 1px; }
   .collection-pack-name b { overflow: hidden; font: 400 15px/1.1 var(--pf-display); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
   .collection-pack-name small { color: var(--pf-muted); font-size: 11px; }
+  .collection-pack--roster { border-left: 3px solid var(--pf-action); }
   .collection-pack-count { color: var(--pf-ink-soft); font-family: var(--pf-mono); font-size: 11px; }
   .collection-pack .collection-meter { grid-column: 1 / -1; }
   .collection-pack.is-locked { border-style: dashed; }
   .collection-pack.is-locked .collection-pack-name b { color: var(--pf-ink-soft); }
 
-  /* ---- Rarity seals: drawn from paper primitives, never from green ---- */
-  .rarity-seal { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--pf-ink-soft); font: 700 13px/1 var(--pf-label); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
-  .rarity-seal i, .rarity-filter i { flex: 0 0 auto; width: 13px; height: 13px; display: inline-block; border: 1.5px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-raised); }
-  .rarity-seal--compact { font-size: 11px; gap: 6px; }
-  .rarity-seal--issue i, .rarity-filter--issue i { border-style: dashed; background: transparent; }
-  .rarity-seal--core i, .rarity-filter--core i { border-color: var(--pf-blue); border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2px var(--pf-surface-raised), inset 0 0 0 5px var(--pf-blue); }
-  .rarity-seal--common i, .rarity-filter--common i { clip-path: polygon(0 0, 68% 0, 100% 32%, 100% 100%, 0 100%); }
-  .rarity-seal--uncommon i, .rarity-filter--uncommon i { border-color: var(--pf-carbon); background: var(--pf-surface-raised); box-shadow: 3px 3px 0 -1px var(--pf-surface-raised), 3px 3px 0 0 var(--pf-carbon); }
-  .rarity-seal--uncommon, .rarity-filter--uncommon { color: var(--pf-carbon); }
-  .rarity-seal--rare i, .rarity-filter--rare i { border: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--pf-brass) 55%, #fffaf0) 0 20%, var(--pf-brass) 21% 58%, color-mix(in srgb, var(--pf-brass) 70%, #000) 60%); box-shadow: 0 0 0 1px color-mix(in srgb, var(--pf-brass) 70%, #000); }
-  .rarity-seal--rare, .rarity-filter--rare { color: var(--pf-brass-text); }
-  .rarity-seal--legendary i, .rarity-filter--legendary i { border: 2px solid var(--pf-brass); border-radius: 50%; background: radial-gradient(circle at 50% 50%, var(--pf-brass) 0 18%, var(--pf-black-ink) 20%); }
-  .rarity-seal--legendary, .rarity-filter--legendary { color: var(--pf-ink); }
-  .daily-filing .rarity-seal { color: var(--pf-brass-on-ink); }
-  .daily-filing .rarity-seal--uncommon { color: var(--pf-carbon); }
-  :root:not([data-theme="dark"]) .daily-filing .rarity-seal--uncommon { color: #b9cdee; }
+  /* ---- Origin tags: where a card comes from. There is no rarity: every card is equal, unlocks only set order. ---- */
+  .origin-tag { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--pf-ink-soft); font: 700 13px/1 var(--pf-label); letter-spacing: .07em; text-transform: uppercase; }
+  .origin-tag b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .origin-tag i { flex: 0 0 auto; width: 14px; height: 11px; display: inline-block; border: 1.5px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-raised); }
+  .origin-tag--compact { gap: 6px; font-size: 11px; }
+  .origin-tag--issue i { border-style: dashed; background: transparent; }
+  .origin-tag--starter i { width: 13px; height: 13px; border-color: var(--pf-blue); border-radius: 50%; box-shadow: inset 0 0 0 2px var(--pf-surface-raised), inset 0 0 0 5px var(--pf-blue); }
+  .origin-tag--booster i { border-color: var(--pf-manila-deep); background: linear-gradient(160deg, var(--pf-manila-deep) 0 38%, var(--pf-manila) 40%); }
+  .origin-tag--roster i { width: 13px; height: 13px; border: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ec7a63 0 18%, var(--pf-action) 20% 62%, var(--pf-action-deep) 64%); }
+  .daily-filing .origin-tag { color: var(--pf-brass-on-ink); }
+  .daily-filing .origin-tag--starter i { box-shadow: inset 0 0 0 2px var(--pf-ink-panel), inset 0 0 0 5px var(--pf-brass-on-ink); border-color: var(--pf-brass-on-ink); }
 
   /* ---- Filters ---- */
   .library-secondary-filters { display: contents; }
   .library-more-filters { display: none; }
-  .rarity-filters { display: flex; flex-wrap: wrap; gap: 7px; margin: -6px 0 19px; }
-  .rarity-filter { min-height: 40px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--pf-line); padding: 8px 11px; color: var(--pf-ink-soft); background: var(--pf-surface); font: 700 13px/1 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
-  .rarity-filter span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 10px; font-weight: 400; }
-  .rarity-filter:hover { border-color: var(--pf-blue); }
-  .rarity-filter[aria-pressed="true"] { border-color: var(--pf-ink); color: var(--pf-ink); background: var(--pf-surface-raised); box-shadow: 3px 3px 0 var(--pf-line-strong); }
-  .rarity-filter--all i { display: none; }
   .result-line p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
   .result-pack-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--pf-action); padding: 0 0 0 8px; color: var(--pf-action); background: var(--pf-surface-raised); }
   .result-pack-chip button { min-width: 32px; min-height: 32px; border: 0; color: inherit; background: transparent; font-size: 16px; cursor: pointer; }
 
-  /* ---- Tiles: dealt onto the desk, sealed by rarity ---- */
+  /* ---- Tiles: dealt onto the desk; a laminate gloss passes over printed cards on hover ---- */
   .card-library-page .card-grid > .library-card { animation: pf-card-deal .42s cubic-bezier(.2, .8, .25, 1) backwards; animation-delay: calc(var(--deal, 0) * 24ms); }
   .library-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; margin-top: auto; border-top: 1px solid var(--pf-line); padding: 8px 14px; }
   .library-card-foot .open-card { flex: 0 0 auto; border: 0; padding: 0; }
   .library-card .binder-star { pointer-events: none; }
-  .library-card--printed .library-card-print::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(112deg, transparent 32%, var(--pf-foil) 46%, rgba(255, 255, 255, .5) 50%, var(--pf-foil) 54%, transparent 68%); mix-blend-mode: screen; transform: translateX(-110%); }
-  .library-card.rarity-rare .library-card-print { box-shadow: 0 0 0 2px var(--pf-brass), 3px 4px 0 var(--pf-line-strong); }
-  .library-card.rarity-legendary .library-card-print { box-shadow: 0 0 0 2px var(--pf-black-ink), 0 0 0 4px var(--pf-brass), 4px 5px 0 var(--pf-line-strong); }
-  .library-card.rarity-rare:is(:hover, :focus-visible) .library-card-print::after,
-  .library-card.rarity-legendary:is(:hover, :focus-visible) .library-card-print::after { opacity: 1; transform: translateX(110%); transition: transform .85s cubic-bezier(.3, .7, .2, 1), opacity .2s ease; }
+  .library-card--printed .library-card-print::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(112deg, transparent 36%, var(--pf-gloss) 48%, var(--pf-gloss) 52%, transparent 64%); mix-blend-mode: screen; transform: translateX(-110%); }
+  .library-card--printed:is(:hover, :focus-visible) .library-card-print::after { opacity: 1; transform: translateX(110%); transition: transform .85s cubic-bezier(.3, .7, .2, 1), opacity .2s ease; }
+  .library-card--printed.is-sealed .library-card-print::after { display: none; }
 
   .library-envelope { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 6px; padding: 14px; overflow: hidden; color: var(--pf-manila-ink); background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .025) 0 1px, transparent 1px 6px), linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); }
   .library-envelope-flap { position: absolute; inset: 0 0 auto; height: 46%; background: linear-gradient(180deg, var(--pf-manila-deep), color-mix(in srgb, var(--pf-manila-deep) 85%, #000)); clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .2)); }
   .library-envelope-flap::after { content: ""; position: absolute; left: 50%; bottom: 6%; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e86b55 0 18%, var(--pf-action) 20% 62%, var(--pf-action-deep) 64%); transform: translateX(-50%); }
   .library-envelope b { position: relative; margin-top: 30%; border: 2px solid var(--pf-action-deep); padding: 5px 9px; color: var(--pf-action-deep); font: 400 clamp(14px, 1.6vw, 20px)/1 var(--pf-impact); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-6deg); }
   .library-envelope small { position: relative; font: 700 12px/1.15 var(--pf-label); letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+  /* Personnel files: a straight-cut folder tab instead of an envelope flap. */
+  .library-envelope--roster .library-envelope-flap { height: 16%; clip-path: polygon(0 0, 46% 0, 52% 100%, 0 100%); }
+  .library-envelope--roster .library-envelope-flap::after { left: 22%; bottom: auto; top: 20%; width: 20px; height: 20px; }
   .library-card.is-sealed .library-card-caption b { color: var(--pf-ink-soft); }
 
   @keyframes pf-card-deal { from { opacity: 0; transform: translateY(16px) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
@@ -123,12 +114,11 @@
     .collection-pack { padding: 6px 8px; }
     .collection-pack-name b { font-size: 13px; }
     .collection-pack-name small { display: none; }
-    .collection-pack-count { font-size: 10px; }
+    .collection-pack--roster { border-left: 3px solid var(--pf-action); }
+  .collection-pack-count { font-size: 10px; }
     .daily-filing-print { width: min(48vw, 180px); }
     .collection-view-toggle { justify-self: stretch; }
     .collection-view-toggle button { flex: 1 1 50%; padding: 0 8px; }
-    .rarity-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; }
-    .rarity-filter { flex: 0 0 auto; min-height: 44px; }
     .library-card-foot { padding: 8px 10px; }
     .library-card-foot .open-card { display: none; }
   }

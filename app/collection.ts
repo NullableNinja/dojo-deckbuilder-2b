@@ -1,28 +1,30 @@
 // Card collection read model (presentation only).
 //
 // The single place the website asks "where does this card come from?" and "does this player own it?".
-// Pack membership and rarity come from content/packs.json (status "proposal"). Real career progress does
-// not exist yet, so ownership is one of two clearly labelled views:
+// Cards are unlocked by playing, never bought. There are two kinds of unlock source:
+//   - packs from content/packs.json (status "proposal"): starter kits and themed booster series whose
+//     5-card packs only ever hold cards you do not own yet;
+//   - rosters: every Character and every Boss Profile, which will also unlock over time.
+// Real career progress does not exist yet, so ownership is one of two clearly labelled views:
 //   - "open-dojo": the full catalog is on loan. Everything is owned. This is the default.
-//   - "recruit-preview": what a brand-new Clearance Level 1 profile would hold. A preview, never saved.
+//   - "recruit-preview": what a brand-new profile might hold. A preview, never saved.
 // When the career store lands (docs/packs-and-progression-plan.md, phase 3), add a "career" view here that
 // reads it; pages keep calling readCollection() and never learn where ownership came from.
 import packsJson from "../content/packs.json";
+import cardsJson from "./data/cards.json";
 
-export type RarityId = "core" | "common" | "uncommon" | "rare" | "legendary";
-export type Rarity = { id: RarityId; name: string; summary: string };
-export type CollectionPack = {
+export type UnlockSourceKind = "starter" | "booster" | "roster";
+export type UnlockSource = {
   id: string;
-  kind: "starter" | "booster";
+  kind: UnlockSourceKind;
   name: string;
   tagline: string;
-  description: string;
+  /** "every-profile" sources are issued on day one. */
   grant?: string;
   /** Clearance Level at which a booster series opens, from the level track. */
   unlockLevel?: number;
   catalogIds: string[];
 };
-export type Provenance = { pack: CollectionPack; rarity: Rarity };
 export type CollectionView = "open-dojo" | "recruit-preview";
 export type CollectionSnapshot = {
   view: CollectionView;
@@ -30,67 +32,75 @@ export type CollectionSnapshot = {
   summary: string;
   owns: (catalogId: string) => boolean;
 };
+export type SourceProgress = { source: UnlockSource; owned: number; total: number; locked: boolean };
 
 type RawPacks = {
   status: string;
-  packsRevision: string;
-  collection: { collectibleDecks: string[] };
-  rarities: Rarity[];
   levelTrack: { levels: { level: number; rewards: { kind: string; pack?: string }[] }[] };
-  packs: { id: string; kind: "starter" | "booster"; name: string; tagline: string; description: string; grant?: string; cards: { catalogId: string; rarity: RarityId }[] }[];
+  packs: { id: string; kind: "starter" | "booster"; name: string; tagline: string; grant?: string; cards: { catalogId: string }[] }[];
 };
+type RawCard = { catalogId: string; deck: string; catalogOrder: number };
 
 const raw = packsJson as unknown as RawPacks;
+const cards = (cardsJson as unknown as { cards: RawCard[] }).cards;
 
 /** "proposal" until the owner approves pack membership. Pages show it so nothing reads as final. */
 export const COLLECTION_STATUS = raw.status;
-export const COLLECTION_REVISION = raw.packsRevision;
-export const RARITIES: Rarity[] = raw.rarities;
-const RARITY_BY_ID = new Map(RARITIES.map((rarity) => [rarity.id, rarity]));
 
 const unlockLevelByPack = new Map<string, number>();
 raw.levelTrack.levels.forEach(({ level, rewards }) => rewards.forEach((reward) => {
   if (reward.kind === "unlock-booster" && reward.pack && !unlockLevelByPack.has(reward.pack)) unlockLevelByPack.set(reward.pack, level);
 }));
 
-export const COLLECTION_PACKS: CollectionPack[] = raw.packs.map((pack) => ({
-  id: pack.id,
-  kind: pack.kind,
-  name: pack.name,
-  tagline: pack.tagline,
-  description: pack.description,
-  grant: pack.grant,
-  unlockLevel: unlockLevelByPack.get(pack.id),
-  catalogIds: pack.cards.map((card) => card.catalogId),
-}));
+const rosterIds = (deck: string) => cards.filter((card) => card.deck === deck).sort((a, b) => a.catalogOrder - b.catalogOrder).map((card) => card.catalogId);
 
-const PROVENANCE = new Map<string, Provenance>();
-raw.packs.forEach((rawPack, index) => rawPack.cards.forEach((card) => {
-  const rarity = RARITY_BY_ID.get(card.rarity);
-  if (rarity) PROVENANCE.set(card.catalogId, { pack: COLLECTION_PACKS[index], rarity });
-}));
+const ROSTERS: UnlockSource[] = [
+  { id: "roster-fighters", kind: "roster", name: "Fighter roster", tagline: "More fighters report for duty as you play.", catalogIds: rosterIds("Character Deck") },
+  { id: "roster-bosses", kind: "roster", name: "Boss profiles", tagline: "Oversized problems, cleared for your table as you play.", catalogIds: rosterIds("Boss Profile Deck") },
+];
 
-const COLLECTIBLE_DECKS = new Set(raw.collection.collectibleDecks);
+export const UNLOCK_SOURCES: UnlockSource[] = [
+  ...raw.packs.map((pack) => ({
+    id: pack.id,
+    kind: pack.kind,
+    name: pack.name,
+    tagline: pack.tagline,
+    grant: pack.grant,
+    unlockLevel: unlockLevelByPack.get(pack.id),
+    catalogIds: pack.cards.map((card) => card.catalogId),
+  })),
+  ...ROSTERS,
+];
 
-/** Starter, Character and Boss cards are standard issue for everyone and never collected. */
-export const isCollectible = (card: { deck: string }) => COLLECTIBLE_DECKS.has(card.deck);
-export const provenanceFor = (catalogId: string): Provenance | undefined => PROVENANCE.get(catalogId);
-export const rarityFor = (catalogId: string): Rarity | undefined => PROVENANCE.get(catalogId)?.rarity;
+const SOURCE_BY_CARD = new Map<string, UnlockSource>();
+UNLOCK_SOURCES.forEach((source) => source.catalogIds.forEach((catalogId) => SOURCE_BY_CARD.set(catalogId, source)));
 
-const RECRUIT_OWNED = new Set(COLLECTION_PACKS.filter((pack) => pack.grant === "every-profile").flatMap((pack) => pack.catalogIds));
+/** Where a card is unlocked from. Undefined means standard issue: the Starter Deck and Boss decks. */
+export const sourceFor = (catalogId: string): UnlockSource | undefined => SOURCE_BY_CARD.get(catalogId);
+export const isUnlockable = (catalogId: string) => SOURCE_BY_CARD.has(catalogId);
+
+/**
+ * Placeholder for the preview only: a new profile needs fighters to play with (Tag Team needs three), and
+ * no starting roster has been decided yet, so the preview issues the first three in catalog order.
+ */
+const PREVIEW_STARTING_FIGHTERS = 3;
+const RECRUIT_OWNED = new Set([
+  ...UNLOCK_SOURCES.filter((source) => source.grant === "every-profile").flatMap((source) => source.catalogIds),
+  ...ROSTERS[0].catalogIds.slice(0, PREVIEW_STARTING_FIGHTERS),
+]);
 
 const SNAPSHOTS: Record<CollectionView, CollectionSnapshot> = {
   "open-dojo": {
     view: "open-dojo",
     label: "Open Dojo",
-    summary: "The full catalog is on loan. Collections and Clearance Levels are not switched on yet, so every card is yours to read.",
+    summary: "The full catalog is on loan. Unlocks are not switched on yet, so every card, fighter and boss is yours to read.",
     owns: () => true,
   },
   "recruit-preview": {
     view: "recruit-preview",
     label: "New recruit preview",
-    summary: "A preview of a Clearance Level 1 profile: the Starter Deck and the Orientation Kit. Nothing is saved and nothing is locked.",
-    owns: (catalogId) => !PROVENANCE.has(catalogId) || RECRUIT_OWNED.has(catalogId),
+    summary: "A preview of a brand-new profile: the Starter Deck, the Orientation Kit and three fighters. Everything else unlocks by playing. Nothing is saved and nothing is locked.",
+    owns: (catalogId) => !SOURCE_BY_CARD.has(catalogId) || RECRUIT_OWNED.has(catalogId),
   },
 };
 
@@ -98,14 +108,12 @@ export function readCollection(view: CollectionView = "open-dojo"): CollectionSn
   return SNAPSHOTS[view];
 }
 
-export type PackProgress = { pack: CollectionPack; owned: number; total: number; locked: boolean };
-
-/** Per-pack ownership for the ledger. A booster above level 1 reads as locked in the recruit preview. */
-export function packProgress(snapshot: CollectionSnapshot): PackProgress[] {
-  return COLLECTION_PACKS.map((pack) => ({
-    pack,
-    owned: pack.catalogIds.filter(snapshot.owns).length,
-    total: pack.catalogIds.length,
-    locked: snapshot.view === "recruit-preview" && (pack.unlockLevel ?? 1) > 1,
+/** Per-source ownership for the ledger. A booster above level 1 reads as locked in the recruit preview. */
+export function sourceProgress(snapshot: CollectionSnapshot): SourceProgress[] {
+  return UNLOCK_SOURCES.map((source) => ({
+    source,
+    owned: source.catalogIds.filter(snapshot.owns).length,
+    total: source.catalogIds.length,
+    locked: snapshot.view === "recruit-preview" && (source.unlockLevel ?? 1) > 1,
   }));
 }
