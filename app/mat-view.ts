@@ -111,6 +111,9 @@ export function fightLog(game: EngineGame, human: number, limit = 32): string[] 
       case "training-stripe-awarded": return `${name(event.player)} ${verb(event.player, "earn", "earns")} a Training Stripe.`;
       case "training-stripe-spent": return `${name(event.player)} ${verb(event.player, "spend", "spends")} a Training Stripe to heal.`;
       case "victory": return `${name(event.player)} ${verb(event.player, "win", "wins")}.`;
+      case "card-boxed": return `${possessive(event.player).replace(/^./, (letter) => letter.toUpperCase())} ${cardName(event.card)} is used up and returns to the box.`;
+      case "reaction": return `${name(event.player)} ${verb(event.player, "react", "reacts")} with ${cardName(event.card)}.`;
+      case "attack-spent": return `${possessive(event.attacker).replace(/^./, (letter) => letter.toUpperCase())} ${cardName(event.card)} finds nobody there: ${name(event.defender)} ${verb(event.defender, "are", "is")} untargetable.`;
       case "unsupported-effect": return `${cardName(event.card)}: part of this effect is not automated yet.`;
       default: return null;
     }
@@ -126,7 +129,7 @@ export function incomingAttack(game: EngineGame, human: number): EngineCard | nu
 }
 
 const CHOICE_TITLE: Record<string, string> = {
-  defense: "Defend or take the hit", reaction: "Play a Reaction?", reversal: "Reversal window", "attack-zone": "Declare the zone",
+  defense: "Defend or take the hit", reaction: "Play a Reaction?", "card-boxed": "Card returned to the box", reversal: "Reversal window", "attack-zone": "Declare the zone",
   "card-movement": "Choose a card", "cycle-discard-draw": "Discard to draw?", "deck-look": "Choose from the revealed cards",
   "discard-or-destroy": "Discard or destroy", "equipment-toggle": "Choose Equipment", "hit-choice": "Choose the hit effect",
   "incoming-attack-choice": "Answer the incoming Attack", "zone-choice": "Choose a zone", structured: "Resolve the printed effect",
@@ -140,6 +143,7 @@ export function choicePrompt(game: EngineGame, pending: EnginePending, human: nu
   const incoming = incomingAttack(game, human);
   const attacker = pending.attackerId !== undefined ? game.players[pending.attackerId]?.character.name : null;
   if (pending.kind === "defense") return `${attacker ?? "Your opponent"} attacks ${pending.zone ? `${pending.zone} ` : ""}with ${incoming?.name ?? "an Attack"}. Play a Defense that covers that zone, or take the hit.`;
+  if (pending.kind === "reaction" && pending.window === "after-block") return "You blocked it. You may play a Reaction that works after a Block, or pass.";
   if (pending.kind === "reaction") return `${attacker ?? "Your opponent"} declared ${incoming?.name ?? "an Attack"}. You may play a Reaction before choosing a Defense.`;
   if (pending.kind === "reversal") return "You blocked it. Counter with a Reversal Attack, or let the moment pass.";
   if (pending.kind === "attack-zone") return "This Attack can go High, Mid or Low. Choose where it lands.";

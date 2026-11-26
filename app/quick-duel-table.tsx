@@ -207,6 +207,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       <section className={`hand-panel paper-stack${phase === "player-initiate" && !human.hand.some(handCardEnabled) ? " hand-panel--idle" : ""}`}>
         <header><div><span className="eyebrow">Your hand · {human.hand.length} cards</span><h2>{handHeading(game, phase, handChoice, human)}</h2></div>
           <div className="hand-counters"><span>Deck {human.deck.length}</span><span>Discard {human.discard.length}</span><span>Attacks {human.attackCount ?? 0}</span><span>Practice {human.practiceUsed ? "used" : "ready"}</span><span>Focus {human.focus}</span><span>ATK {stats.atk} · DEF {stats.def} · SPD {stats.speed}</span></div></header>
+        {handChoice && handChoice.options.some((option) => option.id.startsWith("activate:")) && <div className="equipment-reaction-strip" aria-label="Equipment you can use now"><span>Equipment reactions</span>{handChoice.options.filter((option) => option.id.startsWith("activate:")).map((option) => { const item = findInstance(game, option.id.slice("activate:".length)); return <button type="button" onClick={() => choose(option.id)} key={option.id}><b>{option.label}</b><small>{item?.rulesText?.slice(0, 64) ?? "Use it now"}</small></button>; })}</div>}
         {equipmentActions.length > 0 && <div className="equipment-reaction-strip equipment-trigger-strip" aria-label="Available Equipment actions"><span>Equipment actions</span>{equipmentActions.map((action) => { const item = findInstance(game, action.cardId!); return <button type="button" onClick={() => act(action)} key={action.cardId}><b>Exhaust {item?.name ?? "Equipment"}</b><small>{item?.rulesText?.slice(0, 64) ?? "Activate"}</small></button>; })}</div>}
         <div className="play-card-row">{human.hand.map((card, index) => <PlayCard key={card.instanceId} card={card} handIndex={index} handTotal={human.hand.length} selected={selectedId === card.instanceId} disabled={!handCardEnabled(card)} hint={handChoice ? undefined : actionHint(primaryAction(legal, card))} onClick={() => useHandCard(card)} onInspect={() => setInspected(card)} />)}</div>
       </section>
@@ -297,7 +298,7 @@ function dockLabel(game: EngineGame, phase: MatPhase, selected: EngineCard | nul
 
 function handHeading(game: EngineGame, phase: MatPhase, handChoice: EnginePending | null, human: EngineSeat) {
   if (handChoice?.kind === "defense") return `Defend ${handChoice.zone ?? "the strike"} or let it land`;
-  if (handChoice?.kind === "reaction") return "Play a Reaction or pass";
+  if (handChoice?.kind === "reaction") return handChoice.window === "after-block" ? "Blocked! Play an after-Block Reaction or pass" : "Play a Reaction or pass";
   if (handChoice?.kind === "reversal") return "Return the favor immediately";
   if (game.pendingChoice) return "Waiting on a decision";
   if (phase === "player-initiate") return human.hand.some((card) => ["Weapon", "Gear", "Defense Equipment"].includes(card.subtype ?? "")) ? "Equip before the yelling starts" : "No Equipment in hand. Proceed to Yell.";
