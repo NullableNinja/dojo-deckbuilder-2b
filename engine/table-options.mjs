@@ -5,7 +5,7 @@
  * ids, labels, defaults and parameters. Nothing here knows a card by name.
  */
 
-export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "openMarket", "balancedMarket", "houseRules"]);
+export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "balancedMarket", "houseRules"]);
 
 function optionDefinitions(definition) {
   const declared = Array.isArray(definition?.tableOptions) ? definition.tableOptions : [];
@@ -21,7 +21,7 @@ export function houseRuleVariants(definition) {
 }
 
 // Used only when older generated data declares no tableOptions: today's engine behaviour.
-const FALLBACK_DEFAULTS = Object.freeze({ tempo: true, locations: true, openMarket: true, balancedMarket: false });
+const FALLBACK_DEFAULTS = Object.freeze({ tempo: true, locations: true, balancedMarket: false });
 
 function resolveBoolean(declared, id, requested) {
   if (requested === undefined) return Boolean(declared.get(id)?.default ?? FALLBACK_DEFAULTS[id]);
@@ -47,7 +47,6 @@ export function resolveTableOptions(definition, requested = {}) {
   const options = {
     tempo: resolveBoolean(declared, "tempo", requested?.tempo),
     locations: resolveBoolean(declared, "locations", requested?.locations),
-    openMarket: resolveBoolean(declared, "openMarket", requested?.openMarket),
     balancedMarket: resolveBoolean(declared, "balancedMarket", requested?.balancedMarket),
     houseRules: resolveHouseRules(definition, requested?.houseRules ?? declared.get("houseRules")?.default ?? []),
   };

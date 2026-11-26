@@ -160,7 +160,8 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     const action = primaryAction(legal, card);
     if (!action) return;
     const variants = legal.filter((candidate) => candidate.type === action.type && candidate.cardId === card.instanceId);
-    if (variants.length > 1) { setEquipChoices(variants); return; }
+    // Equipping over a full set of Hands discards Weapons; always ask first (owner decision 17).
+    if (variants.length > 1 || variants.some((candidate) => candidate.replaceCardIds?.length)) { setEquipChoices(variants); return; }
     if (action.type === "play-attack") setSelectedId((current) => current === card.instanceId ? null : card.instanceId!);
     else act(action);
   };
@@ -218,7 +219,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     </footer>
 
     {deskView && <AscendDesk game={game} view={deskView} legal={legal} onView={setDeskView} onAct={act} onInspect={setInspected} onClose={() => setDeskView(null)} onFinish={pass && phase === "player-ascend" ? () => act(pass) : null} />}
-    {equipChoices && <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="equip-choice-title"><span className="eyebrow">Two Hands, no more</span><h2 id="equip-choice-title">Make room for {findInstance(game, equipChoices[0].cardId!)?.name}</h2><p>Your Hands are full. Choose which equipped Weapon to discard first.</p><div className="effect-choice-options">{equipChoices.map((action, index) => <button type="button" autoFocus={index === 0} key={(action.replaceCardIds ?? []).join("+") || index} onClick={() => { setEquipChoices(null); act(action); }}><span>REPLACE</span><b>{(action.replaceCardIds ?? []).map((id) => findInstance(game, id)?.name ?? "Weapon").join(" + ")}</b><small>Discarded to free its Hands</small></button>)}<button type="button" onClick={() => setEquipChoices(null)}><span>CANCEL</span><b>Keep my Weapons</b><small>Do not equip</small></button></div></section></div>}
+    {equipChoices && <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="equip-choice-title"><span className="eyebrow">Two Hands, no more</span><h2 id="equip-choice-title">Make room for {findInstance(game, equipChoices[0].cardId!)?.name}</h2><p>Your Hands are full. Equipping this Weapon discards {equipChoices.length > 1 ? "the Weapon you choose" : "the Weapon below"} first (rulebook: replacing an occupied slot discards the old Equipment).</p><div className="effect-choice-options">{equipChoices.map((action, index) => <button type="button" autoFocus={index === 0} key={(action.replaceCardIds ?? []).join("+") || index} onClick={() => { setEquipChoices(null); act(action); }}><span>DISCARD AND EQUIP</span><b>{(action.replaceCardIds ?? []).map((id) => findInstance(game, id)?.name ?? "Weapon").join(" + ")}</b><small>Discarded to free its Hands</small></button>)}<button type="button" onClick={() => setEquipChoices(null)}><span>CANCEL</span><b>Keep my Weapons</b><small>Do not equip</small></button></div></section></div>}
     {dialogChoice && <ChoiceDialog game={game} pending={dialogChoice} onChoose={choose} />}
     {logOpen && <div className="playtest-inspector-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setLogOpen(false)}><section className="fight-log-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="fight-log-title"><button className="modal-close" onClick={() => setLogOpen(false)} aria-label="Close fight log">×</button><span className="eyebrow">Department receipt</span><h2 id="fight-log-title">Fight log</h2><ol>{log.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ol></section></div>}
     {inspected && <Suspense fallback={null}><CardInspector card={inspected as never} imageUrl={artistUrl(inspected) ?? cardPlaceholderUrl} saved={false} positionLabel="Quick Duel card" onToggleSaved={() => undefined} onClose={() => setInspected(null)} /></Suspense>}
@@ -276,6 +277,7 @@ function primaryAction(legal: EngineAction[], card: EngineCard) {
 
 function actionHint(action: EngineAction | null) {
   if (!action) return undefined;
+  if (action.replaceCardIds?.length) return "Swap Weapon";
   return ({ "play-attack": "Attack", "play-card": "Play", practice: "Practice", "bad-habit-focus": "+1 Focus" } as Record<string, string>)[action.type];
 }
 
@@ -286,6 +288,7 @@ function healthTier(hp: number, maxHp: number) {
 
 function dockLabel(game: EngineGame, phase: MatPhase, selected: EngineCard | null, handChoice: EnginePending | null) {
   if (handChoice) return handChoice.kind === "defense" ? `Defend ${handChoice.zone ?? ""} or take it` : handChoice.kind === "reversal" ? "Counter or decline" : "React or pass";
+  if (game.pendingChoice?.playerId === HUMAN) return "Make your decision";
   if (phase === "player-initiate") return "Equipment first";
   if (phase === "player-yell") return selected ? `${selected.name} selected` : `${game.players[HUMAN].attackCount ?? 0} attack${game.players[HUMAN].attackCount === 1 ? "" : "s"} played`;
   if (phase === "player-ascend") return `${game.players[HUMAN].focus} Focus to spend`;
@@ -429,7 +432,7 @@ function CombatStage({ game, phase, location, selected, incoming, exchange, log,
   const handleDrop = (event: DragEvent<HTMLDivElement>) => { event.preventDefault(); const id = event.dataTransfer.getData("application/x-dojo-card"); if (id) onDropCard(id); };
   const human = game.players[HUMAN]; const computer = game.players[COMPUTER];
   return <section className={`playtest-combat-desk combat-stage paper-stack state-${phase}`}>
-    <header className="combat-stage-heading"><button type="button" onClick={() => location && onInspect(location)}><span>Current Scene</span><b>{location?.name ?? "Tournament Mat"}</b><small><i>SCENE RULE</i>{location?.rulesText ?? "The Department finds no reason to intervene."}</small></button><div><span>ROUND</span><b>{game.round}</b><small>{PHASE_WORD[phase]}</small></div></header>
+    <header className="combat-stage-heading"><button type="button" onClick={() => location && onInspect(location)}><span>Current Scene</span><b>{location?.name ?? "No Location"}</b><small><i>SCENE RULE</i>{location?.rulesText ?? "Locations are switched off for this table. No scene rules apply."}</small></button><div><span>ROUND</span><b>{game.round}</b><small>{PHASE_WORD[phase]}</small></div></header>
     <div className="clash-field" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop} aria-label="Combat stage. Drag a playable card here or use its button.">
       <StageSlot card={humanCard as MatCard | null} side="player" label={incoming ? "Your response" : "Your declaration"} onInspect={onInspect} />
       <div className="clash-seal" aria-label={`${hotZone ?? "No"} combat zone`}><span>{settled ? (exchange.damage > 0 ? "HIT" : "BLOCK") : PHASE_WORD[phase]}</span><b>{(hotZone ?? "—").slice(0, 1)}</b><small>{hotZone ?? "Choose a card"}</small></div>

@@ -66,8 +66,48 @@ Also fixed on Nov 26 (tests in `tests/engine-reversal.test.mjs`):
 
 The Quick Duel fingerprint moved from `340f87ee9f34a97de97560d1` to `d9c357ef5dba71bf9e18ca19`.
 
-Also fixed on Nov 26 (tests in `tests/engine-equipment-reactions.test.mjs`; audit rows E-T5, E-A15, E-R1–R4,
-E-C1, E-C2, E-X16, E-X18 and parts of E-T8, E-A1, E-D8, E-E3, E-X19):
+Also fixed on Nov 27, combat math (tests in `tests/engine-combat-math.test.mjs`; audit rows in
+`docs/engine-parity-audit.md`):
+
+- **Tempo needs a faster fighter.** Tempo gives +1 Attack Power only to an attacker whose current Speed
+  is higher than the defender's, and +1 Guard (`turn.tempoDefenseGuard`) to a faster defender's Defense
+  card. A Boss is compared by its printed Speed. It is still spent automatically whenever legal.
+- **Weapons and Armor.** Every equipped Weapon adds its printed Attack Bonus to each Attack, adjusted per
+  Weapon by Location Weapon-tag text. Armor adds its printed Guard in its zone unless an effect already
+  restates that value. Piercing now ignores Armor DEF only.
+- **Locations** resolve in their own frame: the Attack or Defense card keeps its own effects and the
+  Location applies once. Location tag, zone and Speed conditions are evaluated instead of skipped. Guard
+  changes need a played Defense card, and a card's Guard never drops below 0.
+- **XP**: every legal Attack and every legal Defense card earns XP, Hit or Block
+  (`progression.xpPerLegalAttack` / `xpPerLegalDefense`).
+- **Current Speed** includes timed Speed statuses and static Equipment Speed and floors; opponent-targeted
+  Speed, Guard and DEF changes land on the opponent. Defense Practice no longer counts as a played Defense.
+
+The Quick Duel fingerprint moved from `d9c357ef5dba71bf9e18ca19` to `c480b51e9f73de8c9e141562`.
+
+Also fixed on Nov 27, combos, Characters, statuses and Market (tests in `tests/engine-combos-characters.test.mjs`):
+
+- **Combos pay every part.** A Combo completed when its Attack is declared now also pays its on-Hit
+  and after-resolve parts in the same strike; its passive part applies once on completion. *Clock In,
+  Block Out* gained the owner-approved Reversal step in `content/combo-requirements.json`.
+- **Character abilities.** `engine/character-abilities.mjs` runs every Character resolver but one on
+  engine events (Attack declared, incoming Attack, damage, Hit, Block, card played, discard, Speed
+  change, equip, Scene Change, promotion, exam progress, Combo reveal, Initiate), with their once
+  per turn/round/game limits. Green abilities unlock at Green Belt (`progression.greenAbility`).
+  Character zone changes widen the Attack zone choice; *Librarian Lin* really reveals two Combos.
+- **Status durations and current Speed.** `nextTurn`, `duringNextTurn`, `nextInitiate`, `nextRound`,
+  `endOfTargetNextTurn`, `nextKata` and `scene` work; every Speed change is a Character
+  `speedChanged` event and feeds "gain Speed" Combo requirements.
+- **Market prices.** One price plan: printed cost, Item penalty, Purple discount, qualified discounts
+  with their floors, end-slot Equipment discounts and the Character price hook, known before buying.
+  A purchase consumes only the discounts it used and the refill takes the bought card's slot.
+- **Belts.** Attacks count toward the Brown exam's four cards; Training Stripes follow the mode flag.
+
+The Quick Duel fingerprint moved from `c480b51e9f73de8c9e141562` to `9b8cbb605941c0ea768d99cb`.
+
+Also fixed on Nov 27, Equipment, Reactions, Consumables and choices (tests in
+`tests/engine-equipment-reactions.test.mjs`; audit rows E-T5, E-A15, E-R1–R4, E-C1, E-C2, E-X16, E-X18 and
+parts of E-T8, E-A1, E-D8, E-E3, E-X19):
 
 - **One-use cards leave play as printed.** `definition.equipment.afterUse`: a resolved Consumable returns
   to the box (a new `box` zone, out of the game) unless its own effect destroys it; Reaction Items are
@@ -87,13 +127,13 @@ E-C1, E-C2, E-X16, E-X18 and parts of E-T8, E-A1, E-D8, E-E3, E-X19):
   `play-attack` validates its zone against printed zones and grants, and zone-call / forced-zone
   statuses are read.
 
-The Quick Duel fingerprint moved from `d9c357ef5dba71bf9e18ca19` to `2a66748098392dcddd3c0175`.
+With the two passes above and the table-option changes on `main` (`28c8388a8cfb253c91af935b`), the
+Quick Duel fingerprint is now `28bbde920723dc2a96d66806`.
 
 Still open (the parity work in Phase 1 will find the rest):
 
-- **Tempo needs a faster fighter**: the rulebook and the mat grant Tempo only against a slower opposing
-  fighter, and allow it on a Defense (+1 Guard). The engine spends it on the first Attack of the round
-  regardless of Speed. Fixing it will move the fingerprint.
+- **Optional Tempo**: the engine applies Tempo whenever it is legal; the rulebook makes it optional.
+- **Location damage modifiers** and the damage-prevention layers (audit E-D6, E-L3) are not modelled.
 - **Remaining Reaction and Equipment windows:** the out-of-turn-Consumable Reaction (*Instant Noodle
   Smokescreen*), passive Reaction watchers (discount kept, Combo payoff cancelled, forced discard
   ignored), attacker-side manual Equipment activations at declaration (*Orange Permit Puncher*), the
@@ -102,8 +142,11 @@ Still open (the parity work in Phase 1 will find the rest):
 - **X-Ray Paper** is encoded as "prevent 0"; its "deals 0 damage" needs a data encoding.
 - **Kata watchers**: Kata effects that trigger later on Hit, Block or after an attack never fire,
   because the engine does not set up a watcher when the Kata is played.
-- **Piercing** ignores all Defense in the engine; the rulebook says it ignores Armor only.
 - **AI difficulty** (Student / Certified / Master) is mat-only. It becomes engine policies.
+- **Ronin Reroll** (replace a revealed Market card or Location, once per game) is not triggered, and
+  "an opponent modifies your card" (*Coach Karen*) only sees opposing next-Attack and Guard penalties.
+- **Market leftovers:** restricted Focus, Location purchase modifiers, and the *Laminated Lunch
+  Voucher* qualifiers (5+ cards, minimum 4), which its canonical data does not carry yet.
 - **Approximated resolvers**, e.g. `defense.reversalTargetProtection` is simplified to "prevent 1".
 - **Interfere** is not modelled (no current card uses it).
 

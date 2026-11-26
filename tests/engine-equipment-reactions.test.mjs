@@ -198,7 +198,10 @@ test("Equipment fires on Attack declaration, for the attacker and for the defend
   const armed = yellWith([highAttack], []);
   equip(armed.game, armed.attacker, firstAttackWeapon);
   declare(armed.game, armed.attacker.hand[0]); armed.game.resolveChoice({ optionId: "pass" });
-  assert.equal(lastAttack(armed.game).attack, plain + effectsOf(firstAttackWeapon).find((effect) => effect.trigger === "onAttackDeclared").amount);
+  // The Weapon's printed Attack Bonus is its own part; the declaration effect lands in "Equipment".
+  const part = (label) => lastAttack(armed.game).breakdown.attackParts.find((entry) => entry.label === label)?.value ?? 0;
+  assert.equal(part("Equipment"), effectsOf(firstAttackWeapon).find((effect) => effect.trigger === "onAttackDeclared").amount);
+  assert.equal(lastAttack(armed.game).attack, plain + part("Weapon") + part("Equipment"));
 
   const guarded = yellWith([highAttack], []);
   equip(guarded.game, guarded.defender, incomingPenaltyArmor);

@@ -173,7 +173,8 @@ test("a fighter protected from Reversals cannot be targeted by one", () => {
 
 test("the attack event carries zone, reversal and a breakdown that adds up", () => {
   const { game, attacker, defender } = yellWith([highAttack], [highGuard]);
-  attacker.atk = 1; attacker.tempo = true; defender.def = 1;
+  // Tempo needs the faster fighter (rules: Tempo Advantage).
+  attacker.atk = 1; attacker.tempo = true; defender.def = 1; attacker.speed = defender.speed + 1;
   strike(game, defender.hand[0]);
   const event = lastAttack(game);
   assert.equal(event.zone, "High");

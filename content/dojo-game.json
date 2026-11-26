@@ -506,6 +506,7 @@
       ],
       "handSize": 7,
       "tempoAttackPower": 1,
+      "tempoDefenseGuard": 1,
       "tempoUsesPerRound": 1,
       "focusExpiresAt": "next-own-Hide"
     },
@@ -637,9 +638,14 @@
       }
     },
     "progression": {
+      "greenAbility": {
+        "unlockBelt": "green",
+        "resolverNamespace": "character.green.",
+        "summary": "A Character's Green Ability (its effects in the character.green. resolver namespace) unlocks immediately upon reaching Green Belt."
+      },
       "xpPerHonor": 1,
-      "attackXpOnHit": 1,
-      "defenseXpOnBlock": 1,
+      "xpPerLegalAttack": 1,
+      "xpPerLegalDefense": 1,
       "quickDuelUsesFullBeltRewards": false,
       "beltCheckAction": {
         "usesPerTurn": 1,
@@ -757,30 +763,14 @@
         "type": "boolean",
         "label": "Tempo",
         "default": true,
-        "description": "Every fighter refreshes Tempo at Honor and spends it on their first Attack of the round for +1 Attack Power. Off: no fighter ever has Tempo."
+        "description": "Every fighter refreshes Tempo at Honor. Once per round, a fighter faster than the opposing fighter spends it for +1 Attack Power on an Attack or +1 Guard on a Defense card. Off: no fighter ever has Tempo."
       },
       {
         "id": "locations",
         "type": "boolean",
         "label": "Locations",
         "default": true,
-        "description": "A Location is revealed at every Honor and after a knockout. Off: one fixed Location stays in play all game and the scene never changes.",
-        "whenOff": { "fixedLocation": "DDB-LOC-CORE-047" }
-      },
-      {
-        "id": "openMarket",
-        "type": "boolean",
-        "label": "Open Market",
-        "default": true,
-        "description": "The Market Deck holds every Technique and Item from the Market decks. Off: the listed cards, which still await final art, stay out of the Market Deck.",
-        "whenOff": {
-          "excludeFromMarketDeck": [
-            "DDB-WPN-CORE-046", "DDB-WPN-CORE-047", "DDB-WPN-CORE-048", "DDB-WPN-CORE-049", "DDB-WPN-CORE-050",
-            "DDB-WPN-CORE-051", "DDB-WPN-CORE-052", "DDB-WPN-CORE-053", "DDB-WPN-CORE-054", "DDB-WPN-CORE-055",
-            "DDB-WPN-CORE-056", "DDB-WPN-CORE-057", "DDB-WPN-CORE-058", "DDB-WPN-CORE-059", "DDB-WPN-CORE-060",
-            "DDB-WPN-CORE-061", "DDB-WPN-CORE-062", "DDB-WPN-CORE-063", "DDB-WPN-CORE-064", "DDB-WPN-CORE-065"
-          ]
-        }
+        "description": "A Location is revealed at every Honor and after a knockout. Off: no Location is in play and the scene never changes."
       },
       {
         "id": "balancedMarket",

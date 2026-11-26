@@ -202,11 +202,8 @@ for (const option of tableOptions) {
   if (tableOptionIds.has(option.id)) fail(`Duplicate table option ${option.id}`);
   tableOptionIds.add(option.id);
 }
-for (const id of ["tempo", "locations", "openMarket", "balancedMarket", "houseRules"]) if (!tableOptionIds.has(id)) fail(`definition.tableOptions does not declare ${id}`);
+for (const id of ["tempo", "locations", "balancedMarket", "houseRules"]) if (!tableOptionIds.has(id)) fail(`definition.tableOptions does not declare ${id}`);
 const cardIds = new Set(canonicalCards.cards.map((card) => card.catalogId));
-const fixedLocation = tableOptions.find((option) => option.id === "locations")?.whenOff?.fixedLocation;
-if (fixedLocation && canonicalCards.cards.find((card) => card.catalogId === fixedLocation)?.cardType !== "Location") fail(`Table option locations names ${fixedLocation}, which is not a Location card`);
-for (const id of tableOptions.find((option) => option.id === "openMarket")?.whenOff?.excludeFromMarketDeck ?? []) if (!cardIds.has(id)) fail(`Table option openMarket excludes unknown card ${id}`);
 const houseRuleIds = new Set((canonicalRules.houseRules ?? []).map((rule) => rule.id));
 const variantIds = new Set((tableOptions.find((option) => option.id === "houseRules")?.variants ?? []).map((variant) => variant.id));
 for (const id of variantIds) if (!houseRuleIds.has(id)) fail(`House-rule variant ${id} has no canonical house rule in content/rules.json`);

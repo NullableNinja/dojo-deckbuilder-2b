@@ -4,6 +4,33 @@ Collected while moving every rule onto the shared engine (Nov 26–27, 2026). Ea
 the engine does **right now** (the provisional choice) so the game keeps working until you decide.
 Reply with the item numbers you want changed; everything not mentioned stays as is.
 
+## Answered (Nov 26)
+
+| # | Decision | Status |
+| --- | --- | --- |
+| 1 | Difficulty is computer skill only (Student / Certified / Master); every opponent has rulebook HP and stats. No hidden handicaps, which also keeps online play fair. (Owner: "your best judgement".) | Done in the engine table |
+| 2 | Quick Duel uses every Location. | Done (engine default) |
+| 3 | Tempo follows the rulebook: only against a slower fighter, and usable on a Defense for +1 Guard. | Done |
+| 4 | "Tempo off" means no fighter has Tempo (unchanged; owner unsure). | Unchanged |
+| 5 | Locations off means no Location at all. | Done |
+| 6 | Drop the Open Market option once the missing Weapon art lands. | Done (art imported from the main repo) |
+| 7 | Piercing ignores Armor only. | Done |
+| 8–11 | Reversal choices as implemented (Tempo spent, next-Attack bonuses used, declining keeps the once-per-round Reversal, Temporary Tattoo Pass reading). | Kept |
+| 12 | Witness Protection Stance lasts until the end of your next turn. | To do |
+| 13 | Reversal-or-next-Attack bonuses as implemented. | Kept |
+| 14 | Clock In, Block Out gets a Reversal step in its requirements. | In progress |
+| 15 | A Reversal doesn't count as "an Attack this turn" but counts for Honor-scoped exams. | Kept |
+| 16 | Tag Team: a Reversal window is void if the attacker was swapped out. | Kept |
+| 17 | A Weapon that doesn't fit replaces equipped Weapons, and the player is always warned first ("Swap Weapon" hint plus a confirm dialog). | Done |
+| 18–21 | Weapon replacement choice, two-handed restriction timing, Hands counting, Fast Belts in every mode: as implemented. | Kept |
+| 22 | Steal the Belt and Friendly Fire get rules for Clash and Tag Team. | To do (draft spec first) |
+| 23–24 | Shared-pool collections and Open Dojo. | Approved |
+| 25 | Everything is free of money, always; but extra Bosses and new Characters unlock over time. | Plan being revised |
+| 26–27 | Orientation Kit + Starter Kits; 8 themed series, packs only ever contain new cards, no duplicates. | Approved |
+| 28, 35 | No rarity tiers at all. | Plan being revised |
+| 29–34 | Tickets become Merit when complete; earn rates; Merit / Clearance Levels / Diplomas; series gating; rewards by table type; local storage with export codes. | Approved |
+
+
 ## A. Quick Duel on the engine
 
 1. **Difficulty.** The old mat's Student / Certified / Grandmaster also changed the computer's HP
@@ -33,8 +60,9 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
     Reverse you). *Should it last until the end of your next turn?*
 13. Green Counter-Signature and Rental Chair Recoil read as Reversal bonuses but their data says "next
     Attack": the engine gives the bonus to a Reversal if you make one, otherwise to your next Attack. *OK?*
-14. **Clock In, Block Out** says "your Reversal" but its requirements have no Reversal step, so it
-    also fires on normal attacks. *Add a Reversal step to its canonical requirements?*
+14. ~~**Clock In, Block Out** says "your Reversal" but its requirements have no Reversal step, so it
+    also fires on normal attacks.~~ **Decided (Nov 27):** a Reversal step was added to its canonical
+    requirements.
 15. A Reversal does not count as "an Attack this turn" (turn counters, "two attacks hit this turn",
     impact Focus) but does count for the Honor-scoped exams. *OK?*
 16. Tag Team: if the attacker was swapped out before the window opens, the window is void. *OK?*
@@ -107,3 +135,52 @@ Reply with the item numbers you want changed; everything not mentioned stays as 
     (beta)" in Quick Duel setup. The audit's high-priority gaps are being fixed. My recommendation is
     to switch the default once those land and a few full games feel right to you, then delete the old
     mat's rules code.
+
+## H. Boss Blitz (`docs/boss-blitz-review.md`)
+
+51. **Stage cards say "Boss Character … ignore its Character abilities."** Chapter 14 uses Boss
+    Profiles. *Update the Rival / Mini-Boss Stage card text to say "Boss Profile", or is a normal
+    Character as a Boss meant to be an option?*
+52. **Boss Defense:** "reduce damage by N" (cards) or "add Guard to the Boss's Defense" (rulebook)?
+    The engine uses the rulebook.
+53. **Final Boss KO XP:** +5 (rulebook) or the normal +2 (Final Boss Stage card)?
+54. Should the **8 HP stage-clear heal** be capped at max HP? (Engine: capped.)
+55. Should the mat offer **Challenge Boss Blitz** (pick your three Bosses) as well as random Bosses?
+56. Players win **Speed ties** against the Boss, and Director Clipwell's "active player" means the
+    player the Boss is about to attack. *OK?*
+
+## I. Weapon art
+
+57. ~~Missing Weapon art~~ **Done:** the 20 Weapons' art, source PNGs and editable downloads came from
+    the main repo (`NullableNinja/dojo-deckbuilder`); only missing files were copied. All 597 cards now
+    have art.
+
+## J. Combat math (engine fixes, Nov 26)
+
+58. **Armor whose text restates its Guard.** Kote: Guard 2, "+2 DEF against High and Mid Attacks from
+    Weapons". The engine lets the text decide (2 Guard only against Weapons); the old mat added both.
+59. **Guard bonuses need a Defense card.** "+X Guard" from a Location or status applies only when you
+    play a Defense card, and a card's Guard never drops below 0 (Strip-Mall McDojo −1). *OK?*
+60. **Piercing vs Weapon/Gear DEF** (e.g. Fan +1 DEF): not Armor, so Piercing doesn't remove it. *OK?*
+61. **When Tempo is checked:** when the Attack is declared, before the card's own Speed changes; ties
+    give no Tempo. *OK?*
+62. **"Two-handed Weapons" Location text**: no Weapon has a Two-Handed tag; only `Hands: 2`. *Should
+    Hands 2 count as Two-Handed?*
+63. **"−X Speed next round"** is currently "until the next Honor", so it never changes next round's
+    turn order. *Should it last through the next round's Honor (affecting initiative)?*
+64. **XP anti-loop rule** (each physical card earns XP once per round) isn't implemented yet. *Keep it?*
+
+## K. Combos, Characters and the Market (engine fixes, Nov 26)
+
+65. **Gramma Uppercut** ("once per game when attacked, ignore temporary Attack bonuses"): the engine
+    spends it automatically on the first strike that has a temporary bonus. *Should it be optional?*
+66. **"Temporary" bonuses** = card, Combo and Character modifiers, statuses, next-Attack bonuses, Tempo
+    and the Reversal bonus (not printed Attack Power, ATK, Equipment or Location). *OK?*
+67. "The first time each turn you discard / play …" abilities also fire on the opponent's turn
+    (e.g. Boo-Fu); any next-Attack bonus they give ends with that turn. *OK?*
+68. A Defense played on the opponent's turn doesn't count toward your card types for Three Squirrels. *OK?*
+69. Swan Wing Guard's "purchase discount for your next turn" lasts through that whole turn. *OK?*
+70. For The Belt Collector, a new zone or a new card type toward an exam counts as "completing a
+    requirement". *OK?*
+71. Market Aisle Map's "either end slot" = the first or last Market position. *OK?*
+72. **Ronin Reroll** is the one Character ability not yet automated. (No question; noted.)

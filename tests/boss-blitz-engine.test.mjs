@@ -96,11 +96,11 @@ test("a Boss with no Enrage Threshold takes the 'otherwise' branch (DDB-RUL-108)
   const game = new BossBlitzGame(data, { seed: 13 });
   game.loadStage(0); game.boss.hp = 10;
   game.resolveTechnique(game.cardInstance(data.byId.get(conditionalTechnique)), game.humans()[0]);
-  assert.equal(game.statusValue(game.boss, "modifyAttackPower"), 1);
+  assert.equal(game.statusValue(game.boss, "modifyAttackPower", { consumeDuration: "nextAttack" }), 1);
   const final = new BossBlitzGame(data, { seed: 13 });
   final.loadStage(drama.boss.stages.length - 1); final.boss.hp = 20;
   final.resolveTechnique(final.cardInstance(data.byId.get(conditionalTechnique)), final.humans()[0]);
-  assert.equal(final.statusValue(final.boss, "modifyAttackPower"), 2);
+  assert.equal(final.statusValue(final.boss, "modifyAttackPower", { consumeDuration: "nextAttack" }), 2);
 });
 
 test("stage victory: +5 XP instead of +2, heal the active fighter 8, refresh the Market, next Boss at Honor", () => {
