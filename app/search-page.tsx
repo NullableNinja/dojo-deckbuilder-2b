@@ -11,24 +11,13 @@ import {
 } from "./search";
 import { navigate, replaceRoute } from "./routing";
 import { escapeRegExp } from "./rule-chapters";
+import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
 import "./search-page.css";
 
-const RECENT_STORAGE_KEY = "paper-fu-recent-searches-v1";
 const RECENT_LIMIT = 6;
 const SUGGESTIONS = ["Flow", "Reversal", "Market Mercy", "Tempo", "Belt Exam", "Boss Blitz", "DDB-RUL-001"];
 
-function readRecent() {
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(RECENT_STORAGE_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string").slice(0, RECENT_LIMIT) : [];
-  } catch {
-    return [];
-  }
-}
 
-function writeRecent(entries: string[]) {
-  try { window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(entries)); } catch { /* storage blocked: recents last this visit */ }
-}
 
 function Highlighted({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>;
@@ -50,7 +39,7 @@ const searchTypeClass = (type: SearchResultType) => type.replace(/\s+/g, "-");
 export default function SearchPage({ query = "" }: { query?: string }) {
   const [draftQuery, setDraftQuery] = useState(query);
   const [activeTypes, setActiveTypes] = useState<SearchResultType[]>(SEARCH_GROUP_ORDER);
-  const [recent, setRecent] = useState<string[]>(readRecent);
+  const [recent, setRecent] = useState<string[]>(() => readStoredList(PERSONAL_STORAGE_KEYS.recentSearches).slice(0, RECENT_LIMIT));
 
   useEffect(() => setDraftQuery(query), [query]);
 
@@ -80,11 +69,11 @@ export default function SearchPage({ query = "" }: { query?: string }) {
   const openResult = (result: SearchResult) => {
     const filed = draftQuery.normalize("NFKC").trim().replace(/\s+/g, " ");
     const next = [filed, ...recent.filter((entry) => normalizeSearchQuery(entry) !== normalizeSearchQuery(filed))].slice(0, RECENT_LIMIT);
-    writeRecent(next);
+    writeStoredList(PERSONAL_STORAGE_KEYS.recentSearches, next);
     setRecent(next);
     navigate(result.route);
   };
-  const clearRecent = () => { writeRecent([]); setRecent([]); };
+  const clearRecent = () => { writeStoredList(PERSONAL_STORAGE_KEYS.recentSearches, []); setRecent([]); };
   const markTerm = draftQuery.trim();
 
   return <main className="search-page shell page-shell" aria-labelledby="dojo-search-title">

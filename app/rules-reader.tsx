@@ -5,13 +5,13 @@ import { createContext, Fragment, useContext, useEffect, useId, useMemo, useRef,
 import { COMBAT_FORMULA_TEXT, PHASES, RULE_PRIORITY } from "./canonical-presentation";
 import { blockText, chapterNumber, escapeRegExp, RULE_CHAPTERS, type RuleBlock, type RuleChapter, type RuleSection } from "./rule-chapters";
 import { paperScrollBehavior, prefersReducedMotion, usePaperToast } from "./paper-toast-context";
+import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
 import { navigate, serializeRoute, type SiteRoute } from "./routing";
 import { ALL_GLOSSARY_ENTRIES, normalizeSearchQuery } from "./search";
 import { SectionHeader } from "./section-header";
 import "./rules-reader.css";
 
 const INTRO_KEY = "intro";
-const CERTIFIED_STORAGE_KEY = "paper-fu-rules-certified-v1";
 const MAX_SEARCH_RESULTS = 60;
 
 const chapterBlocks = (chapter: RuleChapter) => [...chapter.intro, ...chapter.sections.flatMap((section) => section.content)];
@@ -151,19 +151,13 @@ function RichRuleBlocks({ blocks, scope, mark }: { blocks: RuleBlock[]; scope: s
 // ---- Certified Reader -----------------------------------------------------------------------------
 
 function readCertified() {
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(CERTIFIED_STORAGE_KEY) ?? "[]");
-    return new Set<string>(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string" && RULE_CHAPTERS.some((chapter) => chapter.id === value)) : []);
-  } catch {
-    return new Set<string>();
-  }
+  const known = new Set(RULE_CHAPTERS.map((chapter) => chapter.id));
+  return new Set(readStoredList(PERSONAL_STORAGE_KEYS.rulesCertified).filter((id) => known.has(id)));
 }
 
 function useCertifiedChapters() {
   const [certified, setCertified] = useState<Set<string>>(readCertified);
-  const save = (next: Set<string>) => {
-    try { window.localStorage.setItem(CERTIFIED_STORAGE_KEY, JSON.stringify([...next])); } catch { /* storage blocked: stamps last this visit */ }
-  };
+  const save = (next: Set<string>) => writeStoredList(PERSONAL_STORAGE_KEYS.rulesCertified, next);
   const certify = (chapterId: string) => setCertified((current) => {
     if (current.has(chapterId)) return current;
     const next = new Set(current).add(chapterId);

@@ -5,6 +5,7 @@ import cardsJson from "./data/cards.json";
 import { COLLECTION_STATUS, isUnlockable, readCollection, sourceFor, sourceProgress, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import { prefersReducedMotion, usePaperToast } from "./paper-toast-context";
+import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
 import { navigate, replaceRoute } from "./routing";
 import { cardSearchText, type CardEntry } from "./search";
 import { SectionHeader } from "./section-header";
@@ -14,7 +15,6 @@ const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ 
 
 const cardData = cardsJson as unknown as { cards: CardEntry[]; counts: Record<string, number>; decks: string[]; total: number };
 const ALL_CARDS = cardData.cards;
-const BINDER_STORAGE_KEY = "dojo-binder-v1";
 const PAGE_SIZE = 24;
 const ALL = "All";
 
@@ -36,20 +36,11 @@ const sourceMeta = (source: UnlockSource | undefined, locked = false) => {
   return locked ? `Series · opens at Clearance ${source.unlockLevel}` : "Booster series";
 };
 
-function readBinder() {
-  if (typeof window === "undefined") return new Set<string>();
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(BINDER_STORAGE_KEY) ?? "[]");
-    return new Set<string>(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : []);
-  } catch {
-    return new Set<string>();
-  }
-}
 
 function useBinder() {
-  const [savedIds, setSavedIds] = useState<Set<string>>(readBinder);
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set(readStoredList(PERSONAL_STORAGE_KEYS.binder)));
   useEffect(() => {
-    try { window.localStorage.setItem(BINDER_STORAGE_KEY, JSON.stringify([...savedIds])); } catch { /* storage blocked: the binder lasts this visit */ }
+    writeStoredList(PERSONAL_STORAGE_KEYS.binder, savedIds);
   }, [savedIds]);
   const toggle = (catalogId: string) => setSavedIds((current) => {
     const next = new Set(current);
