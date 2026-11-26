@@ -877,7 +877,7 @@ The Boss acts once per round according to Speed. It does not buy cards, earn XP,
 
 - Attack a Boss like an active opposing fighter. It always applies printed DEF but has no Armor or Defense hand unless a scenario explicitly gives it one.
 
-- Boss Guard: when a player declares an Attack whose zone matches the face-up Boss Defense, add that card's Guard to the Boss's Defense for that Attack, then discard the Boss Defense after the Attack resolves. An unmatched player Attack leaves Boss Guard in place. A newly revealed Boss Defense replaces the old one.
+- Boss Guard: when a player declares an Attack whose zone matches the face-up Boss Defense, reduce that Attack's damage to the Boss by the card's printed amount, then discard the Boss Defense after the Attack resolves (DDB-RUL-117). An unmatched player Attack leaves Boss Guard in place. A newly revealed Boss Defense replaces the old one.
 
 - Damage modifiers, Hit/Block effects, Speed modifiers, and effects that directly change combat values work normally when they have a legal Boss target.
 
@@ -887,7 +887,7 @@ The Boss acts once per round according to Speed. It does not buy cards, earn XP,
 
 ### Advancing the Ladder
 
-1. When the Rival or Mini-Boss is KO'd, gain 5 XP. This replaces the normal +2 XP award for causing that Boss KO. When the Final Boss is KO'd, gain 5 XP as well, then check for Scenario Victory.
+1. When the Rival or Mini-Boss is KO'd, gain 5 XP. This replaces the normal +2 XP award for causing that Boss KO. When the Final Boss is KO'd, gain the normal +2 KO XP instead, as its Stage card says, then check for Scenario Victory (DDB-RUL-118).
 
 2. Heal your active Character 8 HP. Benched Characters receive no automatic healing.
 
@@ -1386,3 +1386,21 @@ Training Stripes and the Belt Check recovery action apply only to Quick Duel unt
 DDB-RUL-115 · Filed Nov 23, 2026 · Tag Team
 
 The owner of the knocked-out fighter always chooses which conscious benched Character becomes active.
+
+### "Boss Character" on Stage cards
+
+DDB-RUL-116 · Filed Nov 27, 2026 · Boss Blitz
+
+The Rival and Mini-Boss Stage cards call the stage's Boss Profile the "chosen Boss Character". Use the Profile's printed ATK, DEF and Speed and its one Boss Rule; it has no other Character abilities.
+
+### Boss Defense reduces damage
+
+DDB-RUL-117 · Filed Nov 27, 2026 · Boss Blitz
+
+As printed, a Boss Defense in Boss Guard reduces the damage of the next player Attack in its zone by its amount, after Attack and Defense are compared, then is discarded. An Attack in another zone leaves it in place.
+
+### Final Boss KO reward
+
+DDB-RUL-118 · Filed Nov 27, 2026 · Boss Blitz
+
+Knocking out the Rival or Mini-Boss gives 5 XP instead of the normal +2. Knocking out the Final Boss gives the normal +2 KO XP, as its Stage card says, then Scenario Victory is checked.
