@@ -165,6 +165,11 @@
     "playerWinsBossSpeedTies": true
   },
   "progression": {
+    "greenAbility": {
+      "unlockBelt": "green",
+      "resolverNamespace": "character.green.",
+      "summary": "A Character's Green Ability (its effects in the character.green. resolver namespace) unlocks immediately upon reaching Green Belt."
+    },
     "xpPerHonor": 1,
     "xpPerLegalAttack": 1,
     "xpPerLegalDefense": 1,

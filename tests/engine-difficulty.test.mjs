@@ -105,8 +105,8 @@ test("Master beats Student and Certified beats Student on fixed seeds", () => {
     }
     return wins;
   };
-  assert.ok(winsFor("master", "student", 20) > 10);
-  assert.ok(winsFor("certified", "student", 20) > 10);
+  assert.ok(winsFor("master", "student", 60) > 30);
+  assert.ok(winsFor("certified", "student", 60) > 30);
 });
 
 test("a Bad Habit cash-in is taken when the engine offers it", () => {
