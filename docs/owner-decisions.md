@@ -51,7 +51,7 @@ None open right now.
 | 46 | Damage bonus and Hits | A bonus can't turn a 0-damage strike into a Hit. | Claude | Kept |
 | 47 | Combo offer | Each player reveals their own offer in Ascend (rulebook). | Claude | Done |
 | 48 | Computer and your hand | Student and Certified play without looking at your hand; Master still reads the table (it is the "Bad decision" difficulty). | Claude | Done |
-| 50 | Switching Quick Duel to the shared engine | Switch the default once the remaining engine merge is in and a full browser game passes; the classic mat stays one click away until the old rules code is deleted. | Claude | Pending merge |
+| 50 | Switching to the shared engine | Done Nov 27: full browser games of Quick Duel, Tag Team and Boss Blitz passed on the engine, so it is the default; "Classic mat (retiring)" stays in setup until the old rules code is deleted. | Claude | Done |
 | 51 | Boss Stage cards | Printed cards stay as they are (the text is on the card art); ruling DDB-RUL-116 says the Stage card's "Boss Character" means the stage's Boss Profile. | Claude | Done |
 | 52 | Boss Defense | Golden Rule: the printed cards win. Boss Guard reduces the matching Attack's damage (DDB-RUL-117); chapter 14 and the engine now say so. | Claude | Done |
 | 53 | Final Boss KO | Golden Rule: the Final Boss Stage card wins, so the normal +2 KO XP (DDB-RUL-118); Rival and Mini-Boss still give 5. | Claude | Done |

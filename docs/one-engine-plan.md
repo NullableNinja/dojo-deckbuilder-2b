@@ -161,8 +161,8 @@ Each phase ends green on `npm run verify` and is pushed on its own.
   policies (`engine/difficulty.mjs`), attack breakdown events, the Reversal window, the Weapon Hand
   limit, and save/resume as setup + decisions (`app/engine-session.ts`).
 - Phase 3 is running side by side: `app/quick-duel-table.tsx` plays Quick Duel, Tag Team and Boss
-  Blitz on the engine with the mat's look. Players opt in with **Rules engine → Shared engine (beta)**
-  in setup; the classic mat stays the default until the P1 gaps are closed (owner decision 50).
+  Blitz on the engine with the mat's look. Since Nov 27 the shared engine is the
+  default; **Rules engine → Classic mat (retiring)** in setup keeps the old mat reachable until it is deleted (phase 4).
 
 1. **Parity spec.** Turn the mat's certification scenarios (`runPlaytestRuntimeCertification`, 907
    card routes) and the `quick-duel-*` host tests into engine-level scenario tests. Every behaviour the
