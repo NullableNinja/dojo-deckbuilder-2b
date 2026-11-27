@@ -10,10 +10,41 @@
   .settings-record strong small { color: var(--pf-muted); font: 600 13px/1 var(--pf-sans); }
   .settings-profile-stats.settings-record span { color: var(--pf-ink-soft); font: 700 13px/1.25 var(--pf-label); letter-spacing: .05em; text-transform: uppercase; }
   .settings-record i { position: absolute; top: 14px; right: 14px; color: var(--pf-action); font-style: normal; }
+
+  /* Dojo Record: Clearance Level, Merit meter, wallet and the export/import code. */
+  .career-record { display: grid; gap: 18px; }
+  .career-record-diploma { flex: 0 0 auto; display: grid; justify-items: center; min-width: 116px; border: 3px double var(--pf-brass); padding: 10px 14px; color: var(--pf-brass-text); background: color-mix(in srgb, var(--pf-brass) 10%, var(--pf-surface-raised)); text-align: center; }
+  .career-record-diploma span, .career-record-diploma small { font: 700 11px/1.2 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+  .career-record-diploma b { color: var(--pf-ink); font: 400 44px/1 var(--pf-display); }
+  .career-record-note { margin: 0; border-left: 4px solid var(--pf-brass); padding: 8px 12px; color: var(--pf-ink); background: var(--pf-surface); font-size: 14px; }
+  .career-record-level { display: grid; gap: 8px; }
+  .career-record-level > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  .career-record-level strong { color: var(--pf-ink); font: 400 24px/1 var(--pf-display); text-transform: uppercase; }
+  .career-record-level span { color: var(--pf-ink-soft); font: 700 13px/1.2 var(--pf-mono); }
+  .career-record-meter { position: relative; display: block; height: 14px; overflow: hidden; border: 1px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-dim); }
+  .career-record-meter i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, var(--pf-brass) 0 7px, color-mix(in srgb, var(--pf-brass) 78%, var(--pf-surface-raised)) 7px 14px); }
+  .career-record-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; }
+  .career-record-facts > div { display: grid; gap: 4px; border-top: 4px solid var(--pf-brass); border-bottom: 1px solid var(--pf-line); padding: 10px 12px; background: var(--pf-surface); }
+  .career-record-facts dt { color: var(--pf-ink); font: 400 28px/1 var(--pf-display); }
+  .career-record-facts dd { margin: 0; color: var(--pf-ink-soft); font: 700 12px/1.2 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; }
+  .career-record-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; color: var(--pf-ink-soft); font-size: 14px; }
+  .career-record-actions .button { min-height: 44px; }
+  .career-record-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .career-record-code { display: grid; align-content: start; gap: 8px; }
+  .career-record-code label { color: var(--pf-ink); font: 700 14px/1.2 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; }
+  .career-record-code textarea { min-height: 88px; resize: vertical; border: 1px solid var(--pf-line-strong); border-radius: 3px; padding: 10px 12px; color: var(--pf-ink); background: var(--pf-surface); font: 13px/1.4 var(--pf-mono); word-break: break-all; }
+  .career-record-code textarea:focus-visible { outline: 3px solid var(--pf-action); outline-offset: 2px; }
+  .career-record-code .button { justify-self: start; min-height: 44px; }
+  .career-record-code .button:disabled { cursor: default; opacity: .55; transform: none; box-shadow: none; }
+  .career-record-code small { color: var(--pf-muted); font-size: 12px; line-height: 1.45; }
 }
 
 @layer responsive {
   @media (max-width: 860px) {
     .settings-profile-stats.settings-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .career-record-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .career-record-codes { grid-template-columns: 1fr; }
+    .career-record-diploma { justify-self: start; }
+    .career-record-code .button { justify-self: stretch; }
   }
 }

@@ -10,6 +10,7 @@ import type { EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed, type SessionMode, type TableOptions, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, livePreviews, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase, type PreviewLine, type PreviewTone } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
+import { PayrollSlip } from "./career-payroll";
 import "./quick-duel-hand.css";
 
 const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
@@ -237,7 +238,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       <HudFighter seat={computer} side="ai" title={computer.isBoss ? bossTitle(game) : "COMPUTER"} />
     </header>
 
-    {over && <ResultCertificate game={game} onRematch={onRematch} onExit={onExit} />}
+    {over && <ResultCertificate game={game} payroll={<PayrollSlip session={session} />} onRematch={onRematch} onExit={onExit} />}
 
     <section className="playtest-arena">
       <div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>
@@ -676,7 +677,7 @@ function ChoiceDialog({ game, pending, zones, onChoose }: { game: EngineGame; pe
   </section></div>;
 }
 
-function ResultCertificate({ game, onRematch, onExit }: { game: EngineGame; onRematch: () => void; onExit: () => void }) {
+function ResultCertificate({ game, payroll, onRematch, onExit }: { game: EngineGame; payroll: React.ReactNode; onRematch: () => void; onExit: () => void }) {
   const won = game.winner === HUMAN;
   const winner = game.players[game.winner ?? 0].character as MatCard;
   const art = artistUrl(winner);
@@ -691,6 +692,7 @@ function ResultCertificate({ game, onRematch, onExit }: { game: EngineGame; onRe
         <div className="victory-copy"><span className="eyebrow">Department of Questionably Regulated Martial Arts · {reasonLabel(game.reason)}</span><h2>{won ? `${winner.name} remains standing!` : `${winner.name} wins the field test.`}</h2><p>{won ? "Confetti has been authorized and the clipboard has been notified." : "The Department has approved an immediate rematch."}</p></div>
       </div>
       <dl className="match-report"><div><dt>{game.round}</dt><dd>Rounds</dd></div><div><dt>{human.xp}</dt><dd>XP filed</dd></div><div><dt>{human.purchases ?? 0}</dt><dd>Cards acquired</dd></div><div><dt>{human.learnedCombos.length}</dt><dd>Combos learned</dd></div></dl>
+      {payroll}
       <div className="victory-certificate-footer"><div className="victory-signature"><span>Certified by</span><b>Assistant Deputy Sensei, Filing Division</b><small>No one verified this signature.</small></div><div className="match-result-actions"><button className="button primary" onClick={onRematch}>Rematch</button><button className="button ghost" onClick={onExit}>Back to setup</button></div></div>
     </div>
   </section>;

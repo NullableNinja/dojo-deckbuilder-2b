@@ -61,6 +61,35 @@
   .collection-pack.is-locked { border-style: dashed; }
   .collection-pack.is-locked .collection-pack-name b { color: var(--pf-ink-soft); }
 
+  /* ---- My Collection: the wallet (Booster Tickets, stubs, Clearance Level) ---- */
+  .collection-ledger.is-career .collection-ledger-stamp { border-color: var(--pf-blue); color: var(--pf-blue); }
+  .career-wallet { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 16px; border: 1px solid var(--pf-line-strong); border-radius: 4px; padding: 12px 14px; background: var(--pf-surface-raised); }
+  .career-wallet-ticket { position: relative; display: grid; justify-items: center; min-width: 104px; padding: 8px 16px 9px; color: var(--pf-manila-ink); background: linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); clip-path: polygon(0 0, 100% 0, 100% 35%, 94% 50%, 100% 65%, 100% 100%, 0 100%, 0 65%, 6% 50%, 0 35%); }
+  .career-wallet-ticket::after { content: ""; position: absolute; inset: 5px 9px; border: 1px dashed color-mix(in srgb, var(--pf-manila-ink) 45%, transparent); pointer-events: none; }
+  .career-wallet-ticket b { font: 400 34px/1 var(--pf-display); }
+  .career-wallet-ticket span { font: 700 11px/1.1 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+  .career-wallet-facts { display: grid; gap: 4px; color: var(--pf-ink-soft); font-size: 13px; }
+  .career-wallet-facts b { color: var(--pf-ink); font: 700 15px/1.1 var(--pf-label); letter-spacing: .04em; text-transform: uppercase; }
+  .career-wallet-note { grid-column: 1 / -1; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.45; }
+
+  /* ---- Starter Kit requisition: one of three kits, signed on day one ---- */
+  .kit-requisition { display: grid; gap: 18px; margin: 0 0 30px; padding: 24px; border-top: 6px solid var(--pf-brass); }
+  .kit-requisition-head { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 12px 20px; }
+  .kit-requisition-head > div { max-width: 70ch; }
+  .kit-requisition-head h2 { margin: 2px 0 6px; color: var(--pf-ink); font: 400 clamp(26px, 3vw, 38px)/1 var(--pf-display); text-transform: uppercase; }
+  .kit-requisition-head p { margin: 0; color: var(--pf-ink-soft); line-height: 1.5; }
+  .kit-requisition-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .kit-option { display: grid; grid-template-rows: auto 1fr auto; gap: 12px; border: 1px solid var(--pf-line-strong); border-radius: 4px; padding: 16px; background: var(--pf-surface); }
+  .kit-option-fan { position: relative; height: 150px; display: flex; justify-content: center; align-items: end; }
+  .kit-option-fan img { width: 92px; aspect-ratio: 11 / 15; object-fit: contain; margin: 0 -18px; filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, .18)); transform: rotate(calc(var(--i) * 8deg)) translateY(calc(var(--i) * var(--i) * 6px)); transition: transform .2s ease; }
+  .kit-option:hover .kit-option-fan img { transform: rotate(calc(var(--i) * 11deg)) translateY(calc(var(--i) * var(--i) * 4px - 4px)); }
+  .kit-option-copy h3 { margin: 0 0 4px; color: var(--pf-ink); font: 400 24px/1 var(--pf-display); text-transform: uppercase; }
+  .kit-option-copy p { margin: 0 0 10px; color: var(--pf-ink-soft); font-size: 14px; }
+  .kit-option-paths { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .kit-option-paths li { border: 1px solid var(--pf-line-strong); border-radius: 2px; padding: 4px 7px; color: var(--pf-ink-soft); font: 700 12px/1 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; }
+  .kit-option-actions { display: grid; gap: 8px; }
+  .kit-option-actions .button { width: 100%; min-height: 44px; justify-content: center; }
+
   /* ---- Origin tags: where a card comes from. There is no rarity: every card is equal, unlocks only set order. ---- */
   .origin-tag { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--pf-ink-soft); font: 700 13px/1 var(--pf-label); letter-spacing: .07em; text-transform: uppercase; }
   .origin-tag b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -105,6 +134,10 @@
 @layer responsive {
   @media (max-width: 1100px) {
     .library-desk { grid-template-columns: 1fr; }
+    .kit-requisition-options { grid-template-columns: 1fr; }
+    .kit-option { grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto auto; }
+    .kit-option-fan { grid-row: span 2; height: 130px; }
+    .kit-option-fan img { width: 74px; }
     .daily-filing { grid-template-columns: minmax(130px, 190px) minmax(0, 1fr); }
   }
   @media (max-width: 760px) {
@@ -124,16 +157,15 @@
     .collection-pack-name b { font-size: 13px; }
     .collection-pack-name small { display: none; }
     .collection-pack--roster { border-left: 3px solid var(--pf-action); }
-  /* Preview: a whole-catalog moment and a per-series pack rip. */
-  .collection-preview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; border: 1px dashed var(--pf-manila-deep); border-radius: 4px; padding: 12px; background: color-mix(in srgb, var(--pf-manila) 16%, var(--pf-surface)); }
-  .collection-preview-actions p { flex: 1 1 220px; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.4; }
-  .collection-preview-actions .button:disabled { cursor: default; opacity: .5; transform: none; box-shadow: none; }
-  .collection-packs li.has-rip { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-  .collection-packs li.has-rip .collection-pack { border-right: 0; border-radius: 3px 0 0 3px; }
-  .collection-rip { min-width: 70px; min-height: 44px; border: 1px solid var(--pf-manila-deep); border-radius: 0 3px 3px 0; padding: 0 10px; color: var(--pf-manila-ink); background: linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); font: 700 13px/1.05 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; border-left: 2px dashed var(--pf-manila-ink); cursor: pointer; transition: transform .15s ease, filter .15s ease; }
-  .collection-rip:hover:not(:disabled) { filter: brightness(1.06); transform: translateX(2px); }
-  .collection-rip:disabled { color: var(--pf-muted); background: var(--pf-surface-dim); border-color: var(--pf-line); cursor: default; }
-  .collection-pack-count { font-size: 10px; }
+    .collection-pack-count { font-size: 10px; }
+    .career-wallet { grid-template-columns: 1fr; justify-items: start; }
+    /* One series per row on phones, so names stay readable beside their Rip button. */
+    .collection-packs { grid-template-columns: 1fr; }
+    .kit-option { grid-template-columns: 1fr; }
+    .kit-option-fan { grid-row: auto; height: 118px; }
+    .kit-option-fan img { width: 70px; }
+    .kit-requisition { padding: 20px 16px; }
+    .kit-requisition-later { width: 100%; }
     .daily-filing-print { width: min(48vw, 180px); }
     .collection-view-toggle { justify-self: stretch; }
     .collection-view-toggle button { flex: 1 1 50%; padding: 0 8px; }
@@ -144,5 +176,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .library-card--printed .library-card-print::after { display: none; }
+  .kit-option-fan img { transition: none; }
 }
 :root[data-motion="reduced"] .library-card--printed .library-card-print::after { display: none; }
+:root[data-motion="reduced"] .kit-option-fan img { transition: none; }

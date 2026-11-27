@@ -919,6 +919,20 @@
           }
         }
       ]
+    },
+    {
+      "id": "cardPool",
+      "type": "catalog-id-list",
+      "label": "Card pool",
+      "default": null,
+      "description": "The cards this table plays with, as Catalog IDs: the union of the seated players' collections (content/packs.json). Only the pooled decks below are filtered; Starter, Character and Boss Arsenal cards are always in play. Empty (null): the full catalog, which is Open Dojo and the default for tests and simulations.",
+      "pooledDecks": [
+        "Technique Deck",
+        "Item Deck",
+        "Combo Deck",
+        "Location Deck",
+        "Boss Profile Deck"
+      ]
     }
   ]
 }
