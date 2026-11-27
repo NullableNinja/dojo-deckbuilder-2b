@@ -9,8 +9,8 @@
   .pack-ceremony-head h2 { margin: 0; font: 400 clamp(30px, 4vw, 46px)/1 var(--pf-display); text-transform: uppercase; }
   .pack-ceremony-head p { margin: 6px 0 0; color: var(--pf-ink-soft); font-size: 15px; }
 
-  .pack-ceremony-stage { position: relative; min-height: 0; display: grid; place-items: center; overflow: auto; padding: 22px 26px 30px; }
-  .pack-fan { width: 100%; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 168px)); justify-content: center; gap: 14px; margin: 0; padding: 0; list-style: none; perspective: 1200px; }
+  .pack-ceremony-stage { position: relative; min-height: 0; display: grid; place-items: start center; overflow: auto; padding: 22px 26px 44px; }
+  .pack-fan { width: 100%; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 168px)); justify-content: center; gap: 14px; margin: auto 0; padding: 0; list-style: none; perspective: 1200px; }
   .pack-card { display: grid; gap: 8px; justify-items: center; transform: rotate(calc(var(--offset) * 2deg)) translateY(calc(var(--offset) * var(--offset) * 4px)); animation: pf-pack-fan .45s cubic-bezier(.2, .9, .3, 1.15) backwards; animation-delay: calc(.35s + var(--i) * .05s); }
   .pack-card-inner { position: relative; width: 100%; aspect-ratio: 11 / 15; display: block; transform-style: preserve-3d; animation: pf-pack-flip .5s cubic-bezier(.3, .7, .2, 1) backwards; animation-delay: calc(.6s + var(--i) * .12s); }
   .pack-card-front, .pack-card-back { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 7px; backface-visibility: hidden; }
@@ -18,7 +18,7 @@
   .pack-card-back { display: grid; place-items: center; align-content: center; gap: 6px; border: 3px solid var(--pf-surface-raised); color: var(--pf-brass-on-ink); background: repeating-linear-gradient(45deg, rgba(255, 250, 240, .05) 0 6px, transparent 6px 12px), var(--pf-ink-panel); box-shadow: 0 0 0 1px var(--pf-line-strong), 4px 6px 0 rgba(0, 0, 0, .22); transform: rotateY(180deg); }
   .pack-card-back b { font: 400 18px/1 var(--pf-display); letter-spacing: .06em; text-transform: uppercase; }
   .pack-card-back small { font: 700 10px/1 var(--pf-label); letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
-  .pack-card-name { max-width: 100%; color: var(--pf-ink); font: 400 15px/1.05 var(--pf-display); text-align: center; text-transform: uppercase; animation: pf-ceremony-fade .3s ease-out backwards; animation-delay: calc(.95s + var(--i) * .12s); }
+  .pack-card-name { max-width: 100%; color: var(--pf-ink); font: 400 14px/1.1 var(--pf-display); text-align: center; text-wrap: balance; overflow-wrap: anywhere; text-transform: uppercase; animation: pf-ceremony-fade .3s ease-out backwards; animation-delay: calc(.95s + var(--i) * .12s); }
 
   .pack-wrapper { position: absolute; inset: 18px 50% auto auto; z-index: 3; width: min(250px, 60%); aspect-ratio: 11 / 15; translate: 50% 0; pointer-events: none; }
   .pack-wrapper-top, .pack-wrapper-body { position: absolute; inset: 0; border-radius: 8px; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 6px), linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); box-shadow: 0 14px 20px rgba(0, 0, 0, .25); }
