@@ -1,7 +1,7 @@
 import { attackPower, chooseAttack, chooseDefense, choosePractice, choosePurchase, cost, focus, guard } from "./bots.mjs";
 import { comboTimingAllows, comboContext, comboEffects, evaluateCombo } from "./combo-runtime.mjs";
 import { CHARACTER_ABILITIES, ZONE_GRANT_SPENT_ON_ELIGIBLE_ATTACK, characterZoneGrants } from "./character-abilities.mjs";
-import { effectiveDefinition, resolveTableOptions, tableOption, tableOptionsAreDefault } from "./table-options.mjs";
+import { effectiveDefinition, pooledDecks, resolveTableOptions, tableOption, tableOptionsAreDefault } from "./table-options.mjs";
 
 export class Rng {
   constructor(seed = 1) { this.seed = Number(seed) || 1; this.state = this.seed >>> 0; }
@@ -218,6 +218,7 @@ export class Game {
     // Table options (definition.tableOptions) are resolved first: house rules can change the definition.
     this.tableOptions = resolveTableOptions(data.definition, table);
     this.definition = effectiveDefinition(data.definition, this.tableOptions);
+    this.cardPool = this.resolveCardPool(this.tableOptions.cardPool);
     this.mode = resolveMode(this.definition, mode);
     // Quick Duel keeps its certified headless behaviour bit-for-bit (seat-order Speed ties,
     // HP-then-random round cap, game ends on the KO). See docs/game-modes-design.md.
@@ -259,17 +260,38 @@ export class Game {
     }
     this.marketDeck = this.rng.shuffle(this.marketPool().map((card) => this.cardInstance(card)));
     this.marketDiscard = []; this.market = []; this.dealOpeningMarket();
-    this.comboDeck = this.rng.shuffle(data.cards.filter((card) => card.deck === "Combo Deck").map((card) => this.cardInstance(card)));
+    this.comboDeck = this.rng.shuffle(data.cards.filter((card) => card.deck === "Combo Deck" && this.inCardPool(card)).map((card) => this.cardInstance(card)));
     this.comboDiscard = [];
-    this.locationDeck = this.rng.shuffle(data.cards.filter((card) => card.cardType === "Location").map((card) => this.cardInstance(card)));
+    this.locationDeck = this.rng.shuffle(data.cards.filter((card) => card.cardType === "Location" && this.inCardPool(card)).map((card) => this.cardInstance(card)));
     this.locationDiscard = []; this.currentLocation = null; this.sceneChangedThisRound = false;
     if (this.tableOptions.locations) this.revealLocation(); else this.fixLocation();
   }
 
   // ---- Table setup (definition.tableOptions) -------------------------------------------
-  /** Market cards for this table: every card in the Market decks. */
+  /**
+   * The card pool option as a lookup: null plays the full catalog. A pool names the cards of the
+   * pooled decks (definition.tableOptions cardPool.pooledDecks) that this table may use; it must
+   * name real cards and still fill the opening Market row.
+   */
+  resolveCardPool(catalogIds) {
+    if (!catalogIds) return null;
+    const known = new Set(this.data.cards.map((card) => card.catalogId));
+    const unknown = catalogIds.find((catalogId) => !known.has(catalogId));
+    if (unknown) throw new Error(`Card pool names unknown card ${unknown}`);
+    const pool = { ids: new Set(catalogIds), decks: new Set(pooledDecks(this.definition)) };
+    const market = this.data.cards.filter((card) => this.definition.economy.market.decks.includes(card.deck) && (!pool.decks.has(card.deck) || pool.ids.has(card.catalogId)));
+    if (market.length < this.definition.economy.market.rowSize) throw new Error(`Card pool holds ${market.length} Market cards; the Market row needs ${this.definition.economy.market.rowSize}`);
+    return pool;
+  }
+
+  /** True when a card may be used at this table: no pool, a deck the pool does not filter, or a pooled card. */
+  inCardPool(card) {
+    return !this.cardPool || !this.cardPool.decks.has(card.deck) || this.cardPool.ids.has(card.catalogId);
+  }
+
+  /** Market cards for this table: every card in the Market decks that is in the card pool. */
   marketPool() {
-    return this.data.cards.filter((card) => this.definition.economy.market.decks.includes(card.deck));
+    return this.data.cards.filter((card) => this.definition.economy.market.decks.includes(card.deck) && this.inCardPool(card));
   }
 
   /** The opening row. A balanced Market first pulls one affordable card of each guaranteed kind, in draw order. */
