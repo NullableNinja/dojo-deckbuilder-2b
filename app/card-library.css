@@ -47,6 +47,15 @@
   .collection-pack-name b { overflow: hidden; font: 400 15px/1.1 var(--pf-display); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
   .collection-pack-name small { color: var(--pf-muted); font-size: 11px; }
   .collection-pack--roster { border-left: 3px solid var(--pf-action); }
+  /* Preview: a whole-catalog moment and a per-series pack rip. */
+  .collection-preview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; border: 1px dashed var(--pf-manila-deep); border-radius: 4px; padding: 12px; background: color-mix(in srgb, var(--pf-manila) 16%, var(--pf-surface)); }
+  .collection-preview-actions p { flex: 1 1 220px; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.4; }
+  .collection-preview-actions .button:disabled { cursor: default; opacity: .5; transform: none; box-shadow: none; }
+  .collection-packs li.has-rip { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .collection-packs li.has-rip .collection-pack { border-right: 0; border-radius: 3px 0 0 3px; }
+  .collection-rip { min-width: 70px; min-height: 44px; border: 1px solid var(--pf-manila-deep); border-radius: 0 3px 3px 0; padding: 0 10px; color: var(--pf-manila-ink); background: linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); font: 700 13px/1.05 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; border-left: 2px dashed var(--pf-manila-ink); cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+  .collection-rip:hover:not(:disabled) { filter: brightness(1.06); transform: translateX(2px); }
+  .collection-rip:disabled { color: var(--pf-muted); background: var(--pf-surface-dim); border-color: var(--pf-line); cursor: default; }
   .collection-pack-count { color: var(--pf-ink-soft); font-family: var(--pf-mono); font-size: 11px; }
   .collection-pack .collection-meter { grid-column: 1 / -1; }
   .collection-pack.is-locked { border-style: dashed; }
@@ -115,6 +124,15 @@
     .collection-pack-name b { font-size: 13px; }
     .collection-pack-name small { display: none; }
     .collection-pack--roster { border-left: 3px solid var(--pf-action); }
+  /* Preview: a whole-catalog moment and a per-series pack rip. */
+  .collection-preview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; border: 1px dashed var(--pf-manila-deep); border-radius: 4px; padding: 12px; background: color-mix(in srgb, var(--pf-manila) 16%, var(--pf-surface)); }
+  .collection-preview-actions p { flex: 1 1 220px; margin: 0; color: var(--pf-ink-soft); font-size: 13px; line-height: 1.4; }
+  .collection-preview-actions .button:disabled { cursor: default; opacity: .5; transform: none; box-shadow: none; }
+  .collection-packs li.has-rip { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .collection-packs li.has-rip .collection-pack { border-right: 0; border-radius: 3px 0 0 3px; }
+  .collection-rip { min-width: 70px; min-height: 44px; border: 1px solid var(--pf-manila-deep); border-radius: 0 3px 3px 0; padding: 0 10px; color: var(--pf-manila-ink); background: linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); font: 700 13px/1.05 var(--pf-label); letter-spacing: .06em; text-transform: uppercase; border-left: 2px dashed var(--pf-manila-ink); cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+  .collection-rip:hover:not(:disabled) { filter: brightness(1.06); transform: translateX(2px); }
+  .collection-rip:disabled { color: var(--pf-muted); background: var(--pf-surface-dim); border-color: var(--pf-line); cursor: default; }
   .collection-pack-count { font-size: 10px; }
     .daily-filing-print { width: min(48vw, 180px); }
     .collection-view-toggle { justify-self: stretch; }

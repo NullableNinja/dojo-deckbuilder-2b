@@ -772,7 +772,7 @@ body:has(.universal-card-inspector-backdrop) {
 
 /* Dossier moments (Card Library) ---------------------------------------------
    The printed card flips in, a FILED stamp lands when it joins the Dojo Binder,
-   and a preview-only sealed envelope can cover it. All instant under reduced motion. */
+   and a preview-only sealed envelope can cover it (its button opens the series pack). Instant under reduced motion. */
 .card-inspector-print { position: relative; display: block; width: 100%; }
 .card-inspector-print.is-revealing { transform-origin: 50% 60%; animation: pf-dossier-reveal .5s cubic-bezier(.2, .8, .25, 1) backwards; }
 .card-inspector-filed {
@@ -836,18 +836,14 @@ body:has(.universal-card-inspector-backdrop) {
 .dossier-envelope-label b { border: 3px solid var(--pf-action-deep); padding: 6px 14px; color: var(--pf-action-deep); font: 400 34px/1 var(--pf-impact); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-5deg); }
 .dossier-envelope-label span { font: 700 14px/1.2 var(--pf-label); letter-spacing: .08em; text-transform: uppercase; }
 .dossier-envelope .button small { font-weight: 600; opacity: .85; }
-.dossier-envelope.is-opening { pointer-events: none; animation: pf-envelope-away .62s cubic-bezier(.4, 0, .2, 1) forwards; }
-.dossier-envelope.is-opening .dossier-envelope-flap { animation: pf-envelope-flap .32s ease-in forwards; }
 
 @keyframes pf-dossier-reveal { from { opacity: 0; transform: perspective(1100px) rotateY(-68deg) translateY(10px) scale(.94); } 65% { opacity: 1; transform: perspective(1100px) rotateY(5deg); } to { opacity: 1; transform: none; } }
 @keyframes pf-filed-slam { 0% { opacity: 0; transform: rotate(22deg) scale(1.9); } 60% { opacity: 1; transform: rotate(7deg) scale(.94); } 100% { opacity: 1; transform: rotate(9deg) scale(1); } }
-@keyframes pf-envelope-flap { to { transform: perspective(700px) rotateX(-180deg); opacity: .6; } }
-@keyframes pf-envelope-away { 0%, 40% { transform: none; opacity: 1; } 100% { transform: translateY(70%) rotate(3deg); opacity: 0; } }
 
 @media (max-width: 980px) {
   .related-filings ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card-inspector-print.is-revealing, .card-inspector-filed.is-fresh, .dossier-envelope.is-opening, .dossier-envelope.is-opening .dossier-envelope-flap { animation: none; }
+  .card-inspector-print.is-revealing, .card-inspector-filed.is-fresh { animation: none; }
 }
-:root[data-motion="reduced"] :is(.card-inspector-print.is-revealing, .card-inspector-filed.is-fresh, .dossier-envelope.is-opening, .dossier-envelope.is-opening .dossier-envelope-flap) { animation: none; }
+:root[data-motion="reduced"] :is(.card-inspector-print.is-revealing, .card-inspector-filed.is-fresh) { animation: none; }

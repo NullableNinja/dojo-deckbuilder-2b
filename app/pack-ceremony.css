@@ -1,0 +1,61 @@
+/* Pack-opening ceremony: the manila wrapper tears, five cards fan out and flip in a cascade.
+   Timing: tear 0–.5s, fan from .35s, flips .55s + .12s per card. Reduced motion skips straight to the end. */
+
+@layer components {
+  .pack-ceremony-backdrop { position: fixed; inset: 0; z-index: 14000; display: grid; place-items: center; padding: 16px; background: var(--pf-scrim); backdrop-filter: blur(8px); }
+  .pack-ceremony { position: relative; width: min(980px, 100%); max-height: calc(100vh - 32px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--pf-line-strong); border-top: 6px solid var(--pf-action); border-radius: 6px; color: var(--pf-ink); background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--pf-brass) 16%, transparent), transparent 62%), var(--pf-surface-raised); box-shadow: 10px 12px 0 var(--pf-stage-edge), var(--pf-shadow-lifted); animation: pf-ceremony-in .22s ease-out; }
+  .pack-ceremony-head { padding: 22px 26px 6px; text-align: center; }
+  .pack-ceremony-head .eyebrow { margin-bottom: 4px; }
+  .pack-ceremony-head h2 { margin: 0; font: 400 clamp(30px, 4vw, 46px)/1 var(--pf-display); text-transform: uppercase; }
+  .pack-ceremony-head p { margin: 6px 0 0; color: var(--pf-ink-soft); font-size: 15px; }
+
+  .pack-ceremony-stage { position: relative; min-height: 0; display: grid; place-items: center; overflow: auto; padding: 22px 26px 30px; }
+  .pack-fan { width: 100%; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 168px)); justify-content: center; gap: 14px; margin: 0; padding: 0; list-style: none; perspective: 1200px; }
+  .pack-card { display: grid; gap: 8px; justify-items: center; transform: rotate(calc(var(--offset) * 2deg)) translateY(calc(var(--offset) * var(--offset) * 4px)); animation: pf-pack-fan .45s cubic-bezier(.2, .9, .3, 1.15) backwards; animation-delay: calc(.35s + var(--i) * .05s); }
+  .pack-card-inner { position: relative; width: 100%; aspect-ratio: 11 / 15; display: block; transform-style: preserve-3d; animation: pf-pack-flip .5s cubic-bezier(.3, .7, .2, 1) backwards; animation-delay: calc(.6s + var(--i) * .12s); }
+  .pack-card-front, .pack-card-back { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 7px; backface-visibility: hidden; }
+  .pack-card-front { object-fit: contain; filter: drop-shadow(4px 6px 0 rgba(0, 0, 0, .22)); }
+  .pack-card-back { display: grid; place-items: center; align-content: center; gap: 6px; border: 3px solid var(--pf-surface-raised); color: var(--pf-brass-on-ink); background: repeating-linear-gradient(45deg, rgba(255, 250, 240, .05) 0 6px, transparent 6px 12px), var(--pf-ink-panel); box-shadow: 0 0 0 1px var(--pf-line-strong), 4px 6px 0 rgba(0, 0, 0, .22); transform: rotateY(180deg); }
+  .pack-card-back b { font: 400 18px/1 var(--pf-display); letter-spacing: .06em; text-transform: uppercase; }
+  .pack-card-back small { font: 700 10px/1 var(--pf-label); letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+  .pack-card-name { max-width: 100%; color: var(--pf-ink); font: 400 15px/1.05 var(--pf-display); text-align: center; text-transform: uppercase; animation: pf-ceremony-fade .3s ease-out backwards; animation-delay: calc(.95s + var(--i) * .12s); }
+
+  .pack-wrapper { position: absolute; inset: 18px 50% auto auto; z-index: 3; width: min(250px, 60%); aspect-ratio: 11 / 15; translate: 50% 0; pointer-events: none; }
+  .pack-wrapper-top, .pack-wrapper-body { position: absolute; inset: 0; border-radius: 8px; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .03) 0 1px, transparent 1px 6px), linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); box-shadow: 0 14px 20px rgba(0, 0, 0, .25); }
+  .pack-wrapper-top { clip-path: polygon(0 0, 100% 0, 100% 17%, 92% 21%, 84% 16%, 76% 21%, 68% 16%, 60% 21%, 52% 16%, 44% 21%, 36% 16%, 28% 21%, 20% 16%, 12% 21%, 4% 16%, 0 19%); animation: pf-pack-tear-top .5s cubic-bezier(.5, 0, .7, .4) forwards; }
+  .pack-wrapper-body { display: grid; place-items: center; align-content: center; gap: 8px; padding: 20px; color: var(--pf-manila-ink); text-align: center; clip-path: polygon(0 19%, 4% 16%, 12% 21%, 20% 16%, 28% 21%, 36% 16%, 44% 21%, 52% 16%, 60% 21%, 68% 16%, 76% 21%, 84% 16%, 92% 21%, 100% 17%, 100% 100%, 0 100%); animation: pf-pack-tear-body .55s .12s cubic-bezier(.5, 0, .7, .4) forwards; }
+  .pack-wrapper-body b { border: 3px solid var(--pf-action-deep); padding: 6px 10px; color: var(--pf-action-deep); font: 400 20px/1 var(--pf-impact); text-transform: uppercase; transform: rotate(-5deg); }
+  .pack-wrapper-body small { font: 700 12px/1.2 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+
+  .pack-ceremony-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; border-top: 1px solid var(--pf-line); padding: 14px 26px 18px; background: var(--pf-surface); }
+  .pack-ceremony-actions > span { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 11px; text-transform: uppercase; }
+  .pack-ceremony-actions > div { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  @keyframes pf-ceremony-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes pf-ceremony-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pf-pack-tear-top { 0% { transform: none; } 35% { transform: translate(-4px, -6px) rotate(-3deg); } 100% { opacity: 0; transform: translate(-40px, -140px) rotate(-24deg); } }
+  @keyframes pf-pack-tear-body { 0% { transform: none; } 100% { opacity: 0; transform: translateY(160px) rotate(4deg); } }
+  @keyframes pf-pack-fan { from { opacity: 0; transform: translateX(calc(var(--offset) * -100%)) translateY(30px) scale(.86) rotate(0deg); } to { opacity: 1; } }
+  @keyframes pf-pack-flip { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+
+  /* The grid's "Break every seal" wave: each sealed tile's envelope lifts away in turn. */
+  .library-card.is-unsealing .library-envelope { animation: pf-envelope-lift .5s cubic-bezier(.4, 0, .2, 1) forwards; animation-delay: calc(var(--deal, 0) * 40ms); }
+  @keyframes pf-envelope-lift { 0% { transform: none; opacity: 1; } 30% { transform: translateY(-6px) rotate(-1deg); } 100% { transform: translateY(-110%) rotate(-6deg); opacity: 0; } }
+}
+
+@layer responsive {
+  @media (max-width: 700px) {
+    .pack-fan { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 10px; }
+    .pack-card { width: calc(33.333% - 7px); transform: none; }
+    .pack-ceremony-head { padding: 18px 16px 4px; }
+    .pack-ceremony-stage { padding: 14px 14px 8px; }
+    .pack-card-name { font-size: 13px; }
+    .pack-ceremony-actions { padding: 12px 16px 16px; }
+    .pack-ceremony-actions > div, .pack-ceremony-actions .button { flex: 1 1 auto; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pack-ceremony, .pack-card, .pack-card-inner, .pack-card-name, .library-card.is-unsealing .library-envelope { animation: none; }
+}
+:root[data-motion="reduced"] :is(.pack-ceremony, .pack-card, .pack-card-inner, .pack-card-name, .library-card.is-unsealing .library-envelope) { animation: none; }

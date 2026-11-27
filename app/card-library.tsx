@@ -2,7 +2,8 @@
 // Presentation only. Ownership comes from app/collection.ts; card data from app/data/cards.json.
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import cardsJson from "./data/cards.json";
-import { COLLECTION_STATUS, isUnlockable, readCollection, sourceFor, sourceProgress, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
+import { COLLECTION_STATUS, drawPreviewPack, isUnlockable, readCollection, sourceFor, sourceProgress, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
+import { PackCeremony } from "./pack-ceremony";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import { prefersReducedMotion, usePaperToast } from "./paper-toast-context";
 import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
@@ -83,11 +84,11 @@ function SealedFlap({ source }: { source?: UnlockSource }) {
   return <span className={`library-envelope library-envelope--${source?.kind ?? "booster"}`} aria-hidden="true"><span className="library-envelope-flap" /><b>{sealWord(source)}</b><small>{source?.name}</small></span>;
 }
 
-function CardTile({ card, art, saved, sealed, index, onOpen }: { card: CardEntry; art: CardArt; saved: boolean; sealed: boolean; index: number; onOpen: () => void }) {
+function CardTile({ card, art, saved, sealed, unsealing, index, onOpen }: { card: CardEntry; art: CardArt; saved: boolean; sealed: boolean; unsealing: boolean; index: number; onOpen: () => void }) {
   const source = sourceFor(card.catalogId);
   const status = sealed ? `${sealWord(source)}. ${source?.kind === "roster" ? "Unlocks by playing" : `Found in ${source?.name}`}.` : "";
   const style = { "--deal": index % PAGE_SIZE } as CSSProperties;
-  const classes = `library-card paper-stack interactive-paper ${typeClassFor(card)}${sealed ? " is-sealed" : ""}`;
+  const classes = `library-card paper-stack interactive-paper ${typeClassFor(card)}${sealed ? " is-sealed" : ""}${sealed && unsealing ? " is-unsealing" : ""}`;
   const savedStar = saved && <span className="binder-star" aria-hidden="true" title="Saved in Dojo Binder">★</span>;
   const label = `${card.name}, ${card.cardType}, ${source?.name ?? "Standard issue"}.${saved ? " Saved in Dojo Binder." : ""} ${status} Open card details.`;
   const foot = <span className="library-card-foot"><OriginTag card={card} compact /><span className="open-card" aria-hidden="true">View →</span></span>;
@@ -133,7 +134,17 @@ function DailyFiling({ card, art, onOpen, onRandom }: { card: CardEntry; art: Ca
   </section>;
 }
 
-function CollectionLedger({ snapshot, sourceFilter, onView, onSource }: { snapshot: CollectionSnapshot; sourceFilter: string; onView: (view: CollectionView) => void; onSource: (sourceId: string) => void }) {
+type LedgerActions = {
+  sealedIn: (source: UnlockSource) => number;
+  anySealed: boolean;
+  anyUnsealed: boolean;
+  onRip: (source: UnlockSource) => void;
+  onBreakAll: () => void;
+  onReseal: () => void;
+};
+
+function CollectionLedger({ snapshot, sourceFilter, onView, onSource, actions }: { snapshot: CollectionSnapshot; sourceFilter: string; onView: (view: CollectionView) => void; onSource: (sourceId: string) => void; actions: LedgerActions }) {
+  const preview = snapshot.view === "recruit-preview";
   const progress = useMemo(() => sourceProgress(snapshot), [snapshot]);
   const owned = progress.reduce((sum, entry) => sum + entry.owned, 0);
   const total = progress.reduce((sum, entry) => sum + entry.total, 0);
@@ -151,16 +162,21 @@ function CollectionLedger({ snapshot, sourceFilter, onView, onSource }: { snapsh
       <button type="button" aria-pressed={snapshot.view === "open-dojo"} onClick={() => onView("open-dojo")}>Open Dojo</button>
       <button type="button" aria-pressed={snapshot.view === "recruit-preview"} onClick={() => onView("recruit-preview")}>Preview new recruit</button>
     </div>
+    {preview && <div className="collection-preview-actions">
+      <button type="button" className="button primary" onClick={actions.onBreakAll} disabled={!actions.anySealed}>Break every seal</button>
+      <button type="button" className="button ghost" onClick={actions.onReseal} disabled={!actions.anyUnsealed}>Re-seal everything</button>
+      <p>Or rip open a pack from any booster series below. Preview only: nothing is saved.</p>
+    </div>}
     <div className="collection-total" aria-label={`${owned} of ${total} unlockable cards owned`}>
       <b>{owned}</b><span>/ {total} unlockable cards · earned by playing, never sold</span>
       <span className="collection-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></span>
     </div>
     <ul className="collection-packs" aria-label="Packs, series and rosters">
-      {progress.map(({ source, owned: sourceOwned, total: sourceTotal, locked }) => <li key={source.id}><button type="button" className={`collection-pack collection-pack--${source.kind}${locked ? " is-locked" : ""}`} aria-pressed={sourceFilter === source.id} onClick={() => onSource(source.id)} title={source.tagline}>
+      {progress.map(({ source, owned: sourceOwned, total: sourceTotal, locked }) => <li key={source.id} className={preview && source.kind === "booster" ? "has-rip" : undefined}><button type="button" className={`collection-pack collection-pack--${source.kind}${locked ? " is-locked" : ""}`} aria-pressed={sourceFilter === source.id} onClick={() => onSource(source.id)} title={source.tagline}>
         <span className="collection-pack-name"><b>{source.name}</b><small>{sourceMeta(source, locked)}</small></span>
         <span className="collection-pack-count">{sourceOwned}/{sourceTotal}</span>
         <span className="collection-meter" aria-hidden="true"><i style={{ width: `${(sourceOwned / sourceTotal) * 100}%` }} /></span>
-      </button></li>)}
+      </button>{preview && source.kind === "booster" && <button type="button" className="collection-rip" onClick={() => actions.onRip(source)} disabled={!actions.sealedIn(source)} aria-label={actions.sealedIn(source) ? `Rip open a ${source.name} pack` : `${source.name} is fully open`}>{actions.sealedIn(source) ? <>Rip a pack</> : <>Open</>}</button>}</li>)}
     </ul>
   </section>;
 }
@@ -187,24 +203,12 @@ function RelatedFilings({ cards, art, onOpen }: { cards: CardEntry[]; art: CardA
   </section>;
 }
 
-function SealedEnvelope({ card, onBreak }: { card: CardEntry; onBreak: () => void }) {
-  const [opening, setOpening] = useState(false);
+function SealedEnvelope({ card, onRip }: { card: CardEntry; onRip?: () => void }) {
   const source = sourceFor(card.catalogId);
-  const envelopeRef = useRef<HTMLDivElement>(null);
-  const breakSeal = () => {
-    if (opening) return;
-    setOpening(true);
-    const stage = envelopeRef.current?.parentElement;
-    window.setTimeout(() => {
-      onBreak();
-      // The button that had focus is gone; hand focus to the next control on the card (the binder star).
-      window.requestAnimationFrame(() => stage?.querySelector<HTMLElement>("button")?.focus({ preventScroll: true }));
-    }, prefersReducedMotion() ? 0 : 620);
-  };
-  return <div ref={envelopeRef} className={`dossier-envelope${opening ? " is-opening" : ""}`}>
+  return <div className="dossier-envelope">
     <span className="dossier-envelope-flap" aria-hidden="true" />
     <span className="dossier-envelope-label"><small>Department of Competitive Safety</small><b>{sealWord(source)}</b><span>{source?.name} · {sourceMeta(source)}</span></span>
-    <button type="button" className="button primary" onClick={breakSeal}>Break the seal <small>(preview)</small></button>
+    {onRip && <button type="button" className="button primary" onClick={onRip}>Rip open a {source?.name} pack</button>}
   </div>;
 }
 
@@ -217,16 +221,19 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
   const [binderOnly, setBinderOnly] = useState(false);
   const [moreFilters, setMoreFilters] = useState(false);
   const [view, setView] = useState<CollectionView>("open-dojo");
-  const [peeked, setPeeked] = useState<Set<string>>(() => new Set());
+  const [unsealed, setUnsealed] = useState<Set<string>>(() => new Set());
+  const [unsealing, setUnsealing] = useState(false);
+  const [ceremony, setCeremony] = useState<{ source: UnlockSource; catalogIds: string[]; number: number } | null>(null);
   const { savedIds, toggle } = useBinder();
   const pushToast = usePaperToast();
   const gridRef = useRef<HTMLElement>(null);
   const snapshot = readCollection(view);
-  const isSealed = (card: CardEntry) => isUnlockable(card.catalogId) && !snapshot.owns(card.catalogId) && !peeked.has(card.catalogId);
+  const isSealedId = (catalogId: string) => isUnlockable(catalogId) && !snapshot.owns(catalogId) && !unsealed.has(catalogId);
+  const isSealed = (card: CardEntry) => isSealedId(card.catalogId);
   const ownershipNote = (card: CardEntry) => {
     if (snapshot.view === "open-dojo") return "On loan in Open Dojo.";
     if (snapshot.owns(card.catalogId)) return "Issued to a new recruit.";
-    return peeked.has(card.catalogId) ? "Peeked at, not collected." : "Sealed in this preview.";
+    return unsealed.has(card.catalogId) ? "Unsealed in this preview, not collected." : "Sealed in this preview.";
   };
   const featured = useMemo(() => pickBySeed(ALL_CARDS.filter((card) => hasArt(card) && isFeaturable(card)), dayNumber()), [hasArt]);
   const activeCard = cardId ? ALL_CARDS.find((card) => card.catalogId.toLocaleLowerCase() === cardId.toLocaleLowerCase()) ?? null : null;
@@ -282,7 +289,8 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
   const changeView = (next: CollectionView) => {
     if (next === view) return;
     setView(next);
-    setPeeked(new Set());
+    setUnsealed(new Set());
+    setCeremony(null);
     pushToast(next === "open-dojo"
       ? { kind: "note", eyebrow: "Collection ledger", title: "Open Dojo restored", message: "Every card is on loan again.", duration: 2600 }
       : { kind: "stamp", eyebrow: "Preview only", title: "New recruit view", message: "Sealed envelopes and classified files show what a new profile would not own yet. Nothing is locked or saved.", duration: 4200 });
@@ -292,15 +300,43 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
     restartPaging();
     window.requestAnimationFrame(() => gridRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" }));
   };
-  const breakSeal = (card: CardEntry) => {
-    setPeeked((current) => new Set(current).add(card.catalogId));
-    pushToast({ kind: "stamp", eyebrow: "Preview only", title: "Seal broken", message: `${card.name} was peeked at, not collected.`, duration: 2800 });
+  // Opening a pack unseals its cards first, then plays the ceremony over the grid.
+  const ripPack = (source: UnlockSource, mustInclude?: string) => {
+    const catalogIds = drawPreviewPack(source, isSealedId, mustInclude);
+    if (!catalogIds.length) return;
+    setUnsealed((current) => new Set([...current, ...catalogIds]));
+    setCeremony((current) => ({ source, catalogIds, number: current?.source.id === source.id ? current.number + 1 : 1 }));
   };
+  const ripFromDossier = (card: CardEntry) => {
+    const source = sourceFor(card.catalogId);
+    if (!source) return;
+    closeCard();
+    ripPack(source, card.catalogId);
+  };
+  const breakEverySeal = () => {
+    const everything = new Set(UNLOCK_SOURCES.flatMap((source) => source.catalogIds));
+    const finish = () => { setUnsealed(everything); setUnsealing(false); };
+    pushToast({ kind: "stamp", eyebrow: "Preview only", title: "Every seal broken", message: "The whole catalog is open for this visit. Re-seal to start over.", duration: 3200 });
+    if (prefersReducedMotion()) return finish();
+    setUnsealing(true);
+    window.setTimeout(finish, PAGE_SIZE * 40 + 520);
+  };
+  const ledgerActions: LedgerActions = {
+    sealedIn: (source) => source.catalogIds.filter(isSealedId).length,
+    anySealed: UNLOCK_SOURCES.some((source) => source.catalogIds.some(isSealedId)),
+    anyUnsealed: unsealed.size > 0,
+    onRip: (source) => ripPack(source),
+    onBreakAll: breakEverySeal,
+    onReseal: () => setUnsealed(new Set()),
+  };
+  // The ledger counts cards unsealed in this preview as held, so the meters fill as packs are opened.
+  const previewSnapshot: CollectionSnapshot = { ...snapshot, owns: (catalogId) => snapshot.owns(catalogId) || unsealed.has(catalogId) };
+  const ceremonyRemaining = ceremony ? ceremony.source.catalogIds.filter(isSealedId).length : 0;
 
   return <main className="page-shell shell card-library-page"><SectionHeader eyebrow="Card Library" title={`${cardData.total} cards. One awkward curriculum.`} intro="Search the complete Core catalog by ID, deck, type, rules text, or Focus Cost. The 500-card main pool excludes Starter, Character, and Boss-module cards." art={headerArt} />
     <div className="library-desk">
       <DailyFiling card={featured} art={art} onOpen={() => openCard(featured)} onRandom={openRandom} />
-      <CollectionLedger snapshot={snapshot} sourceFilter={sourceFilter} onView={changeView} onSource={chooseSource} />
+      <CollectionLedger snapshot={previewSnapshot} sourceFilter={sourceFilter} onView={changeView} onSource={chooseSource} actions={ledgerActions} />
     </div>
     <section className={`library-controls${moreFilters ? " is-expanded" : ""}`} aria-label="Search and filter cards">
       <div className="library-control library-search-control"><label htmlFor="card-library-search">Search</label><div className="search-box"><span aria-hidden="true">⌕</span><input id="card-library-search" value={query} onChange={(event) => { setQuery(event.target.value); restartPaging(); }} placeholder="ID, name, rules, tag…" />{query && <button type="button" onClick={() => setQuery("")} aria-label="Clear card search">×</button>}</div></div>
@@ -316,7 +352,7 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
     <div className="binder-strip"><button type="button" className={`binder-toggle${binderOnly ? " is-saved" : ""}`} aria-pressed={binderOnly} onClick={() => { setBinderOnly((current) => !current); restartPaging(); }}><span aria-hidden="true">{binderOnly ? "★" : "☆"}</span> Dojo Binder <b>{savedIds.size}</b></button><p>Saved on this device only. Open a card to add or remove it.</p></div>
     <div className="type-filters" role="group" aria-label="Filter by card type">{[ALL, ...Object.keys(cardData.counts)].map((entry) => <button type="button" aria-pressed={type === entry} className={type === entry ? "active" : ""} onClick={() => { setType(entry); resetSecondaryFilters(); restartPaging(); }} key={entry}>{entry}<span>{entry === ALL ? cardsInScope.length : typeCounts[entry] ?? 0}</span></button>)}</div>
     <div className="result-line" aria-live="polite"><p><strong>{filtered.length}</strong> results{activeSource && <span className="result-pack-chip">in {activeSource.name} <button type="button" onClick={() => setSourceFilter("")} aria-label={`Clear ${activeSource.name} filter`}>×</button></span>}</p>{filtersActive && <button type="button" onClick={resetFilters}>Reset filters</button>}</div>
-    {filtered.length ? <><section ref={gridRef} className="card-grid" aria-label="Cards">{filtered.slice(0, visible).map((card, index) => <CardTile key={card.id} card={card} art={art} index={index} saved={savedIds.has(card.catalogId)} sealed={isSealed(card)} onOpen={() => openCard(card)} />)}</section>{visible < filtered.length && <button type="button" className="button load-more" onClick={() => setVisible((count) => count + PAGE_SIZE)}>Load {PAGE_SIZE} more <span>{filtered.length - visible} remaining</span></button>}</> : <div className="empty-state"><strong>No cards match that search.</strong><p>Clear a filter or try a broader rules term.</p><button type="button" className="button ghost" onClick={resetFilters}>Reset filters</button></div>}
+    {filtered.length ? <><section ref={gridRef} className="card-grid" aria-label="Cards">{filtered.slice(0, visible).map((card, index) => <CardTile key={card.id} card={card} art={art} index={index} saved={savedIds.has(card.catalogId)} sealed={isSealed(card)} unsealing={unsealing} onOpen={() => openCard(card)} />)}</section>{visible < filtered.length && <button type="button" className="button load-more" onClick={() => setVisible((count) => count + PAGE_SIZE)}>Load {PAGE_SIZE} more <span>{filtered.length - visible} remaining</span></button>}</> : <div className="empty-state"><strong>No cards match that search.</strong><p>Clear a filter or try a broader rules term.</p><button type="button" className="button ghost" onClick={resetFilters}>Reset filters</button></div>}
     {activeCard && <Suspense fallback={null}><CardInspector
       card={activeCard}
       imageUrl={imageUrlFor(activeCard)}
@@ -333,11 +369,21 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
       reveal
       provenance={<DossierProvenance card={activeCard} sealed={isSealed(activeCard)} ownership={ownershipNote(activeCard)} />}
       related={<RelatedFilings cards={related} art={art} onOpen={(card) => stepCard(card)} />}
-      stageOverlay={isSealed(activeCard) ? <SealedEnvelope key={activeCard.id} card={activeCard} onBreak={() => breakSeal(activeCard)} /> : null}
+      stageOverlay={isSealed(activeCard) ? <SealedEnvelope key={activeCard.id} card={activeCard} onRip={sourceFor(activeCard.catalogId)?.kind === "booster" ? () => ripFromDossier(activeCard) : undefined} /> : null}
     /></Suspense>}
+    {ceremony && <PackCeremony
+      source={ceremony.source}
+      cards={ceremony.catalogIds.flatMap((catalogId) => CARDS_BY_ID.get(catalogId) ?? [])}
+      packNumber={ceremony.number}
+      remaining={ceremonyRemaining}
+      imageUrlFor={imageUrlFor}
+      onKeepGoing={() => ripPack(ceremony.source)}
+      onDone={() => setCeremony(null)}
+    />}
   </main>;
 }
 
+const CARDS_BY_ID = new Map(ALL_CARDS.map((card) => [card.catalogId, card]));
 const SOURCE_MEMBERS = new Map(UNLOCK_SOURCES.map((source) => [source.id, new Set(source.catalogIds)]));
 
 function countBy(values: (string | number | null | undefined)[]) {
