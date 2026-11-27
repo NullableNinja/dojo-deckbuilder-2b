@@ -202,8 +202,10 @@ for (const option of tableOptions) {
   if (tableOptionIds.has(option.id)) fail(`Duplicate table option ${option.id}`);
   tableOptionIds.add(option.id);
 }
-for (const id of ["tempo", "locations", "balancedMarket", "houseRules"]) if (!tableOptionIds.has(id)) fail(`definition.tableOptions does not declare ${id}`);
+for (const id of ["tempo", "locations", "balancedMarket", "houseRules", "cardPool"]) if (!tableOptionIds.has(id)) fail(`definition.tableOptions does not declare ${id}`);
 const cardIds = new Set(canonicalCards.cards.map((card) => card.catalogId));
+const catalogDecks = new Set(canonicalCards.cards.map((card) => card.deck));
+for (const deck of tableOptions.find((option) => option.id === "cardPool")?.pooledDecks ?? []) if (!catalogDecks.has(deck)) fail(`Table option cardPool pools unknown deck ${deck}`);
 const houseRuleIds = new Set((canonicalRules.houseRules ?? []).map((rule) => rule.id));
 const variantIds = new Set((tableOptions.find((option) => option.id === "houseRules")?.variants ?? []).map((variant) => variant.id));
 for (const id of variantIds) if (!houseRuleIds.has(id)) fail(`House-rule variant ${id} has no canonical house rule in content/rules.json`);

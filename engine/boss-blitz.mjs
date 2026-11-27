@@ -33,7 +33,10 @@ export class BossBlitzGame extends Game {
   stageFits(profile, stage) { return new RegExp(`Stage Fit:[^.]*\\b${stage.stageFit}\\b`, "i").test(profile.rulesText ?? ""); }
 
   chooseProfiles(requested = null) {
-    const profiles = this.data.cards.filter((card) => card.subtype === "Boss Profile");
+    // The card pool decides which Boss Profiles may be drawn (the union of the seated players' unlocks).
+    const profiles = this.data.cards.filter((card) => card.subtype === "Boss Profile" && this.inCardPool(card));
+    const unfilled = this.bossRules.stages.find((stage) => !profiles.some((card) => this.stageFits(card, stage)));
+    if (unfilled) throw new Error(`Card pool leaves no Boss Profile for ${unfilled.title}`);
     // Always draw the random ladder first so the seeded RNG stream is identical whether or not
     // Profiles were requested (replays pass the original Profiles back in).
     const random = this.randomProfiles(profiles);

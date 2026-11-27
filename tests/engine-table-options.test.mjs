@@ -49,7 +49,7 @@ test("fixtures exist", () => {
 // ---- Options and defaults -------------------------------------------------------------
 
 test("every table option is declared canonically with a label, default and description", () => {
-  for (const id of ["tempo", "locations", "balancedMarket", "houseRules"]) {
+  for (const id of ["tempo", "locations", "balancedMarket", "houseRules", "cardPool"]) {
     const option = tableOption(definition, id);
     assert.ok(option?.label && option.description && option.default !== undefined, `${id} is declared`);
   }
@@ -57,7 +57,8 @@ test("every table option is declared canonically with a label, default and descr
 
 test("defaults reproduce the canonical declaration and are exposed and recorded", () => {
   const game = new Game(data, { seed: 3 });
-  const declared = Object.fromEntries(definition.tableOptions.map((option) => [option.id, option.default]));
+  // A null default (the card pool: the full catalog) is recorded by leaving the option out.
+  const declared = Object.fromEntries(definition.tableOptions.filter((option) => option.default !== null).map((option) => [option.id, option.default]));
   assert.deepEqual(game.tableOptions, declared);
   assert.deepEqual(game.tableOptions, { tempo: true, locations: true, balancedMarket: false, houseRules: [] });
   assert.deepEqual(game.setup.table, game.tableOptions);

@@ -1,15 +1,18 @@
-// Card Library page: the catalog grid, the Card of the Day, the collection ledger and the Dossier.
-// Presentation only. Ownership comes from app/collection.ts; card data from app/data/cards.json.
+// Card Library page: the catalog grid, the Card of the Day, the collection ledger, the Starter Kit
+// requisition, pack opening and the Dossier. Ownership comes from app/collection.ts (which reads the
+// career store); real packs are opened through app/career.ts; card data from app/data/cards.json.
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import cardsJson from "./data/cards.json";
-import { COLLECTION_STATUS, drawPreviewPack, isUnlockable, readCollection, sourceFor, sourceProgress, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
+import { careerStore, economy, walletOf, type CareerSnapshot } from "./career";
+import { COLLECTION_STATUS, drawPreviewPack, isUnlockable, readCollection, sourceFor, sourceProgress, unlockHint, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
 import { PackCeremony } from "./pack-ceremony";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
-import { prefersReducedMotion, usePaperToast } from "./paper-toast-context";
+import { prefersReducedMotion, usePaperToast, type ToastInput } from "./paper-toast-context";
 import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
 import { navigate, replaceRoute } from "./routing";
 import { cardSearchText, type CardEntry } from "./search";
 import { SectionHeader } from "./section-header";
+import { useCareer } from "./use-career";
 import "./card-library.css";
 
 const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
@@ -34,7 +37,7 @@ const sourceMeta = (source: UnlockSource | undefined, locked = false) => {
   if (!source) return "Standard issue";
   if (source.kind === "roster") return "Unlocks by playing";
   if (source.kind === "starter") return source.grant === "every-profile" ? "Issued on day one" : "Starter kit · choose one";
-  return locked ? `Series · opens at Clearance ${source.unlockLevel}` : "Booster series";
+  return locked ? `Series · opens at Clearance Level ${source.unlockLevel}` : "Booster series";
 };
 
 
@@ -80,13 +83,13 @@ export function OriginTag({ card, compact = false }: { card: CardEntry; compact?
 /** Pack cards arrive in sealed envelopes; fighters and bosses are classified personnel files. */
 const sealWord = (source?: UnlockSource) => source?.kind === "roster" ? "Classified" : "Sealed";
 
-function SealedFlap({ source }: { source?: UnlockSource }) {
-  return <span className={`library-envelope library-envelope--${source?.kind ?? "booster"}`} aria-hidden="true"><span className="library-envelope-flap" /><b>{sealWord(source)}</b><small>{source?.name}</small></span>;
+function SealedFlap({ source, hint }: { source?: UnlockSource; hint: string }) {
+  return <span className={`library-envelope library-envelope--${source?.kind ?? "booster"}`} aria-hidden="true"><span className="library-envelope-flap" /><b>{sealWord(source)}</b><small>{hint}</small></span>;
 }
 
-function CardTile({ card, art, saved, sealed, unsealing, index, onOpen }: { card: CardEntry; art: CardArt; saved: boolean; sealed: boolean; unsealing: boolean; index: number; onOpen: () => void }) {
+function CardTile({ card, art, saved, sealed, hint, unsealing, index, onOpen }: { card: CardEntry; art: CardArt; saved: boolean; sealed: boolean; hint: string; unsealing: boolean; index: number; onOpen: () => void }) {
   const source = sourceFor(card.catalogId);
-  const status = sealed ? `${sealWord(source)}. ${source?.kind === "roster" ? "Unlocks by playing" : `Found in ${source?.name}`}.` : "";
+  const status = sealed ? `${sealWord(source)}. ${hint}.` : "";
   const style = { "--deal": index % PAGE_SIZE } as CSSProperties;
   const classes = `library-card paper-stack interactive-paper ${typeClassFor(card)}${sealed ? " is-sealed" : ""}${sealed && unsealing ? " is-unsealing" : ""}`;
   const savedStar = saved && <span className="binder-star" aria-hidden="true" title="Saved in Dojo Binder">★</span>;
@@ -97,7 +100,7 @@ function CardTile({ card, art, saved, sealed, unsealing, index, onOpen }: { card
       {savedStar}
       <span className="library-card-print">
         <img src={art.imageUrlFor(card)} alt="" loading="lazy" decoding="async" />
-        {sealed && <SealedFlap source={source} />}
+        {sealed && <SealedFlap source={source} hint={hint} />}
       </span>
       <span className="library-card-caption"><small>{card.catalogId} · {card.deck}</small><b>{card.name}</b></span>
       {foot}
@@ -143,40 +146,100 @@ type LedgerActions = {
   onReseal: () => void;
 };
 
-function CollectionLedger({ snapshot, sourceFilter, onView, onSource, actions }: { snapshot: CollectionSnapshot; sourceFilter: string; onView: (view: CollectionView) => void; onSource: (sourceId: string) => void; actions: LedgerActions }) {
-  const preview = snapshot.view === "recruit-preview";
+/** The career's wallet and Clearance Level, shown at the top of My Collection. */
+function CareerWallet({ career }: { career: NonNullable<CollectionSnapshot["career"]> }) {
+  const { tickets, stubs, stubRate } = walletOf(career);
+  const progress = economy.levelProgress(career.merit);
+  const complete = economy.collectionComplete(career);
+  return <div className="career-wallet">
+    <div className="career-wallet-ticket" aria-label={`${tickets} Booster ${tickets === 1 ? "Ticket" : "Tickets"}`}><b>{tickets}</b><span>Booster {tickets === 1 ? "Ticket" : "Tickets"}</span></div>
+    <div className="career-wallet-facts">
+      <span><b>{stubs}/{stubRate}</b> Ticket Stubs</span>
+      <span><b>Clearance Level {progress.level}</b> · {career.merit.toLocaleString()} Merit</span>
+    </div>
+    <p className="career-wallet-note">{complete ? `Collection complete. Every new ticket files as ${economy.packs.boosterRules.completedCollection.ticketConvertsToMerit} Merit.` : tickets ? "Pick any open series below and rip a pack: five cards you do not own yet." : "Win a match for a Booster Ticket. A loss earns a Ticket Stub; three stubs make a ticket."}</p>
+  </div>;
+}
+
+function ripLabel(snapshot: CollectionSnapshot, source: UnlockSource, sealed: number, locked: boolean) {
+  if (locked) return { text: `CL ${source.unlockLevel}`, label: `${source.name} opens at Clearance Level ${source.unlockLevel}`, enabled: false };
+  if (!sealed) return { text: "Done", label: `${source.name} is complete`, enabled: false };
+  if (snapshot.mode === "career" && !walletOf(snapshot.career).tickets) return { text: "No ticket", label: `Rip a ${source.name} pack: you need a Booster Ticket`, enabled: false };
+  return { text: "Rip a pack", label: snapshot.mode === "career" ? `Spend a Booster Ticket on a ${source.name} pack` : `Rip open a free preview ${source.name} pack`, enabled: true };
+}
+
+function CollectionLedger({ snapshot, viewLocked, sourceFilter, onView, onSource, actions }: { snapshot: CollectionSnapshot; viewLocked: boolean; sourceFilter: string; onView: (view: CollectionView) => void; onSource: (sourceId: string) => void; actions: LedgerActions }) {
+  const { mode } = snapshot;
   const progress = useMemo(() => sourceProgress(snapshot), [snapshot]);
   const owned = progress.reduce((sum, entry) => sum + entry.owned, 0);
   const total = progress.reduce((sum, entry) => sum + entry.total, 0);
   const percent = Math.round((owned / total) * 100);
-  return <section className={`collection-ledger paper-stack is-${snapshot.view}`} aria-labelledby="collection-ledger-title">
+  const canRip = mode !== "open-dojo";
+  return <section className={`collection-ledger paper-stack is-${mode}`} aria-labelledby="collection-ledger-title">
     <header className="collection-ledger-head">
       <div>
         <span className="eyebrow">Collection ledger · {COLLECTION_STATUS === "proposal" ? "draft packs" : "packs"}</span>
         <h2 id="collection-ledger-title">{snapshot.label}</h2>
       </div>
-      <span className="collection-ledger-stamp" aria-hidden="true">{snapshot.view === "open-dojo" ? "On loan" : "Preview"}</span>
+      <span className="collection-ledger-stamp" aria-hidden="true">{mode === "open-dojo" ? "On loan" : mode === "career" ? "On file" : "Preview"}</span>
     </header>
     <p className="collection-ledger-summary">{snapshot.summary}</p>
-    <div className="collection-view-toggle" role="group" aria-label="Collection view">
+    {!viewLocked && <div className="collection-view-toggle" role="group" aria-label="Collection view">
+      <button type="button" aria-pressed={snapshot.view === "career"} onClick={() => onView("career")}>My Collection</button>
       <button type="button" aria-pressed={snapshot.view === "open-dojo"} onClick={() => onView("open-dojo")}>Open Dojo</button>
-      <button type="button" aria-pressed={snapshot.view === "recruit-preview"} onClick={() => onView("recruit-preview")}>Preview new recruit</button>
-    </div>
-    {preview && <div className="collection-preview-actions">
+    </div>}
+    {mode === "career" && snapshot.career && <CareerWallet career={snapshot.career} />}
+    {mode === "preview" && <div className="collection-preview-actions">
       <button type="button" className="button primary" onClick={actions.onBreakAll} disabled={!actions.anySealed}>Break every seal</button>
       <button type="button" className="button ghost" onClick={actions.onReseal} disabled={!actions.anyUnsealed}>Re-seal everything</button>
-      <p>Or rip open a pack from any booster series below. Preview only: nothing is saved.</p>
+      <p>Or rip open a free pack from any booster series below. Preview only: nothing is saved.</p>
     </div>}
     <div className="collection-total" aria-label={`${owned} of ${total} unlockable cards owned`}>
       <b>{owned}</b><span>/ {total} unlockable cards · earned by playing, never sold</span>
       <span className="collection-meter" aria-hidden="true"><i style={{ width: `${percent}%` }} /></span>
     </div>
     <ul className="collection-packs" aria-label="Packs, series and rosters">
-      {progress.map(({ source, owned: sourceOwned, total: sourceTotal, locked }) => <li key={source.id} className={preview && source.kind === "booster" ? "has-rip" : undefined}><button type="button" className={`collection-pack collection-pack--${source.kind}${locked ? " is-locked" : ""}`} aria-pressed={sourceFilter === source.id} onClick={() => onSource(source.id)} title={source.tagline}>
-        <span className="collection-pack-name"><b>{source.name}</b><small>{sourceMeta(source, locked)}</small></span>
-        <span className="collection-pack-count">{sourceOwned}/{sourceTotal}</span>
-        <span className="collection-meter" aria-hidden="true"><i style={{ width: `${(sourceOwned / sourceTotal) * 100}%` }} /></span>
-      </button>{preview && source.kind === "booster" && <button type="button" className="collection-rip" onClick={() => actions.onRip(source)} disabled={!actions.sealedIn(source)} aria-label={actions.sealedIn(source) ? `Rip open a ${source.name} pack` : `${source.name} is fully open`}>{actions.sealedIn(source) ? <>Rip a pack</> : <>Open</>}</button>}</li>)}
+      {progress.map(({ source, owned: sourceOwned, total: sourceTotal, locked }) => {
+        const rip = canRip && source.kind === "booster" ? ripLabel(snapshot, source, actions.sealedIn(source), locked) : null;
+        return <li key={source.id} className={rip ? "has-rip" : undefined}><button type="button" className={`collection-pack collection-pack--${source.kind}${locked ? " is-locked" : ""}`} aria-pressed={sourceFilter === source.id} onClick={() => onSource(source.id)} title={source.tagline}>
+          <span className="collection-pack-name"><b>{source.name}</b><small>{sourceMeta(source, locked)}</small></span>
+          <span className="collection-pack-count">{sourceOwned}/{sourceTotal}</span>
+          <span className="collection-meter" aria-hidden="true"><i style={{ width: `${(sourceOwned / sourceTotal) * 100}%` }} /></span>
+        </button>{rip && <button type="button" className="collection-rip" onClick={() => actions.onRip(source)} disabled={!rip.enabled} aria-label={rip.label}>{rip.text}</button>}</li>;
+      })}
+    </ul>
+  </section>;
+}
+
+/** The Starter Kit choice: offered on a new profile's first visit, and again at the kit levels. */
+function StarterKitRequisition({ career, art, onChoose, onBrowse, onLater }: { career: NonNullable<CareerSnapshot["state"]>; art: CardArt; onChoose: (kitId: string) => void; onBrowse: (kitId: string) => void; onLater: () => void }) {
+  const kits = economy.kits.filter((kit) => !career.starterKits.includes(kit.id));
+  const first = career.starterKits.length === 0;
+  return <section className="kit-requisition paper-stack" aria-labelledby="kit-requisition-title">
+    <header className="kit-requisition-head">
+      <div>
+        <span className="eyebrow">Requisition form · {first ? "day one" : `Clearance Level ${economy.levelFor(career.merit)}`}</span>
+        <h2 id="kit-requisition-title">{first ? "Choose your Starter Kit" : "Choose another Starter Kit"}</h2>
+        <p>{first ? `Your Orientation Kit is already filed. Sign for one of these ${economy.kits[0]?.cards.length ?? 20}-card kits to add a fighting style; the others unlock at later Clearance Levels.` : "A new Clearance Level cleared another kit for you. Sign for the style you want next."}</p>
+      </div>
+      <button type="button" className="button ghost kit-requisition-later" onClick={onLater}>Decide later</button>
+    </header>
+    <ul className="kit-requisition-options">
+      {kits.map((kit) => {
+        const samples = kit.cards.map((entry) => CARDS_BY_ID.get(entry.catalogId)).filter((card): card is CardEntry => Boolean(card && art.hasArt(card))).slice(0, 3);
+        return <li key={kit.id} className="kit-option">
+          <div className="kit-option-fan" aria-hidden="true">{samples.map((card, index) => <img key={card.id} src={art.imageUrlFor(card)} alt="" loading="lazy" decoding="async" style={{ ["--i" as string]: index - 1 }} />)}</div>
+          <div className="kit-option-copy">
+            <h3>{kit.name}</h3>
+            <p>{kit.tagline}</p>
+            <ul className="kit-option-paths" aria-label="Build paths">{kit.themeBuildPaths.map((path) => <li key={path}>{path}</li>)}</ul>
+          </div>
+          <div className="kit-option-actions">
+            <button type="button" className="button primary" onClick={() => onChoose(kit.id)}>Sign for the {kit.name}</button>
+            <button type="button" className="button ghost" onClick={() => onBrowse(kit.id)}>See its {kit.cards.length} cards</button>
+          </div>
+        </li>;
+      })}
     </ul>
   </section>;
 }
@@ -203,12 +266,15 @@ function RelatedFilings({ cards, art, onOpen }: { cards: CardEntry[]; art: CardA
   </section>;
 }
 
-function SealedEnvelope({ card, onRip }: { card: CardEntry; onRip?: () => void }) {
+type EnvelopeRip = { label: string; note?: string; disabled?: boolean; onRip: () => void };
+
+function SealedEnvelope({ card, hint, rip }: { card: CardEntry; hint: string; rip?: EnvelopeRip }) {
   const source = sourceFor(card.catalogId);
   return <div className="dossier-envelope">
     <span className="dossier-envelope-flap" aria-hidden="true" />
-    <span className="dossier-envelope-label"><small>Department of Competitive Safety</small><b>{sealWord(source)}</b><span>{source?.name} · {sourceMeta(source)}</span></span>
-    {onRip && <button type="button" className="button primary" onClick={onRip}>Rip open a {source?.name} pack</button>}
+    <span className="dossier-envelope-label"><small>Department of Competitive Safety</small><b>{sealWord(source)}</b><span>{hint}</span></span>
+    {rip && <button type="button" className="button primary" onClick={rip.onRip} disabled={rip.disabled}>{rip.label}</button>}
+    {rip?.note && <small className="dossier-envelope-note">{rip.note}</small>}
   </div>;
 }
 
@@ -220,21 +286,31 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
   const [sort, setSort] = useState("catalog"); const [visible, setVisible] = useState(PAGE_SIZE);
   const [binderOnly, setBinderOnly] = useState(false);
   const [moreFilters, setMoreFilters] = useState(false);
-  const [view, setView] = useState<CollectionView>("open-dojo");
+  // Players with a career default to My Collection; without one (blocked storage, a newer record) to Open Dojo.
+  const career = useCareer();
+  const [localView, setLocalView] = useState<CollectionView>("open-dojo");
+  const careerView: CollectionView | null = career.status === "career" && career.state ? (career.state.openDojo ? "open-dojo" : "career") : null;
+  const view: CollectionView = careerView ?? localView;
   const [unsealed, setUnsealed] = useState<Set<string>>(() => new Set());
   const [unsealing, setUnsealing] = useState(false);
-  const [ceremony, setCeremony] = useState<{ source: UnlockSource; catalogIds: string[]; number: number } | null>(null);
+  const [kitDeferred, setKitDeferred] = useState(false);
+  const [ceremony, setCeremony] = useState<{ source: UnlockSource; catalogIds: string[]; number: number; mode: "career" | "preview" } | null>(null);
   const { savedIds, toggle } = useBinder();
   const pushToast = usePaperToast();
   const gridRef = useRef<HTMLElement>(null);
-  const snapshot = readCollection(view);
-  const isSealedId = (catalogId: string) => isUnlockable(catalogId) && !snapshot.owns(catalogId) && !unsealed.has(catalogId);
+  const snapshot = readCollection(view, career);
+  const realPacks = snapshot.mode === "career";
+  const tickets = walletOf(snapshot.career).tickets;
+  const isSealedId = (catalogId: string) => isUnlockable(catalogId) && !snapshot.owns(catalogId) && !(snapshot.mode === "preview" && unsealed.has(catalogId));
   const isSealed = (card: CardEntry) => isSealedId(card.catalogId);
+  const hintFor = (card: CardEntry) => unlockHint(card.catalogId, snapshot);
   const ownershipNote = (card: CardEntry) => {
-    if (snapshot.view === "open-dojo") return "On loan in Open Dojo.";
+    if (snapshot.mode === "open-dojo") return "On loan in Open Dojo.";
+    if (snapshot.mode === "career") return snapshot.owns(card.catalogId) ? "In your collection." : `Not in your collection yet: ${hintFor(card)}.`;
     if (snapshot.owns(card.catalogId)) return "Issued to a new recruit.";
     return unsealed.has(card.catalogId) ? "Unsealed in this preview, not collected." : "Sealed in this preview.";
   };
+  const pendingKits = realPacks && snapshot.career ? economy.pendingKitChoices(snapshot.career) : 0;
   const featured = useMemo(() => pickBySeed(ALL_CARDS.filter((card) => hasArt(card) && isFeaturable(card)), dayNumber()), [hasArt]);
   const activeCard = cardId ? ALL_CARDS.find((card) => card.catalogId.toLocaleLowerCase() === cardId.toLocaleLowerCase()) ?? null : null;
 
@@ -286,32 +362,61 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
     if (binderOnly && wasSaved) setBinderOnly(false);
     pushToast({ kind: wasSaved ? "note" : "stamp", eyebrow: "Dojo Binder", title: wasSaved ? "Card withdrawn" : "Card filed", message: card.name, duration: 2600 });
   };
+  // With a career the view is the player's Open Dojo switch, so it also decides what matches use and pay.
   const changeView = (next: CollectionView) => {
     if (next === view) return;
-    setView(next);
     setUnsealed(new Set());
     setCeremony(null);
-    pushToast(next === "open-dojo"
-      ? { kind: "note", eyebrow: "Collection ledger", title: "Open Dojo restored", message: "Every card is on loan again.", duration: 2600 }
-      : { kind: "stamp", eyebrow: "Preview only", title: "New recruit view", message: "Sealed envelopes and classified files show what a new profile would not own yet. Nothing is locked or saved.", duration: 4200 });
+    if (careerView) careerStore.setOpenDojo(next === "open-dojo"); else setLocalView(next);
+    if (next === "open-dojo") pushToast({ kind: "note", eyebrow: "Collection ledger", title: "Open Dojo", message: careerView ? "Every card is on loan. Matches use the full catalog and earn nothing until you switch back." : "Every card is on loan again.", duration: 3600 });
+    else if (careerView) pushToast({ kind: "stamp", eyebrow: "Collection ledger", title: "My Collection", message: "Matches deal from your own cards and pay Merit and Booster Tickets.", duration: 3600 });
+    else pushToast({ kind: "stamp", eyebrow: "Preview only", title: "New recruit view", message: "This browser is not keeping records, so this previews a brand-new profile. Nothing is locked or saved.", duration: 4200 });
+  };
+  const chooseKit = (kitId: string) => {
+    const kit = economy.kits.find((entry) => entry.id === kitId);
+    careerStore.chooseStarterKit(kitId);
+    pushToast({ kind: "stamp", eyebrow: "Requisition approved", title: `${kit?.name ?? "Starter Kit"} issued`, message: `${kit?.cards.length ?? 0} cards filed to your collection. They join your Market from the next match.`, duration: 4200 });
+  };
+  const browseKit = (kitId: string) => {
+    setSourceFilter(kitId);
+    restartPaging();
+    window.requestAnimationFrame(() => gridRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" }));
   };
   const chooseSource = (sourceId: string) => {
     setSourceFilter((current) => current === sourceId ? "" : sourceId);
     restartPaging();
     window.requestAnimationFrame(() => gridRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" }));
   };
-  // Opening a pack unseals its cards first, then plays the ceremony over the grid.
+  // A real pack spends a ticket and is saved before the ceremony plays; a preview pack only unseals for this visit.
   const ripPack = (source: UnlockSource, mustInclude?: string) => {
+    const nextNumber = (current: typeof ceremony) => current?.source.id === source.id ? current.number + 1 : 1;
+    if (realPacks) {
+      const firstPack = (snapshot.career?.packSerial ?? 0) === 0;
+      const opened = careerStore.openBooster(source.id);
+      if (opened.error) { pushToast(PACK_REFUSALS[opened.error] ?? PACK_REFUSALS.locked); return; }
+      if (firstPack) requestPersistentStorage();
+      setCeremony((current) => ({ source, catalogIds: opened.cards, number: nextNumber(current), mode: "career" }));
+      return;
+    }
     const catalogIds = drawPreviewPack(source, isSealedId, mustInclude);
     if (!catalogIds.length) return;
     setUnsealed((current) => new Set([...current, ...catalogIds]));
-    setCeremony((current) => ({ source, catalogIds, number: current?.source.id === source.id ? current.number + 1 : 1 }));
+    setCeremony((current) => ({ source, catalogIds, number: nextNumber(current), mode: "preview" }));
   };
   const ripFromDossier = (card: CardEntry) => {
     const source = sourceFor(card.catalogId);
     if (!source) return;
     closeCard();
-    ripPack(source, card.catalogId);
+    // A real pack is random within its series; only the free preview pins the card you opened it from.
+    ripPack(source, realPacks ? undefined : card.catalogId);
+  };
+  const envelopeRip = (card: CardEntry): EnvelopeRip | undefined => {
+    const source = sourceFor(card.catalogId);
+    if (source?.kind !== "booster" || snapshot.series.get(source.id)?.unlocked === false) return undefined;
+    if (!realPacks) return { label: `Rip open a ${source.name} pack`, note: "Free preview: nothing is saved.", onRip: () => ripFromDossier(card) };
+    return tickets
+      ? { label: `Spend a ticket on a ${source.name} pack`, note: `${CARDS_PER_PACK_LABEL} you do not own yet, drawn from this series. You hold ${tickets} ${tickets === 1 ? "ticket" : "tickets"}.`, onRip: () => ripFromDossier(card) }
+      : { label: "No Booster Tickets yet", note: "Win a match for a ticket; a loss earns a Ticket Stub.", disabled: true, onRip: () => undefined };
   };
   const breakEverySeal = () => {
     const everything = new Set(UNLOCK_SOURCES.flatMap((source) => source.catalogIds));
@@ -329,15 +434,16 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
     onBreakAll: breakEverySeal,
     onReseal: () => setUnsealed(new Set()),
   };
-  // The ledger counts cards unsealed in this preview as held, so the meters fill as packs are opened.
-  const previewSnapshot: CollectionSnapshot = { ...snapshot, owns: (catalogId) => snapshot.owns(catalogId) || unsealed.has(catalogId) };
+  // The preview ledger counts cards unsealed this visit as held, so the meters fill as packs are opened.
+  const ledgerSnapshot: CollectionSnapshot = snapshot.mode === "preview" ? { ...snapshot, owns: (catalogId) => snapshot.owns(catalogId) || unsealed.has(catalogId) } : snapshot;
   const ceremonyRemaining = ceremony ? ceremony.source.catalogIds.filter(isSealedId).length : 0;
 
   return <main className="page-shell shell card-library-page"><SectionHeader eyebrow="Card Library" title={`${cardData.total} cards. One awkward curriculum.`} intro="Search the complete Core catalog by ID, deck, type, rules text, or Focus Cost. The 500-card main pool excludes Starter, Character, and Boss-module cards." art={headerArt} />
     <div className="library-desk">
       <DailyFiling card={featured} art={art} onOpen={() => openCard(featured)} onRandom={openRandom} />
-      <CollectionLedger snapshot={previewSnapshot} sourceFilter={sourceFilter} onView={changeView} onSource={chooseSource} actions={ledgerActions} />
+      <CollectionLedger snapshot={ledgerSnapshot} viewLocked={career.status === "everything"} sourceFilter={sourceFilter} onView={changeView} onSource={chooseSource} actions={ledgerActions} />
     </div>
+    {pendingKits > 0 && !kitDeferred && snapshot.career && <StarterKitRequisition career={snapshot.career} art={art} onChoose={chooseKit} onBrowse={browseKit} onLater={() => setKitDeferred(true)} />}
     <section className={`library-controls${moreFilters ? " is-expanded" : ""}`} aria-label="Search and filter cards">
       <div className="library-control library-search-control"><label htmlFor="card-library-search">Search</label><div className="search-box"><span aria-hidden="true">⌕</span><input id="card-library-search" value={query} onChange={(event) => { setQuery(event.target.value); restartPaging(); }} placeholder="ID, name, rules, tag…" />{query && <button type="button" onClick={() => setQuery("")} aria-label="Clear card search">×</button>}</div></div>
       <label className="library-control"><span>Deck</span><select value={deck} onChange={(event) => { setDeck(event.target.value); resetSecondaryFilters(); restartPaging(); }}><option>{ALL}</option>{cardData.decks.map((entry) => <option key={entry}>{entry}</option>)}</select></label>
@@ -352,7 +458,7 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
     <div className="binder-strip"><button type="button" className={`binder-toggle${binderOnly ? " is-saved" : ""}`} aria-pressed={binderOnly} onClick={() => { setBinderOnly((current) => !current); restartPaging(); }}><span aria-hidden="true">{binderOnly ? "★" : "☆"}</span> Dojo Binder <b>{savedIds.size}</b></button><p>Saved on this device only. Open a card to add or remove it.</p></div>
     <div className="type-filters" role="group" aria-label="Filter by card type">{[ALL, ...Object.keys(cardData.counts)].map((entry) => <button type="button" aria-pressed={type === entry} className={type === entry ? "active" : ""} onClick={() => { setType(entry); resetSecondaryFilters(); restartPaging(); }} key={entry}>{entry}<span>{entry === ALL ? cardsInScope.length : typeCounts[entry] ?? 0}</span></button>)}</div>
     <div className="result-line" aria-live="polite"><p><strong>{filtered.length}</strong> results{activeSource && <span className="result-pack-chip">in {activeSource.name} <button type="button" onClick={() => setSourceFilter("")} aria-label={`Clear ${activeSource.name} filter`}>×</button></span>}</p>{filtersActive && <button type="button" onClick={resetFilters}>Reset filters</button>}</div>
-    {filtered.length ? <><section ref={gridRef} className="card-grid" aria-label="Cards">{filtered.slice(0, visible).map((card, index) => <CardTile key={card.id} card={card} art={art} index={index} saved={savedIds.has(card.catalogId)} sealed={isSealed(card)} unsealing={unsealing} onOpen={() => openCard(card)} />)}</section>{visible < filtered.length && <button type="button" className="button load-more" onClick={() => setVisible((count) => count + PAGE_SIZE)}>Load {PAGE_SIZE} more <span>{filtered.length - visible} remaining</span></button>}</> : <div className="empty-state"><strong>No cards match that search.</strong><p>Clear a filter or try a broader rules term.</p><button type="button" className="button ghost" onClick={resetFilters}>Reset filters</button></div>}
+    {filtered.length ? <><section ref={gridRef} className="card-grid" aria-label="Cards">{filtered.slice(0, visible).map((card, index) => <CardTile key={card.id} card={card} art={art} index={index} saved={savedIds.has(card.catalogId)} sealed={isSealed(card)} hint={hintFor(card)} unsealing={unsealing} onOpen={() => openCard(card)} />)}</section>{visible < filtered.length && <button type="button" className="button load-more" onClick={() => setVisible((count) => count + PAGE_SIZE)}>Load {PAGE_SIZE} more <span>{filtered.length - visible} remaining</span></button>}</> : <div className="empty-state"><strong>No cards match that search.</strong><p>Clear a filter or try a broader rules term.</p><button type="button" className="button ghost" onClick={resetFilters}>Reset filters</button></div>}
     {activeCard && <Suspense fallback={null}><CardInspector
       card={activeCard}
       imageUrl={imageUrlFor(activeCard)}
@@ -369,13 +475,15 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
       reveal
       provenance={<DossierProvenance card={activeCard} sealed={isSealed(activeCard)} ownership={ownershipNote(activeCard)} />}
       related={<RelatedFilings cards={related} art={art} onOpen={(card) => stepCard(card)} />}
-      stageOverlay={isSealed(activeCard) ? <SealedEnvelope key={activeCard.id} card={activeCard} onRip={sourceFor(activeCard.catalogId)?.kind === "booster" ? () => ripFromDossier(activeCard) : undefined} /> : null}
+      stageOverlay={isSealed(activeCard) ? <SealedEnvelope key={activeCard.id} card={activeCard} hint={hintFor(activeCard)} rip={envelopeRip(activeCard)} /> : null}
     /></Suspense>}
     {ceremony && <PackCeremony
       source={ceremony.source}
       cards={ceremony.catalogIds.flatMap((catalogId) => CARDS_BY_ID.get(catalogId) ?? [])}
       packNumber={ceremony.number}
       remaining={ceremonyRemaining}
+      mode={ceremony.mode}
+      tickets={tickets}
       imageUrlFor={imageUrlFor}
       onKeepGoing={() => ripPack(ceremony.source)}
       onDone={() => setCeremony(null)}
@@ -384,6 +492,18 @@ export function CardLibrary({ cardId = "", headerArt, imageUrlFor, hasArt }: { c
 }
 
 const CARDS_BY_ID = new Map(ALL_CARDS.map((card) => [card.catalogId, card]));
+const CARDS_PER_PACK_LABEL = `Up to ${economy.cardsPerPack} cards`;
+const PACK_REFUSALS: Record<string, ToastInput> = {
+  "no-ticket": { kind: "warning", eyebrow: "Booster Tickets", title: "No ticket on file", message: "Win a match for a Booster Ticket. A loss earns a Ticket Stub; three stubs make a ticket.", duration: 4200 },
+  locked: { kind: "warning", eyebrow: "Booster series", title: "Series not open yet", message: "This series opens at a higher Clearance Level.", duration: 3600 },
+  complete: { kind: "note", eyebrow: "Booster series", title: "Series complete", message: "You own every card in this series.", duration: 3200 },
+  "no-career": { kind: "warning", eyebrow: "Records office", title: "Nothing was saved", message: "This browser is not keeping records right now.", duration: 3600 },
+};
+
+/** Ask the browser to keep the career (Safari otherwise clears script storage after a week away). */
+function requestPersistentStorage() {
+  try { void navigator.storage?.persist?.().catch(() => undefined); } catch { /* optional: storage stays best-effort */ }
+}
 const SOURCE_MEMBERS = new Map(UNLOCK_SOURCES.map((source) => [source.id, new Set(source.catalogIds)]));
 
 function countBy(values: (string | number | null | undefined)[]) {

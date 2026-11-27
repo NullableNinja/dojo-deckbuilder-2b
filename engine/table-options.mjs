@@ -1,11 +1,11 @@
 /**
  * Table options: the switches a table agrees on before a game starts (Tempo, Locations, the
- * Market pool, a balanced opening row and canonical house rules). Each option is described in
+ * Market pool, a balanced opening row, canonical house rules and the card pool). Each option is described in
  * `definition.tableOptions` (content/dojo-game.json), so the engine and every UI read the same
  * ids, labels, defaults and parameters. Nothing here knows a card by name.
  */
 
-export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "balancedMarket", "houseRules"]);
+export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "balancedMarket", "houseRules", "cardPool"]);
 
 function optionDefinitions(definition) {
   const declared = Array.isArray(definition?.tableOptions) ? definition.tableOptions : [];
@@ -37,6 +37,24 @@ function resolveHouseRules(definition, requested = []) {
   return [...variants.keys()].filter((id) => requested.includes(id));
 }
 
+// Used only when older generated data declares no cardPool option.
+const FALLBACK_POOLED_DECKS = Object.freeze(["Technique Deck", "Item Deck", "Combo Deck", "Location Deck", "Boss Profile Deck"]);
+
+/** The decks a card pool filters (definition.tableOptions cardPool.pooledDecks). */
+export function pooledDecks(definition) {
+  return tableOption(definition, "cardPool")?.pooledDecks ?? FALLBACK_POOLED_DECKS;
+}
+
+/**
+ * The card pool: null (the full catalog) or a sorted, de-duplicated list of Catalog IDs, so the
+ * same collections always produce the same setup, whatever order they arrived in.
+ */
+function resolveCardPool(requested) {
+  if (requested === undefined || requested === null) return null;
+  if (!Array.isArray(requested) || requested.some((id) => typeof id !== "string" || !id)) throw new Error("Table option cardPool must be null or an array of Catalog IDs");
+  return [...new Set(requested)].sort();
+}
+
 /**
  * Merge the requested table options with the canonical defaults.
  * Unknown option ids are rejected so a typo never silently plays a different game.
@@ -50,6 +68,10 @@ export function resolveTableOptions(definition, requested = {}) {
     balancedMarket: resolveBoolean(declared, "balancedMarket", requested?.balancedMarket),
     houseRules: resolveHouseRules(definition, requested?.houseRules ?? declared.get("houseRules")?.default ?? []),
   };
+  // The full catalog is recorded by leaving the pool out, so setups, results and fingerprints of
+  // tables without a pool stay exactly as they were before pools existed.
+  const cardPool = resolveCardPool(requested?.cardPool);
+  if (cardPool) options.cardPool = cardPool;
   return options;
 }
 

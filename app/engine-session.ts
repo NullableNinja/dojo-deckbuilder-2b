@@ -4,6 +4,7 @@
 import { createModeGame } from "../engine/game-factory.mjs";
 import { clashData, type EngineCard } from "./clash-engine.ts";
 import { difficultyPolicy } from "../engine/difficulty.mjs";
+import { tableCardPool } from "./career.ts";
 
 export type EngineOption = { id: string; label: string };
 export type EnginePending = { kind: string; playerId: number; attackerId?: number; targetPlayerId?: number; cardId?: string; zone?: string; options: EngineOption[]; [key: string]: unknown };
@@ -40,12 +41,13 @@ export type SessionSetup = {
   rosters?: string[][];
   humanSeats: number[];
   rulesVersion: string;
-  /** Table options from content/dojo-game.json `tableOptions` (tempo, locations, market, house rules). */
+  /** Table options from content/dojo-game.json `tableOptions` (tempo, locations, market, house rules, card pool). */
   table?: TableOptions;
   /** How well computer seats play: "student" | "certified" | "master" (engine/difficulty.mjs). */
   difficulty?: string;
 };
-export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[] };
+/** `cardPool`: the Catalog IDs this table plays with (the seated players' collections); null is the full catalog. */
+export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[]; cardPool?: string[] | null };
 export type Decision = { kind: "action"; action: EngineAction } | { kind: "choice"; optionId: string };
 export type SavedSession = { format: 1; setup: SessionSetup; decisions: Decision[] };
 export type BotPolicy = { chooseAction(game: EngineGame, legal: EngineAction[]): EngineAction; chooseChoice(game: EngineGame, pending: EnginePending): { optionId: string } };
@@ -60,6 +62,13 @@ function characterFor(catalogId: string) {
   return card;
 }
 
+/** The setup with its card pool decided once, so saves and replays reproduce the same table. */
+function withCardPool(setup: SessionSetup, source: () => string[] | null): SessionSetup {
+  if (setup.table && "cardPool" in setup.table) return setup;
+  const cardPool = source();
+  return cardPool ? { ...setup, table: { ...setup.table, cardPool } } : setup;
+}
+
 export function newSeed() {
   return Math.floor(Math.random() * 2 ** 31) || 1;
 }
@@ -70,8 +79,14 @@ export class EngineSession {
   readonly decisions: Decision[] = [];
   private policy: BotPolicy;
 
+  /**
+   * Where a new table's card pool comes from when its setup does not name one: the player's
+   * collection (app/career.ts), or null for the full catalog (Open Dojo, or no career).
+   */
+  static cardPoolSource: () => string[] | null = () => tableCardPool();
+
   constructor(setup: SessionSetup, policy?: BotPolicy) {
-    this.setup = setup;
+    this.setup = withCardPool(setup, EngineSession.cardPoolSource);
     this.policy = policy ?? (setup.difficulty ? difficultyPolicy(setup.difficulty) as BotPolicy : defaultPolicy);
     const seats = setup.rosters?.length ?? setup.fighters.length;
     this.game = createModeGame(clashData(), {
@@ -80,7 +95,7 @@ export class EngineSession {
       players: seats,
       ...(setup.rosters ? { rosters: setup.rosters } : { characters: setup.fighters.map(characterFor) }),
       strategies: Array.from({ length: seats }, () => "balanced"),
-      ...(setup.table ? { table: setup.table } : {}),
+      ...(this.setup.table ? { table: this.setup.table } : {}),
     }) as unknown as EngineGame;
     this.game.advanceAutomaticEvents();
   }
@@ -89,7 +104,8 @@ export class EngineSession {
   static restore(saved: SavedSession, policy?: BotPolicy): EngineSession | null {
     if (saved?.format !== 1 || !saved.setup) return null;
     try {
-      const session = new EngineSession(saved.setup, policy);
+      // A save records its pool; an older save without one was played with the full catalog.
+      const session = new EngineSession({ ...saved.setup, table: { cardPool: null, ...saved.setup.table } }, policy);
       for (const decision of saved.decisions) if (!session.apply(decision)) return null;
       return session;
     } catch {
