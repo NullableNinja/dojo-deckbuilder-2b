@@ -1,7 +1,8 @@
 // Card Library page: the catalog grid, the Card of the Day, the collection ledger, the Starter Kit
 // requisition, pack opening and the Dossier. Ownership comes from app/collection.ts (which reads the
 // career store); real packs are opened through app/career.ts; card data from app/data/cards.json.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { lazyWithRetry } from "./lazy-with-retry";
 import cardsJson from "./data/cards.json";
 import { careerStore, economy, walletOf, type CareerSnapshot } from "./career";
 import { COLLECTION_STATUS, drawPreviewPack, isUnlockable, readCollection, sourceFor, sourceProgress, unlockHint, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
@@ -15,7 +16,7 @@ import { SectionHeader } from "./section-header";
 import { useCareer } from "./use-career";
 import "./card-library.css";
 
-const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
+const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
 const cardData = cardsJson as unknown as { cards: CardEntry[]; counts: Record<string, number>; decks: string[]; total: number };
 const ALL_CARDS = cardData.cards;

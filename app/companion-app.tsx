@@ -1,6 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { lazyWithRetry } from "./lazy-with-retry";
 import { createPortal } from "react-dom";
 import { AVATAR_IMAGES } from "./avatar-catalog";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
@@ -37,7 +38,7 @@ import { DESKTOP_NAVIGATION, MOBILE_BOTTOM_NAVIGATION, MOBILE_MENU_NAVIGATION, n
 import { AVATAR_OPTIONS, applyThemeToDocument, readInitialTheme, readUserPreferences, THEME_STORAGE_KEY, updateUserPreferences, type AccentKey, type AvatarKey, type PresentationPreferences } from "./user-preferences";
 
 // The game client is the largest chunk; load it only when someone opens the mat.
-const PlaytestView = lazy(() => import("./playtest"));
+const PlaytestView = lazyWithRetry(() => import("./playtest"));
 const MatLoading = () => <div className="mat-loading" role="status"><b>Unfolding the mat…</b><span>Filing your fighter paperwork.</span></div>;
 
 const characterCardModules = import.meta.glob<string>("./assets/cards/characters/*.webp", {

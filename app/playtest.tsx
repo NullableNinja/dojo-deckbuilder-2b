@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type SetStateAction } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type SetStateAction } from "react";
+import { lazyWithRetry } from "./lazy-with-retry";
 import { MODE_META, ModeCard, type ModeMeta } from "./mode-card";
 import { useCardMotion } from "./use-card-motion";
 import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
-const ClashTable = lazy(() => import("./clash-table.tsx"));
-const QuickDuelMat = lazy(() => import("./quick-duel-table.tsx"));
+const ClashTable = lazyWithRetry(() => import("./clash-table.tsx"));
+const QuickDuelMat = lazyWithRetry(() => import("./quick-duel-table.tsx"));
 /** Saved engine-driven Quick Duel (setup + decisions); see app/quick-duel-table.tsx. */
 const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
@@ -76,7 +77,7 @@ import { useCareer } from "./use-career";
  * generated structured registry and the shared host/resolver modules.
  */
 
-const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
+const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
 // -----------------------------------------------------------------------------
 // REACT-SIDE STATE SHAPES

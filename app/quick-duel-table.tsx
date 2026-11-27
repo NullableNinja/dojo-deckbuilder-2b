@@ -1,7 +1,8 @@
 // Quick Duel on the canonical engine. The engine owns every rule; this component renders its
 // state with the Paper-Fu mat, offers the human seat its legal actions and choices, and lets the
 // computer seat play through EngineSession. No rules live here.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { lazyWithRetry } from "./lazy-with-retry";
 import { artistUrl, fighterIllustrationUrl, locationTheme, presentationSlug } from "./card-art";
 import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
@@ -13,7 +14,7 @@ import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import { PayrollSlip } from "./career-payroll";
 import "./quick-duel-hand.css";
 
-const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
+const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
 type MatCard = EngineCard & { timing?: string | null; flavorText?: string | null; details?: Record<string, string | number> };
 type VfxKind = "attack" | "hit" | "block" | "ko" | "certified" | "promotion";

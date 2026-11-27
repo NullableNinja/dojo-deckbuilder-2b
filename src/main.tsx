@@ -5,6 +5,7 @@ import CompanionApp from "../app/companion-app";
 import PlaytestCardRouteLifecycle from "../app/playtest-card-route-lifecycle";
 import "../app/card-inspector.css";
 import "../app/playtest.css";
+import { reloadForNewVersion } from "../app/lazy-with-retry";
 import { applyThemeToDocument, readInitialTheme, readUserPreferences } from "../app/user-preferences";
 
 const initialPreferences = readUserPreferences();
@@ -62,6 +63,9 @@ if (import.meta.env.PROD && import.meta.env.MODE !== "offline" && "serviceWorker
       .catch(() => undefined);
   }, { once: true });
 }
+
+// Vite reports a failed preload of a deploy-removed file here; recover instead of leaving a blank page.
+window.addEventListener("vite:preloadError", (event) => { if (reloadForNewVersion()) event.preventDefault(); });
 
 const rootElement = document.getElementById("root")!;
 
