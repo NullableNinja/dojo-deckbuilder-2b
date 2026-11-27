@@ -31,6 +31,8 @@ import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
 import SettingsPage from "./settings-page";
+import CollectionPage from "./collection-page";
+import { CareerBand, CareerPanel, CareerRing, useCareerSummary } from "./career-ui";
 import { ModeCard, modeMetaFor } from "./mode-card";
 import { navigate, readRoute, replaceRoute, subscribeToRoute, topLevelRoute, type RulingsTab, type SitePage, type SiteRoute } from "./routing";
 import { SEARCH_GROUP_LABELS, cardSearchText, groupSearchResults, normalizeSearchQuery, publicCardDetails, searchDojo, type CardEntry, type SearchResult } from "./search";
@@ -209,6 +211,7 @@ const VIEW_LABELS: Record<SitePage, string> = {
   glossary: "Glossary",
   lab: "Design Lab",
   settings: "Settings",
+  collection: "Collection",
   search: "Search",
 };
 const CARD_IMAGE_URLS: Record<string, string> = {
@@ -356,6 +359,7 @@ function FighterStandee({ fighter, side }: { fighter: HomeFighter; side: "left" 
 }
 
 function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void; displayName: string; avatar: AvatarKey }) {
+  const careerSummary = useCareerSummary();
   const [boutSeed, setBoutSeed] = useState(dayNumber);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [cardSeed, setCardSeed] = useState(dayNumber);
@@ -398,6 +402,8 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
       <header className="home-block-head"><span className="home-block-tab">01</span><div><h2 id="formats-title">Four ways to start trouble.</h2><p>All four formats are playable right now: Quick Duel, Tag Team, Standard Clash and Boss Blitz.</p></div></header>
       <div className="home-mode-board">{CANONICAL_GAME_MODES.map((mode) => { const isLive = modeMetaFor(mode.id).live; return <ModeCard key={mode.id} mode={mode} action={isLive ? "Play it now" : "Read the brief"} onSelect={() => goTo(isLive ? "playtest" : "quickstart")} />; })}</div>
     </section>
+
+    {careerSummary && <CareerBand summary={careerSummary} onGo={(page) => goTo(page)} />}
 
     {/* 3. One round, as five yells. */}
     <section className="hiyah" aria-labelledby="hiyah-title">
@@ -562,6 +568,7 @@ export default function CompanionApp() {
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [avatar, setAvatar] = useState<AvatarKey>(initialAvatar);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const careerSummary = useCareerSummary();
   const [globalSearch, setGlobalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRestoreRef = useRef<HTMLElement | null>(null);
@@ -582,6 +589,16 @@ export default function CompanionApp() {
     setToasts((current) => [...current.filter((entry) => entry.title !== toast.title), toast].slice(-4));
   }, [presentationPreferences.toastDuration]);
   const dismissToast = useCallback((id: number) => setToasts((current) => current.filter((toast) => toast.id !== id)), []);
+  // Once per visit, on the way in, remind the player that Booster Tickets are waiting. Never during a match or on the pages that already show them.
+  const ticketsWaiting = careerSummary?.tickets ?? 0;
+  useEffect(() => {
+    if (!ticketsWaiting || route.page === "playtest" || route.page === "cards" || route.page === "collection") return;
+    try {
+      if (window.sessionStorage.getItem("ddb-ticket-toast")) return;
+      window.sessionStorage.setItem("ddb-ticket-toast", "1");
+    } catch { /* storage blocked: the reminder simply shows on each visit */ }
+    pushToast({ kind: "note", eyebrow: "Dojo record", title: `${ticketsWaiting} Booster ${ticketsWaiting === 1 ? "Ticket" : "Tickets"} waiting`, message: "Open packs from your Field Agent menu or the Card Library.", duration: 5200 });
+  }, [ticketsWaiting, route.page]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handlePaperFuToast = (event: Event) => {
       const detail = (event as CustomEvent<PaperFuToastDetail>).detail;
@@ -878,7 +895,7 @@ export default function CompanionApp() {
       <div className="header-actions">
         <button type="button" className="header-tool search-trigger" onClick={openSearchPalette} aria-label="Search the dojo" aria-keyshortcuts="/ Control+K Meta+K" aria-haspopup="dialog" aria-expanded={searchOpen}><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></svg><kbd aria-hidden="true">/</kbd></button>
         {view !== "playtest" && <button type="button" className="header-play" onClick={() => goTo("playtest")}><span aria-hidden="true">✦</span>Play</button>}
-        <div className="user-menu-wrap" data-user-menu><button ref={userMenuButtonRef} type="button" className={`profile-menu-button${userMenuOpen ? " is-open" : ""}`} onClick={() => setUserMenuOpen((current) => !current)} aria-haspopup="dialog" aria-expanded={userMenuOpen} aria-label={`Open personal menu for ${displayName || "Dojo Agent"}`}><img src={AVATAR_IMAGES[avatar]} alt="" /><span><b>{displayName || "Dojo Agent"}</b><small>FIELD AGENT</small></span><strong aria-hidden="true">⌄</strong></button>{userMenuOpen && <aside className="user-menu-panel" role="dialog" aria-label="Personal dojo menu"><header><img src={AVATAR_IMAGES[avatar]} alt="" /><div><span>Current filing</span><strong>{displayName || "Dojo Agent"}</strong><small>{AVATAR_OPTIONS.find((option) => option.id === avatar)?.quip}</small></div></header><button type="button" className="user-menu-settings" onClick={() => goTo("settings")}>Personal settings <span>→</span></button><div className="user-menu-lighting"><span>Lighting</span><ThemeToggle theme={theme} onToggle={toggleTheme} full /></div><div className="user-menu-accent"><span>Accent</span><b>{accent.toLocaleUpperCase()}</b></div></aside>}</div>
+        <div className="user-menu-wrap" data-user-menu><button ref={userMenuButtonRef} type="button" className={`profile-menu-button${userMenuOpen ? " is-open" : ""}`} onClick={() => setUserMenuOpen((current) => !current)} aria-haspopup="dialog" aria-expanded={userMenuOpen} aria-label={`Open personal menu for ${displayName || "Dojo Agent"}${careerSummary ? `. Clearance Level ${careerSummary.level}${careerSummary.tickets ? `, ${careerSummary.tickets} Booster ${careerSummary.tickets === 1 ? "Ticket" : "Tickets"} ready` : ""}` : ""}`}>{careerSummary ? <CareerRing fraction={careerSummary.fraction} size={48} stroke={3} className="header-career-ring"><img src={AVATAR_IMAGES[avatar]} alt="" /><data className="header-career-level" value={careerSummary.level} aria-hidden="true">{careerSummary.level}</data>{careerSummary.tickets > 0 && <i className="header-career-dot" aria-hidden="true" />}</CareerRing> : <img src={AVATAR_IMAGES[avatar]} alt="" />}<span><b>{displayName || "Dojo Agent"}</b><small>FIELD AGENT</small></span><strong aria-hidden="true">⌄</strong></button>{userMenuOpen && <aside className="user-menu-panel" role="dialog" aria-label="Personal dojo menu"><header><img src={AVATAR_IMAGES[avatar]} alt="" /><div><span>Current filing</span><strong>{displayName || "Dojo Agent"}</strong><small>{AVATAR_OPTIONS.find((option) => option.id === avatar)?.quip}</small></div></header>{careerSummary && <CareerPanel summary={careerSummary} onGo={(page) => { setUserMenuOpen(false); goTo(page); }} />}<button type="button" className="user-menu-settings" onClick={() => goTo("settings")}>Personal settings <span>→</span></button><div className="user-menu-lighting"><span>Lighting</span><ThemeToggle theme={theme} onToggle={toggleTheme} full /></div><div className="user-menu-accent"><span>Accent</span><b>{accent.toLocaleUpperCase()}</b></div></aside>}</div>
         <button type="button" className={`index-button${menuOpen ? " is-open" : ""}`} onClick={toggleMenu} aria-controls="mobile-menu" aria-expanded={menuOpen} aria-haspopup="dialog"><span className="index-button-drawer" aria-hidden="true"><i /><i /><i /></span><b>{menuOpen ? "Close" : "Index"}</b></button>
       </div>
     </div><div className="reading-progress" role="progressbar" aria-label={`${VIEW_LABELS[view]} reading progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scrollProgress * 100)}><span style={{ width: `${scrollProgress * 100}%` }} /><b>{VIEW_LABELS[view]}</b></div>{route.page === "playtest" && <button type="button" className="gameplay-menu-tab" onClick={toggleMenu} aria-controls="mobile-menu" aria-expanded={menuOpen} aria-haspopup="dialog"><span aria-hidden="true">☰</span> Menu <span aria-hidden="true">▾</span></button>}</header>
@@ -887,7 +904,7 @@ export default function CompanionApp() {
         <div className="dojo-index-heading"><div><span className="eyebrow">Dojo Index · drawer 01</span><h2 id="dojo-index-title">Where to, Agent?</h2></div><button className="mobile-menu-close" onClick={() => closeMenu()} aria-label="Close the Dojo Index">×</button></div>
         <nav className="dojo-index-cards" aria-label="All site pages">{MOBILE_MENU_NAVIGATION.map((item, index) => { const active = navigationItemIsActive(item, route); const art = INDEX_ART[item.page]; return <button type="button" key={item.page} className={`index-card${active ? " is-active" : ""}${item.page === "playtest" ? " is-play" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)} style={{ "--index-tilt": `${((index % 3) - 1) * .6}deg` } as CSSProperties}>
           <span className="index-card-tab">{String(index + 1).padStart(2, "0")}</span>
-          {art && <span className="index-card-art"><img src={art} alt="" loading="lazy" decoding="async" /></span>}
+          {art && <span className="index-card-art"><img src={art} alt="" loading="lazy" decoding="async" /></span>}{!art && item.page === "collection" && careerSummary && <span className="index-card-art index-card-art--career" aria-hidden="true"><CareerRing fraction={careerSummary.fraction} size={78} stroke={6}><b>{careerSummary.level}</b><small>Level</small></CareerRing></span>}
           <span className="index-card-copy"><b>{item.label}</b><small>{item.description}</small></span>
           {active && <span className="index-card-stamp" aria-hidden="true">You are here</span>}
         </button>; })}</nav>
@@ -899,7 +916,7 @@ export default function CompanionApp() {
       {globalResults.length > 0 ? renderGlobalResults("global-results", "dojo-global-results") : <div className="search-palette-empty">{globalSearch.trim().length >= 2 ? <p>No matching filing number. Try a shorter search.</p> : <><span>Try a filing</span><div>{["Basic Jab", "Tempo", "Combo", "Belt", "Reaction"].map((hint) => <button type="button" key={hint} onClick={() => { setGlobalSearch(hint); searchInputRef.current?.focus(); }}>{hint}</button>)}</div></>}</div>}
       <footer className="search-palette-foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
     </div></div>}
-    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesReader initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} headerArt={headerRulesUrl} />}{route.page === "cards" && <CardLibrary cardId={route.cardId} headerArt={headerCardsUrl} imageUrlFor={cardImageUrl} hasArt={hasCardArt} />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryPage initialQuery={route.term ?? ""} headerArt={headerGlossaryUrl} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
+    <div key={routeKey} className="view-stage">{route.page === "home" && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "playtest" && <Suspense fallback={<MatLoading />}><PlaytestView goTo={goTo} /></Suspense>}{route.page === "quickstart" && <QuickStartView goTo={goTo} />}{route.page === "story" && <StoryView goTo={goTo} />}{route.page === "rules" && <RulesReader initialChapterId={route.chapterId ?? ""} initialSectionId={route.sectionId ?? ""} headerArt={headerRulesUrl} />}{route.page === "cards" && <CardLibrary cardId={route.cardId} headerArt={headerCardsUrl} imageUrlFor={cardImageUrl} hasArt={hasCardArt} />}{route.page === "collection" && <CollectionPage />}{route.page === "rulings" && <RulingsView initialTab={route.tab ?? "official"} initialQuery={route.query ?? ""} />}{route.page === "glossary" && <GlossaryPage initialQuery={route.term ?? ""} headerArt={headerGlossaryUrl} />}{route.page === "lab" && internalLabAvailable && <DesignLab theme={theme} onToggleTheme={toggleTheme} onToast={pushToast} />}{route.page === "lab" && !internalLabAvailable && <HomeView goTo={goTo} displayName={displayName} avatar={avatar} />}{route.page === "settings" && <SettingsPage theme={theme} accent={accent} displayName={displayName} avatar={avatar} presentationPreferences={presentationPreferences} onPresentationPreferencesChange={changePresentationPreferences} onToggleTheme={toggleTheme} onAccentChange={(next) => { setAccent(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: `${next.toLocaleUpperCase()} accent filed`, message: "The whole website has received the memo.", duration: 2800 }); }} onNameChange={(next) => setDisplayName(next)} onAvatarChange={(next) => { setAvatar(next); pushToast({ kind: "stamp", eyebrow: "Personal settings", title: "Avatar filed", message: "The new field agent has been cleared for the dojo.", duration: 2800 }); }} onToast={pushToast} />}{route.page === "search" && <SearchPage query={route.query ?? ""} />}</div>
     <nav className="thumb-bar" aria-label="Quick navigation">{MOBILE_BOTTOM_NAVIGATION.map((item) => { const active = navigationItemIsActive(item, route); return <button type="button" key={item.page} className={`thumb-bar-item${item.page === "playtest" ? " is-play" : ""}${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => goTo(item.page)}><span aria-hidden="true">{item.mobileBottomIcon}</span><b>{item.shortLabel}</b></button>; })}</nav>
     <footer className="site-footer"><div className="shell footer-inner"><div className="brand footer-brand"><BrandMark /><span><b>DOJO</b><em>PAPER-FU // DECKBUILDER</em></span></div><p>Build your deck. Earn your belt. File the incident.</p><span>Filed with the Department. Probably correctly.</span></div></footer>
     {scrollProgress > .2 && <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: paperScrollBehavior() })} aria-label="Back to top"><span aria-hidden="true">↑</span><b>Top</b></button>}

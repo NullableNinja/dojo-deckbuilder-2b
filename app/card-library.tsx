@@ -159,6 +159,7 @@ function CareerWallet({ career }: { career: NonNullable<CollectionSnapshot["care
       <span><b>Clearance Level {progress.level}</b> · {career.merit.toLocaleString()} Merit</span>
     </div>
     <p className="career-wallet-note">{complete ? `Collection complete. Every new ticket files as ${economy.packs.boosterRules.completedCollection.ticketConvertsToMerit} Merit.` : tickets ? "Pick any open series below and rip a pack: five cards you do not own yet." : "Win a match for a Booster Ticket. A loss earns a Ticket Stub; three stubs make a ticket."}</p>
+    <button type="button" className="button ghost career-wallet-link" onClick={() => navigate({ page: "collection" })}>Level track and unlocks <span aria-hidden="true">→</span></button>
   </div>;
 }
 

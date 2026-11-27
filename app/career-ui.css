@@ -1,0 +1,69 @@
+/* Career chrome in the shell: the Clearance Level ring around the Field Agent avatar and the career card in
+   the Field Agent menu. The header is ink in both themes, so its ring uses the on-ink brass. */
+@layer components {
+  .career-ring, .career-ring-inner { font-style: normal; }
+  .header-career-ring { flex: 0 0 auto; }
+  .header-career-ring .career-ring-track { stroke: rgba(247, 240, 223, .3); opacity: 1; }
+  .header-career-ring .career-ring-fill { stroke: var(--pf-brass-on-ink, var(--pf-brass)); }
+  .header-career-ring img { width: 38px; height: 38px; border: 2px solid var(--pf-line-strong); border-radius: 50%; background: var(--pf-surface); object-fit: contain; object-position: center bottom; }
+  .profile-menu-button:hover .career-ring-fill, .profile-menu-button.is-open .career-ring-fill { stroke: var(--pf-action); }
+  .header-career-level { position: absolute; right: -5px; bottom: -4px; display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 3px; border: 1.5px solid var(--pf-brass-on-ink, var(--pf-brass)); border-radius: 9px; color: #fffaf0; background: var(--pf-stage-edge, #1a2a3a); font: 700 10px/1 var(--pf-mono); }
+  .header-career-dot { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border: 2px solid var(--pf-stage-edge, #1a2a3a); border-radius: 50%; background: var(--pf-action); }
+  @media (prefers-reduced-motion: no-preference) { .header-career-dot { animation: pf-career-dot 2.2s ease-in-out infinite; } }
+  @keyframes pf-career-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+
+  .user-menu-career { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--pf-line-strong); border-left: 5px solid var(--pf-brass); border-radius: 3px; background: var(--pf-surface-raised); }
+  .user-menu-career-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; }
+  .user-menu-career-head b { font: 400 17px/1.1 var(--pf-display); text-transform: uppercase; color: var(--pf-ink); }
+  .user-menu-career-head span { font: 700 10px/1 var(--pf-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--pf-brass-text); }
+  .career-bar { height: 9px; overflow: hidden; border: 1.5px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-dim); }
+  .career-bar i { display: block; height: 100%; background: repeating-linear-gradient(135deg, var(--pf-brass) 0 6px, color-mix(in srgb, var(--pf-brass) 78%, var(--pf-surface-raised)) 6px 12px); }
+  .user-menu-career p { margin: 0; color: var(--pf-ink-soft); font-size: 12.5px; line-height: 1.4; }
+  .user-menu-career-wallet b { color: var(--pf-ink); }
+  .user-menu-career-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .user-menu-career-actions button { min-height: 44px; padding: 6px 12px; border: 1.5px solid var(--pf-line-strong); border-radius: 3px; color: var(--pf-ink); background: var(--pf-surface); font: 700 12px/1 var(--pf-sans); cursor: pointer; }
+  .user-menu-career-actions button:hover { border-color: var(--pf-action); }
+  .user-menu-career-actions button.is-ticket { color: var(--qd-on-action, #fffaf0); border-color: var(--pf-action); background: var(--pf-action); }
+}
+
+@layer components {
+  .career-band-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px 26px; padding: 20px 24px; border: 2px solid var(--pf-stage-edge, var(--pf-ink)); border-radius: 4px; color: var(--pf-ink); background: var(--pf-surface-raised); box-shadow: 5px 6px 0 var(--pf-brass); }
+  .career-band-ring b { font: 400 36px/1 var(--pf-display); }
+  .career-band-ring small { display: block; font: 700 9px/1 var(--pf-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--pf-ink-soft); }
+  .career-band-main { display: grid; gap: 8px; min-width: 0; }
+  .career-band-title { font: 400 20px/1.1 var(--pf-display); text-transform: uppercase; }
+  .career-band-merit { color: var(--pf-ink-soft); font-size: 14px; }
+  .career-band-next { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .career-band-next li { display: grid; gap: 2px; min-width: 0; max-width: 260px; padding: 6px 10px; border: 1.5px dashed var(--pf-line-strong); border-radius: 3px; font-size: 12.5px; line-height: 1.3; }
+  .career-band-next b { font: 700 10px/1 var(--pf-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--pf-brass-text); }
+  .career-band-actions { display: grid; gap: 8px; justify-items: stretch; }
+  .career-band-actions .button { min-height: 44px; white-space: nowrap; }
+}
+@layer responsive {
+  @media (max-width: 820px) {
+    .career-band-card { grid-template-columns: auto minmax(0, 1fr); padding: 16px; }
+    .career-band-actions { grid-column: 1 / -1; grid-auto-flow: column; }
+    .career-band-ring { transform: scale(.82); transform-origin: left center; margin-right: -18px; }
+  }
+  @media (max-width: 520px) { .career-band-actions { grid-auto-flow: row; } }
+}
+
+@layer components {
+  .setup-payroll { display: grid; gap: 6px; margin: 10px 0 2px; padding: 10px 12px; border: 1.5px dashed var(--pf-line-strong); border-left: 5px solid var(--pf-brass); border-radius: 3px; color: var(--pf-ink); background: var(--pf-surface-raised); }
+  .setup-payroll-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; }
+  .setup-payroll-head b { font: 400 15px/1.1 var(--pf-display); text-transform: uppercase; }
+  .setup-payroll-head span { font: 700 10px/1.2 var(--pf-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--pf-brass-text); }
+  .setup-payroll ul { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
+  .setup-payroll li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-size: 13px; }
+  .setup-payroll li b { font: 700 12px/1.3 var(--pf-mono); }
+  .setup-payroll p { margin: 0; color: var(--pf-ink-soft); font-size: 12.5px; line-height: 1.4; }
+  .setup-payroll.is-off b { font: 400 15px/1.1 var(--pf-display); text-transform: uppercase; }
+}
+
+@layer components {
+  .index-card-art--career { text-align: center; }
+  .index-card-art--career .career-ring { display: grid; margin: 9px auto 0; }
+  .index-card-art--career .career-ring-track { stroke: var(--pf-line-strong); }
+  .index-card-art--career b { font: 400 28px/1 var(--pf-display); color: var(--pf-ink); }
+  .index-card-art--career small { display: block; font: 700 8px/1 var(--pf-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--pf-ink-soft); }
+}

@@ -63,6 +63,7 @@
 
   /* ---- My Collection: the wallet (Booster Tickets, stubs, Clearance Level) ---- */
   .collection-ledger.is-career .collection-ledger-stamp { border-color: var(--pf-blue); color: var(--pf-blue); }
+  .career-wallet-link { grid-column: 1 / -1; justify-self: start; min-height: 44px; }
   .career-wallet { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 16px; border: 1px solid var(--pf-line-strong); border-radius: 4px; padding: 12px 14px; background: var(--pf-surface-raised); }
   .career-wallet-ticket { position: relative; display: grid; justify-items: center; min-width: 104px; padding: 8px 16px 9px; color: var(--pf-manila-ink); background: linear-gradient(160deg, var(--pf-manila), var(--pf-manila-deep)); clip-path: polygon(0 0, 100% 0, 100% 35%, 94% 50%, 100% 65%, 100% 100%, 0 100%, 0 65%, 6% 50%, 0 35%); }
   .career-wallet-ticket::after { content: ""; position: absolute; inset: 5px 9px; border: 1px dashed color-mix(in srgb, var(--pf-manila-ink) 45%, transparent); pointer-events: none; }

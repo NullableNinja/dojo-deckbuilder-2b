@@ -2,17 +2,14 @@
 // match in the career once (app/career-match.ts) and shows what it paid: Merit, tickets and stubs,
 // any Clearance Level reached with its rewards, and the wallet afterwards.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { careerStore, economy, walletOf, type Payroll, type PayrollLine, type Reward } from "./career";
+import { careerStore, economy, walletOf, type Payroll, type PayrollLine } from "./career";
 import { recordSessionResult } from "./career-match";
 import type { EngineSession } from "./engine-session";
 import { navigate } from "./routing";
+import { plural, rewardLabel, titleCase } from "./career-labels";
 import { cardMotionDisabled } from "./card-motion";
 import { revealBeats, revealState, type RevealInput } from "./payroll-reveal";
 import "./career-payroll.css";
-
-const titleCase = (key: string) => key.split(/[-:\s]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
-const packName = (id?: string) => economy.boosters.find((pack) => pack.id === id)?.name ?? titleCase(id ?? "");
 
 // Labels for the earn rules' `when` vocabulary (content/packs.json earnRules.bonuses).
 const BONUS_LABELS: Record<string, (times: number) => string> = {
@@ -34,17 +31,6 @@ function lineLabel(line: PayrollLine) {
 
 function lineValue(line: PayrollLine) {
   return [line.merit ? `+${line.merit} Merit` : "", line.tickets ? `+${plural(line.tickets, "ticket")}` : "", line.stubs ? `+${plural(line.stubs, "stub")}` : ""].filter(Boolean).join(" · ");
-}
-
-function rewardLabel(reward: Reward) {
-  if (reward.kind === "booster-ticket") return plural(reward.count ?? 1, "Booster Ticket");
-  if (reward.kind === "unlock-booster") return `${packName(reward.pack)} series opens`;
-  if (reward.kind === "unlock-character") return `${reward.name} cleared for duty`;
-  if (reward.kind === "unlock-boss") return `New Boss: ${reward.name}`;
-  if (reward.kind === "starter-kit-choice") return "Another Starter Kit to choose in the Card Library";
-  if (reward.kind === "title") return `Title: ${titleCase((reward.id ?? "").replace(/^title:/, ""))}`;
-  const [slot, name] = (reward.id ?? "").split(":");
-  return `${titleCase(slot ?? "")}: ${titleCase(name ?? "")} (design pending)`;
 }
 
 const REFUSALS: Record<string, { stamp: string; text: () => string }> = {
@@ -157,6 +143,9 @@ function FiledSlip({ payroll, motion, startDelay }: { payroll: Payroll; motion?:
       <span className="payroll-meter" aria-hidden="true"><i className={shown.meter.reset ? "is-reset" : ""} style={{ width: `${shown.meter.pct}%` }} /></span>
     </div>
     {!finished && <button type="button" className="button ghost payroll-skip" onClick={(event) => { event.stopPropagation(); skipNow(); }}>Skip</button>}
-    {finished && wallet.tickets > 0 && <button type="button" className="button ghost payroll-open" onClick={() => navigate({ page: "cards" })}>Open packs in the Card Library <span aria-hidden="true">→</span></button>}
+    {finished && <div className="payroll-links">
+      {wallet.tickets > 0 && <button type="button" className="button ghost payroll-open" onClick={() => navigate({ page: "cards" })}>Open packs in the Card Library <span aria-hidden="true">→</span></button>}
+      <button type="button" className="button ghost payroll-open" onClick={() => navigate({ page: "collection" })}>See your Collection <span aria-hidden="true">→</span></button>
+    </div>}
   </section>;
 }

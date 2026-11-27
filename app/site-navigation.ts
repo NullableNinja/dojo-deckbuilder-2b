@@ -78,6 +78,16 @@ const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     order: 50,
   },
   {
+    page: "collection",
+    label: "Collection",
+    shortLabel: "Collection",
+    description: "Your Clearance Level, tickets, series and unlocks.",
+    desktop: false,
+    mobileMenu: true,
+    mobileBottom: false,
+    order: 55,
+  },
+  {
     page: "rulings",
     label: "Rulings & Variants",
     shortLabel: "Rulings",

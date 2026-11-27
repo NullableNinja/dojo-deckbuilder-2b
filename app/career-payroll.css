@@ -26,6 +26,7 @@
   .payroll-level { font: 700 12px/1.2 var(--pf-mono); text-transform: uppercase; }
   .payroll-meter { grid-column: 1 / -1; position: relative; display: block; height: 8px; overflow: hidden; border: 1px solid var(--pf-line-strong); border-radius: 2px; background: var(--pf-surface-dim); }
   .payroll-meter i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, var(--pf-brass) 0 6px, color-mix(in srgb, var(--pf-brass) 78%, var(--pf-surface-raised)) 6px 12px); }
+  .payroll-links { display: flex; flex-wrap: wrap; gap: 8px; }
   .payroll-open { justify-self: start; min-height: 44px; }
 
   /* ---- Filing animation -------------------------------------------------------------------
@@ -88,7 +89,7 @@
     .payroll-stamp { position: static; justify-self: end; margin-bottom: 2px; }
     .payroll-slip h3, .payroll-slip p { padding-right: 0; }
     .payroll-wallet { grid-template-columns: 1fr; }
-    .payroll-open { justify-self: stretch; }
+    .payroll-open { justify-self: stretch; flex: 1 1 100%; }
     /* On a phone the Skip button joins the slip's flow instead of floating over the meter. */
     .payroll-skip { position: static; justify-self: stretch; }
     .payroll-slip.is-filing { padding-bottom: 14px; }
