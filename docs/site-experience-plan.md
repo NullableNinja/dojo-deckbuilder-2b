@@ -113,7 +113,7 @@ Search already has a strong hero. **A:** recent searches as paper tabs, and a "T
 Market Mercy" suggestion row. Settings: **A:** a live "ID badge" preview that updates as you choose name,
 avatar and accent; **B:** a "certified" stamp when a preference saves.
 
-## Play (`#playtest`) setup
+## Play (`#play`) setup
 
 The live mats are out of scope here (other work owns them). The setup screen could later borrow the
 Home VS card for the chosen fighters.

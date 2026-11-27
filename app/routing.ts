@@ -56,6 +56,12 @@ const nonEmpty = (value: string | undefined) => value?.trim() || undefined;
 
 const fallbackRoute = (): SiteRoute => ({ page: "home" });
 
+// The game page keeps its internal id ("playtest": data-app-route, styles, lazy chunk) but its public
+// address is #play.
+const PLAY_HASH_PAGE = "play";
+const LEGACY_PLAY_HASH_PAGE = "playtest";
+const LEGACY_PLAY_HASH = /^#\/*playtest(?:[/?].*)?$/i;
+
 export function parseRoute(location: string): SiteRoute {
   const rawHash = location.includes("#") ? location.slice(location.indexOf("#") + 1) : location.replace(/^#/, "");
   const raw = rawHash.replace(/^#/, "").replace(/^\/+|\/+$/g, "");
@@ -70,6 +76,10 @@ export function parseRoute(location: string): SiteRoute {
     const cardId = nonEmpty(parts[0]);
     return cardId ? { page: "cards", cardId } : { page: "cards" };
   }
+
+  // The game lives at #play. Old #playtest links and bookmarks (with or without a trailing path) still land
+  // on it; readRoute() rewrites them to #play in the address bar.
+  if (page === PLAY_HASH_PAGE || page === LEGACY_PLAY_HASH_PAGE) return { page: "playtest" };
 
   // Legacy House Rules links pre-date the unified Rulings view.
   if (page === "house-rules") {
@@ -117,7 +127,7 @@ export function parseRoute(location: string): SiteRoute {
 export function serializeRoute(route: SiteRoute): string {
   switch (route.page) {
     case "home": return "#home";
-    case "playtest": return "#playtest";
+    case "playtest": return `#${PLAY_HASH_PAGE}`;
     case "quickstart": return "#quickstart";
     case "story": return "#story";
     case "rules": return `#rules${route.chapterId ? `/${encodePart(route.chapterId)}` : ""}${route.chapterId && route.sectionId ? `/${encodePart(route.sectionId)}` : ""}`;
@@ -135,6 +145,9 @@ export function serializeRoute(route: SiteRoute): string {
 
 export function readRoute(): SiteRoute {
   if (typeof window === "undefined") return fallbackRoute();
+  if (LEGACY_PLAY_HASH.test(window.location.hash)) {
+    window.history.replaceState(window.history.state, "", serializeRoute({ page: "playtest" }));
+  }
   return parseRoute(window.location.hash);
 }
 
