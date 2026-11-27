@@ -22,6 +22,7 @@
  */
 import { attackPower, cost, focus, guard } from "./bots.mjs";
 import { HEADLESS_RESOLVER_ACTIONS } from "./core.mjs";
+import { cloneGame } from "./game-clone.mjs";
 
 export const DIFFICULTIES = ["student", "certified", "master"];
 
@@ -248,22 +249,6 @@ function choosePurchase(game, player, legal, profile) {
 }
 
 // ---- Look-ahead (Master) -----------------------------------------------------------------
-
-const SHARED_KEYS = new Set(["data", "definition", "effects", "mode", "rng", "events", "decisions", "lastPresentedChoice", "cardStats", "marketDeck", "comboDeck", "locationDeck"]);
-
-/**
- * A private copy of the table to try a decision on. Rules data is shared read-only; draw
- * piles nobody draws from within a turn are shared by array copy; everything else is cloned.
- */
-function cloneGame(game) {
-  const mutable = {};
-  for (const [key, value] of Object.entries(game)) if (!SHARED_KEYS.has(key) && typeof value !== "function") mutable[key] = value;
-  const copy = Object.assign(Object.create(Object.getPrototypeOf(game)), structuredClone(mutable));
-  Object.assign(copy, { data: game.data, definition: game.definition, effects: game.effects, mode: game.mode, events: [], decisions: [], lastPresentedChoice: null, cardStats: new Map() });
-  for (const key of ["marketDeck", "comboDeck", "locationDeck"]) copy[key] = Array.isArray(game[key]) ? game[key].slice() : game[key];
-  copy.rng = Object.assign(Object.create(Object.getPrototypeOf(game.rng)), game.rng);
-  return copy;
-}
 
 /** Play a copy forward with Certified judgement for every seat until `done` says stop. */
 function playOut(sim, done, maxSteps = 80) {
