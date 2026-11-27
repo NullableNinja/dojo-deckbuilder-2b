@@ -1451,18 +1451,6 @@
 .effect-choice-options small { opacity: .7; font-size: 8px; }
 .effect-choice-dialog footer { display: flex; justify-content: flex-end; margin-top: 14px; }
 
-.playtest-inspector { width: min(920px, calc(100vw - 34px)); }
-.playtest-inspector .inspector-heading { grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); align-items: start; gap: 23px; }
-.playtest-inspector .inspector-card-visual { width: 100%; min-height: 0; padding: 7px; }
-.playtest-inspector .inspector-card-visual > img { width: 100%; height: auto; max-height: min(64dvh, 560px); object-fit: contain; }
-.playtest-inspector .inspector-card-visual > .native-card-art { min-height: 390px; }
-.playtest-inspector.is-fighter-dossier .inspector-heading { grid-template-columns: minmax(210px, 285px) minmax(0, 1fr); }
-.playtest-inspector.is-fighter-dossier .inspector-card-visual { max-width: 285px; }
-.fighter-inspector-stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.inspector-loadout { margin-top: 14px; }
-.inspector-loadout > header { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
-.inspector-loadout h3 { margin: 2px 0 0; font-size: 20px; }
-.inspector-loadout-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
 .equipment-slot { min-width: 0; min-height: 100px; border: 1px dashed rgba(42, 63, 52, .26); padding: 7px; background: rgba(255, 255, 255, .22); }
 .equipment-slot > span { display: block; margin-bottom: 5px; color: #87631b; font-size: 7px; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
 .equipment-slot > em { min-height: 60px; display: grid; place-items: center; opacity: .38; font-size: 9px; }
@@ -1661,7 +1649,6 @@
   .ascend-guide { grid-template-columns: 1fr; }
   .ascend-guide ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ascend-guide li:nth-child(2)::after { display: none; }
-  .inspector-loadout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -3335,11 +3322,6 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 .playtest-shell--live .battle-hud-fighter--ai { background: linear-gradient(180deg, #9b3f35, #40252e); }
 .playtest-shell--live .battle-hud-fighter i em { background: linear-gradient(90deg, #6d82df, #b8c5ff); }
 .playtest-shell--live .battle-hud-fighter--ai i em { background: linear-gradient(270deg, #d46552, #ff9a82); }
-.playtest-inspector .equipment-slot-control > button:first-child {
-  color: #fff;
-  background: #405bb0;
-}
-:root[data-theme="dark"] .playtest-inspector .equipment-slot-control > button:first-child { background: #2f4385; }
 
 /* ==========================================================================\n+   LIVE MAT REFINEMENT AUTHORITY\n+   The playmat uses one neutral charcoal field in both themes. Accent colors\n+   are reserved for actions, guard states, certification, and impact.\n+   ========================================================================== */
 .playtest-shell--live {
@@ -3832,7 +3814,6 @@ body:has(.playtest-shell--live .match-result) { overflow: hidden; }
 
 /* Inspector headings were authored as grid columns but never opted into the
    grid layout, which made the card dossier collapse at narrower widths. */
-.playtest-shell--live .playtest-inspector .inspector-heading { display: grid; }
 
 /* Mobile is a deliberate stacked field report: stage first, then the two
    fighter dossiers. No 960px desktop mat is allowed to escape the viewport. */
