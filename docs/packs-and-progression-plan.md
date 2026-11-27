@@ -1,8 +1,8 @@
 # Packs, collections and Clearance Levels
 
-Status: **approved** (owner answers of Nov 27, 2026). Nothing is wired into gameplay or the UI yet; the
-implementation phases are at the end. The owner asked for small decisions to be made here rather than
-sent back, so the final section lists what was decided and why, and no open questions remain.
+Status: **approved** (owner answers of Nov 27, 2026), and the first playable slice is **implemented**
+(see "What is built" below). The owner asked for small decisions to be made here rather than sent back,
+so the final section lists what was decided and why, and no open questions remain.
 
 The data is `content/packs.json` (shape: `content/packs.schema.json`), checked by
 `scripts/check-packs.mjs` (`npm run packs:check`, and `tests/packs-data.test.mjs` in `npm test`).
@@ -380,6 +380,29 @@ Each phase ends green on `npm run verify`.
 6. **PvP.** Manifest exchange in the pairing codes; pools, rosters and `packsRevision` in setup and the
    state hash.
 7. **Tuning** from play data and simulations.
+
+### What is built (first slice)
+
+- **Engine pool.** `table.cardPool` (declared in `content/dojo-game.json` `tableOptions`, with its
+  `pooledDecks`) restricts the Market, Combo and Location decks and the Boss ladder. Null is the full
+  catalog and leaves setups, results and fingerprints exactly as before; a pool is recorded sorted in
+  `setup.table`, so saves and replays reproduce it. Tests: `tests/engine-card-pool.test.mjs`.
+- **Economy.** `engine/collection.mjs` (`createEconomy(packs, cards)`): ownership, roster unlocks,
+  Clearance Levels, seeded booster draws, earn rules, stub exchange, completed-collection conversion,
+  `resolveMatchPool` and never-lose `mergeCareers`.
+- **Career store.** `app/career.ts` (the plan's `career-store`): `paper-fu-career-v1` with a checksum,
+  `-backup` key, read-only newer schemas and `PFC1.` codes (deflate-raw + CRC32, `opened` as bitsets).
+  Ownership and unlocks are derived; only choices, random results, wallet and Merit are stored.
+- **UI.** Card Library views *My Collection* / *Open Dojo* (the Open Dojo switch also decides what matches
+  use and pay), the Starter Kit requisition, real pack opening, sealed envelopes that say how to get each
+  card, the "Department payroll" slip on every engine table's result, unlocked-only fighter select, and
+  the Dojo Record in Settings. Tests: `tests/career.test.mjs`.
+- **Small calls made while building.** A match "reaches 3 rounds" when it ends in round 3 or later.
+  Boss Blitz pays by stage instead of difficulty (its setup has no difficulty). Difficulty scales only the
+  base result Merit, not bonuses. A real pack opened from a card's Dossier is random within that series
+  (only the free preview pins the card). A browser that cannot store a career defaults to Open Dojo and
+  previews a new recruit in My Collection. Still to come: the Collection page and level track behind the
+  Field Agent menu, cosmetics, export prompts, QR/download, and PvP manifests.
 
 ## Decisions
 

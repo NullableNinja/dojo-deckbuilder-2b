@@ -327,3 +327,30 @@ test("importing a code into the store merges into the current career", async () 
   assert.ok(after.starterKits.includes(kit.id));
   assert.ok(after.merit >= other.merit);
 });
+
+// ---- Finished tables ----------------------------------------------------------------------
+
+test("a finished engine table becomes one receipt and pays once", async () => {
+  const { EngineSession } = await import("../app/engine-session.ts");
+  const { matchReceipt, recordSessionResult } = await import("../app/career-match.ts");
+  const fighters = cards.filter((card) => card.cardType === "Character").map((card) => card.catalogId);
+  const pool = economy.resolveMatchPool([economy.manifest(fresh())]);
+  const session = new EngineSession({ mode: "quick-duel", seed: 41, fighters: [fighters[0], fighters[1]], humanSeats: [0], rulesVersion: "test", difficulty: "certified", table: { cardPool: pool } });
+  assert.equal(matchReceipt(session), null, "no receipt while the match runs");
+  for (let step = 0; step < 20000 && !session.over; step += 1) {
+    if (!session.humanToAct()) { session.stepBots(200); continue; }
+    if (session.game.pendingChoice) session.choose(session.game.defaultChoice().optionId);
+    else session.act(session.game.defaultAction(session.legalFor(0)));
+  }
+  const match = matchReceipt(session);
+  assert.equal(match.table, "vs-bots");
+  assert.equal(match.result, session.game.winner === 0 ? "win" : "loss");
+  assert.equal(match.rounds, session.game.round);
+  const store = storeOn(memoryStorage());
+  const first = recordSessionResult(session, store);
+  assert.equal(first.eligible, match.rounds >= earn.eligibility.minimumCompletedRounds);
+  assert.equal(recordSessionResult(session, store), first, "rendering the result again pays nothing more");
+  assert.equal(store.get().state.receipts.length, first.eligible ? 1 : 0);
+  const openDojo = new EngineSession({ mode: "quick-duel", seed: 41, fighters: [fighters[0], fighters[1]], humanSeats: [0], rulesVersion: "test", table: { cardPool: null } });
+  assert.equal(matchReceipt({ ...openDojo, game: { ...openDojo.game, winner: 0, round: 9, events: [], players: openDojo.game.players }, setup: openDojo.setup }).table, "open-dojo");
+});

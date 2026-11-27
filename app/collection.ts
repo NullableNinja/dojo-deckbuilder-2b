@@ -4,14 +4,15 @@
 // Cards are unlocked by playing, never bought. There are two kinds of unlock source:
 //   - packs from content/packs.json: starter kits and themed booster series whose
 //     5-card packs only ever hold cards you do not own yet;
-//   - rosters: every Character and every Boss Profile, which will also unlock over time.
-// Real career progress does not exist yet, so ownership is one of two clearly labelled views:
-//   - "open-dojo": the full catalog is on loan. Everything is owned. This is the default.
-//   - "recruit-preview": what a brand-new profile might hold. A preview, never saved.
-// When the career store lands (docs/packs-and-progression-plan.md, phase 3), add a "career" view here that
-// reads it; pages keep calling readCollection() and never learn where ownership came from.
+//   - rosters: every Character and every Boss Profile, which unlock with Clearance Levels and series.
+// Ownership comes from the career store (app/career.ts) through one of two views:
+//   - "career" (My Collection): the player's own cards. Without a working career (storage blocked, or a
+//     record from a newer version) it becomes a free preview of a brand-new profile, never saved.
+//   - "open-dojo": the full catalog is on loan. Everything is owned and matches earn nothing.
+// Pages call readCollection() and never learn where ownership came from.
 import packsJson from "../content/packs.json";
 import cardsJson from "./data/cards.json";
+import { economy, type CareerSnapshot, type CareerState, type SeriesStatus } from "./career";
 
 export type UnlockSourceKind = "starter" | "booster" | "roster";
 export type UnlockSource = {
@@ -25,12 +26,19 @@ export type UnlockSource = {
   unlockLevel?: number;
   catalogIds: string[];
 };
-export type CollectionView = "open-dojo" | "recruit-preview";
+export type CollectionView = "career" | "open-dojo";
+/** "career": a saved collection. "preview": a new recruit's collection, nothing saved. "open-dojo": everything. */
+export type CollectionMode = "career" | "preview" | "open-dojo";
 export type CollectionSnapshot = {
   view: CollectionView;
+  mode: CollectionMode;
   label: string;
   summary: string;
   owns: (catalogId: string) => boolean;
+  /** The career behind the view (a throwaway recruit in preview, null in Open Dojo). */
+  career: CareerState | null;
+  /** Per-series state for the career or preview profile. */
+  series: Map<string, SeriesStatus>;
 };
 export type SourceProgress = { source: UnlockSource; owned: number; total: number; locked: boolean };
 
@@ -83,40 +91,83 @@ UNLOCK_SOURCES.forEach((source) => source.catalogIds.forEach((catalogId) => SOUR
 export const sourceFor = (catalogId: string): UnlockSource | undefined => SOURCE_BY_CARD.get(catalogId);
 export const isUnlockable = (catalogId: string) => SOURCE_BY_CARD.has(catalogId);
 
-/** A new profile holds every day-one pack plus the starting fighters and bosses named in packs.json. */
-const RECRUIT_OWNED = new Set([
-  ...UNLOCK_SOURCES.filter((source) => source.grant === "every-profile").flatMap((source) => source.catalogIds),
-  ...characters.starting.map((entry) => entry.catalogId),
-  ...bosses.starting.map((entry) => entry.catalogId),
-]);
+/** A brand-new profile, for the preview view: built by the same economy, never saved. */
+const RECRUIT = economy.newCareer({ profileId: "preview", createdAt: "", rngSeed: 1 });
 
-const SNAPSHOTS: Record<CollectionView, CollectionSnapshot> = {
-  "open-dojo": {
-    view: "open-dojo",
-    label: "Open Dojo",
-    summary: "The full catalog is on loan. Unlocks are not switched on yet, so every card, fighter and boss is yours to read.",
-    owns: () => true,
-  },
-  "recruit-preview": {
-    view: "recruit-preview",
-    label: "New recruit preview",
-    summary: `A preview of a brand-new profile: the Starter Deck, the Orientation Kit, ${characters.starting.length} fighters and ${bosses.starting.length} bosses. Everything else unlocks by playing. Nothing is saved and nothing is locked.`,
-    owns: (catalogId) => !SOURCE_BY_CARD.has(catalogId) || RECRUIT_OWNED.has(catalogId),
-  },
-};
-
-export function readCollection(view: CollectionView = "open-dojo"): CollectionSnapshot {
-  return SNAPSHOTS[view];
+function ownership(state: CareerState) {
+  const owned = economy.ownedCards(state);
+  const roster = economy.unlockedRoster(state);
+  return (catalogId: string) => !SOURCE_BY_CARD.has(catalogId) || owned.has(catalogId) || roster.characters.has(catalogId) || roster.bosses.has(catalogId);
 }
 
-/** Per-source ownership for the ledger. A booster above level 1 reads as locked in the recruit preview. */
+const seriesMap = (state: CareerState) => new Map(economy.seriesStatus(state).map((series) => [series.id, series]));
+
+const OPEN_DOJO: CollectionSnapshot = {
+  view: "open-dojo",
+  mode: "open-dojo",
+  label: "Open Dojo",
+  summary: "The full catalog is on loan: every card, fighter and Boss. Matches played in Open Dojo use everything and earn nothing.",
+  owns: () => true,
+  career: null,
+  series: new Map(),
+};
+
+const careerCache = new WeakMap<CareerState, CollectionSnapshot>();
+
+/** The view for a career snapshot. Open Dojo ignores the career; My Collection reads it (or previews). */
+export function readCollection(view: CollectionView, career: CareerSnapshot): CollectionSnapshot {
+  if (view === "open-dojo" || career.status === "everything") return OPEN_DOJO;
+  if (career.status === "career" && career.state) {
+    const cached = careerCache.get(career.state);
+    if (cached) return cached;
+    const snapshot: CollectionSnapshot = {
+      view: "career",
+      mode: "career",
+      label: "My Collection",
+      summary: "Your own cards, kept in this browser. Matches deal the Market, Combos and Locations from these cards and pay Merit and Booster Tickets. Rip packs to add cards you do not own yet.",
+      owns: ownership(career.state),
+      career: career.state,
+      series: seriesMap(career.state),
+    };
+    careerCache.set(career.state, snapshot);
+    return snapshot;
+  }
+  const state = career.status === "read-only" && career.state ? career.state : RECRUIT;
+  return {
+    view: "career",
+    mode: "preview",
+    label: career.status === "read-only" ? "My Collection · read only" : "New recruit preview",
+    summary: career.status === "read-only"
+      ? "This record was saved by a newer version of Paper-Fu, so it is shown read-only and never overwritten. Export it from Settings. Packs opened here are a free preview."
+      : `This browser is not keeping records, so this is a preview of a brand-new profile: the Starter Deck, the Orientation Kit, ${characters.starting.length} fighters and ${bosses.starting.length} Bosses. Packs opened here are free and nothing is saved.`,
+    owns: ownership(state),
+    career: state,
+    series: seriesMap(state),
+  };
+}
+
+/** Per-source ownership for the ledger. A booster series above the profile's Clearance Level reads as locked. */
 export function sourceProgress(snapshot: CollectionSnapshot): SourceProgress[] {
   return UNLOCK_SOURCES.map((source) => ({
     source,
     owned: source.catalogIds.filter(snapshot.owns).length,
     total: source.catalogIds.length,
-    locked: snapshot.view === "recruit-preview" && (source.unlockLevel ?? 1) > 1,
+    locked: source.kind === "booster" && snapshot.mode !== "open-dojo" && snapshot.series.get(source.id)?.unlocked === false,
   }));
+}
+
+/** How a locked card, Character or Boss is obtained, in one line for envelopes and the Dossier. */
+export function unlockHint(catalogId: string, snapshot: CollectionSnapshot): string {
+  const source = economy.unlockSource(catalogId);
+  if (source.kind === "booster") {
+    const series = snapshot.series.get(source.series);
+    return series && !series.unlocked ? `${source.seriesName} series · opens at Clearance Level ${source.level}` : `${source.seriesName} series · Rip a pack`;
+  }
+  if (source.kind === "level") return `Unlocks at Clearance Level ${source.level}`;
+  if (source.kind === "series") return `Complete ${source.seriesName} to unlock`;
+  if (source.kind === "starter-kit") return `${source.packName} · choose it as a Starter Kit`;
+  if (source.kind === "every-profile") return `${source.packName} · issued on day one`;
+  return "Standard issue";
 }
 
 /** Cards per booster pack. Packs only ever hold cards you do not own yet; the last pack holds what is left. */
@@ -124,8 +175,8 @@ export const CARDS_PER_PACK = raw.boosterRules.cardsPerPack;
 
 /**
  * A preview pack: up to CARDS_PER_PACK still-sealed cards from one booster series, in catalog order once
- * drawn. Preview only, so it uses the browser's randomness; real packs will be rolled from the profile seed.
- * `mustInclude` puts a specific sealed card in the pack (opening a pack from that card's Dossier).
+ * drawn. Preview only, so it uses the browser's randomness; real packs are rolled from the profile seed
+ * by the career store. `mustInclude` puts a specific sealed card in the pack (opening from its Dossier).
  */
 export function drawPreviewPack(source: UnlockSource, isSealed: (catalogId: string) => boolean, mustInclude?: string, random = Math.random): string[] {
   const sealed = source.catalogIds.filter(isSealed);

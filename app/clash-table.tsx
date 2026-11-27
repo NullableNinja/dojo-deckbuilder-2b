@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { clashCardByCatalogId, clashData, type EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed } from "./engine-session.ts";
+import { PayrollSlip } from "./career-payroll";
 
 type Seat = {
   id: number; name: string; character: EngineCard; hp: number; maxHp: number; xp: number; beltIndex: number; focus: number;
@@ -173,6 +174,7 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
         <span className="eyebrow">{over ? `Final bell · ${reasonLabel(game.reason)}` : "You have been knocked out"}</span>
         <h2 id="clash-result-title">{over ? (game.winner === HUMAN ? "You win the Clash!" : `${game.players[game.winner!].character.name} wins the Clash.`) : "Out of the clash."}</h2>
         <p>{over ? `Round ${game.round}. ${game.players.filter((seat) => !seat.eliminated).length} still standing.` : "The rest of the table is still swinging."}</p>
+        {over && <PayrollSlip session={session} />}
         <div className="clash-choice-options">
           {!over && <button type="button" className="button ghost" onClick={() => setWatching(true)}>Watch it play out</button>}
           <button type="button" className="button primary" onClick={onRematch}>New Clash</button>

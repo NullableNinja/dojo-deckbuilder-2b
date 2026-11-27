@@ -1,5 +1,6 @@
-// Pack-opening ceremony (preview only): one click tears the wrapper, the cards fan out and flip in a
-// quick cascade. "Keep going" opens the next pack of the same series; "Done" closes. Nothing is saved.
+// Pack-opening ceremony: one click tears the wrapper, the cards fan out and flip in a quick cascade.
+// "Keep going" opens the next pack of the same series; "Done" closes. In the career the pack has
+// already been saved (a ticket spent, the cards filed) before the ceremony starts; in preview nothing is.
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { UnlockSource } from "./collection";
@@ -13,6 +14,10 @@ type PackCeremonyProps = {
   /** Changes for every pack so the tear and the cascade replay. */
   packNumber: number;
   remaining: number;
+  /** "career": a real pack, already filed. "preview": a free pack, nothing saved. */
+  mode: "career" | "preview";
+  /** Booster Tickets left after this pack (career only). */
+  tickets?: number;
   imageUrlFor: (card: CardEntry) => string;
   onKeepGoing: () => void;
   onDone: () => void;
@@ -20,7 +25,9 @@ type PackCeremonyProps = {
 
 const FOCUSABLE = "button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])";
 
-export function PackCeremony({ source, cards, packNumber, remaining, imageUrlFor, onKeepGoing, onDone }: PackCeremonyProps) {
+export function PackCeremony({ source, cards, packNumber, remaining, mode, tickets = 0, imageUrlFor, onKeepGoing, onDone }: PackCeremonyProps) {
+  const career = mode === "career";
+  const canKeepGoing = remaining > 0 && (!career || tickets > 0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
@@ -57,7 +64,7 @@ export function PackCeremony({ source, cards, packNumber, remaining, imageUrlFor
   return createPortal(<div className="pack-ceremony-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onDone()}>
     <div ref={dialogRef} className="pack-ceremony" role="dialog" aria-modal="true" aria-labelledby="pack-ceremony-title" aria-describedby="pack-ceremony-reveal">
       <header className="pack-ceremony-head">
-        <span className="eyebrow">Preview only · pack {packNumber}</span>
+        <span className="eyebrow">{career ? `Pack ${packNumber} · filed to your collection` : `Preview only · pack ${packNumber}`}</span>
         <h2 id="pack-ceremony-title">{source.name}</h2>
         <p>{source.tagline}</p>
       </header>
@@ -73,15 +80,16 @@ export function PackCeremony({ source, cards, packNumber, remaining, imageUrlFor
               <img className="pack-card-front" src={imageUrlFor(card)} alt="" decoding="async" />
             </span>
             <span className="pack-card-name">{card.name}</span>
+            {career && <span className="pack-card-new" aria-hidden="true">New</span>}
           </li>)}
         </ol>
       </div>
-      <p className="sr-only" id="pack-ceremony-reveal" aria-live="polite">Revealed: {cards.map((card) => card.name).join(", ")}.</p>
+      <p className="sr-only" id="pack-ceremony-reveal" aria-live="polite">Revealed{career ? " and added to your collection" : ""}: {cards.map((card) => card.name).join(", ")}.</p>
       <footer className="pack-ceremony-actions">
-        <span>{remaining ? `${remaining} still sealed in ${source.name}` : `${source.name} is complete`}</span>
+        <span>{remaining ? `${remaining} still sealed in ${source.name}` : `${source.name} is complete`}{career && <> · <b className="pack-ceremony-tickets">{tickets} {tickets === 1 ? "ticket" : "tickets"} left</b></>}</span>
         <div>
-          {remaining > 0 && <button type="button" className="button primary" onClick={onKeepGoing}>Keep going <span aria-hidden="true">→</span></button>}
-          <button type="button" className={`button ${remaining > 0 ? "ghost" : "primary"}`} onClick={onDone}>Done</button>
+          {canKeepGoing && <button type="button" className="button primary" onClick={onKeepGoing}>{career ? "Spend a ticket" : "Keep going"} <span aria-hidden="true">→</span></button>}
+          <button type="button" className={`button ${canKeepGoing ? "ghost" : "primary"}`} onClick={onDone}>Done</button>
         </div>
       </footer>
     </div>

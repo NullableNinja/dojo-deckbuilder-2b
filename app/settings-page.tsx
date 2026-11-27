@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AVATAR_IMAGES } from "./avatar-catalog";
+import { economy, walletOf } from "./career";
+import { CareerRecord } from "./career-record";
 import { readPersonalRecord } from "./personal-record";
 import { RULE_CHAPTERS } from "./rule-chapters";
 import { navigate } from "./routing";
+import { useCareer } from "./use-career";
 import "./settings-record.css";
 import { ACCENT_OPTIONS, AVATAR_OPTIONS, DEFAULT_USER_PREFERENCES, type AccentKey, type AvatarKey, type PresentationPreferences } from "./user-preferences";
 
@@ -62,6 +65,7 @@ export default function SettingsPage({ theme, accent, displayName, avatar, prese
   };
 
   const record = useMemo(readPersonalRecord, []);
+  const career = useCareer();
   return <main className="page-shell shell settings-page" aria-labelledby="settings-title">
     <header className="settings-hero paper-stack">
       <div className="settings-hero-copy"><span className="eyebrow">Paper-Fu / Personal filing</span><h1 id="settings-title">Your dojo.<br /><em>Your rules.</em></h1><p>Set the way Paper-Fu speaks, moves, and throws a paper airplane at your screen. These preferences stay in this browser and travel across the whole website.</p><span className="settings-saved"><i aria-hidden="true" />{savedNotice}</span></div>
@@ -108,8 +112,10 @@ export default function SettingsPage({ theme, accent, displayName, avatar, prese
       <button type="button" onClick={() => navigate({ page: "rules" })}><strong>{record.certifiedChapters}<small> / {RULE_CHAPTERS.length}</small></strong><span>rule chapters certified</span><i aria-hidden="true">→</i></button>
       <button type="button" onClick={() => navigate({ page: "cards" })}><strong>{record.binderCards}</strong><span>cards in the Dojo Binder</span><i aria-hidden="true">→</i></button>
       <button type="button" onClick={() => navigate({ page: "search" })}><strong>{record.recentSearches}</strong><span>searches on file</span><i aria-hidden="true">→</i></button>
-      <div><strong>OPEN</strong><span>Dojo: the full catalog is on loan</span></div>
+      {career.state && career.status !== "unavailable" ? <button type="button" onClick={() => navigate({ page: "cards" })}><strong>{economy.levelFor(career.state.merit)}<small> CL · {walletOf(career.state).tickets} tickets</small></strong><span>Clearance Level · {career.state.merit.toLocaleString()} Merit</span><i aria-hidden="true">→</i></button> : <div><strong>OPEN</strong><span>Dojo: the full catalog is on loan</span></div>}
     </div><div className="settings-profile-actions"><button type="button" className="button ghost" onClick={resetPreferences}>Restore style defaults</button></div></section>
+
+    <CareerRecord onToast={onToast} />
   </main>;
 }
 

@@ -381,6 +381,11 @@ export function playableCharacters(snapshot: CareerSnapshot = careerStore.get())
   return collectionActive(snapshot) ? economy.unlockedRoster(snapshot.state!).characters : null;
 }
 
+/** Boss Profiles a Boss Blitz ladder may draw from, or null when every Boss is available. */
+export function playableBosses(snapshot: CareerSnapshot = careerStore.get()): Set<string> | null {
+  return collectionActive(snapshot) ? economy.unlockedRoster(snapshot.state!).bosses : null;
+}
+
 /** Ticket count, with Ticket Stubs as the partial ticket. */
 export function walletOf(state: CareerState | null) {
   return { tickets: state?.wallet[TICKET] ?? 0, stubs: state?.wallet[STUB] ?? 0, stubRate: economy.packs.earnRules.currencies.find((currency) => currency.id === STUB)?.exchangeRate ?? 3 };
