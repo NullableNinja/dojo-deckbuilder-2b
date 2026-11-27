@@ -3,7 +3,8 @@
 // only renders its state, offers its legal actions to you, and lets the bots take their turns.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { clashCardByCatalogId, clashData, type EngineCard } from "./clash-engine.ts";
-import { EngineSession, newSeed } from "./engine-session.ts";
+import { EngineSession, newSeed, type EngineGame } from "./engine-session.ts";
+import { livePreviews, type PreviewLine } from "./mat-view.ts";
 
 type Seat = {
   id: number; name: string; character: EngineCard; hp: number; maxHp: number; xp: number; beltIndex: number; focus: number;
@@ -83,6 +84,8 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
   const actionsFor = (card: EngineCard) => legal.filter((action) => action.cardId === card.instanceId);
 
   const log = useMemo(() => formatLog(game), [tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  // What each card would do right now, from the engine's own numbers (engine/preview.mjs).
+  const previews = useMemo(() => livePreviews(game as unknown as EngineGame, HUMAN, target?.id), [tick, target?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const pending = game.pendingChoice && game.pendingChoice.playerId === HUMAN && !human.eliminated ? game.pendingChoice : null;
   const location = game.currentLocation;
   const activeSeat = game.players[game.activePlayer];
@@ -150,6 +153,7 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
           const actions = actionsFor(card);
           return <div className="clash-hand-card" key={card.instanceId}>
             <CardTile card={card} art={artFor(card) ?? placeholder} />
+            <PreviewChip line={previews.byCard[card.instanceId ?? ""]} />
             <div className="clash-card-actions">{actions.map((action) => <button type="button" key={action.type} className={`button ${action.type === "play-attack" ? "primary" : "ghost"}`} onClick={() => act(action.type === "play-attack" && target ? { ...action, targetId: target.id } : action)}>{
               action.type === "play-attack" ? `Attack ${target ? target.character.name.split(/[ ,]/)[0] : ""}` : action.type === "practice" ? "Practice" : game.phase === "Initiate" ? "Equip" : "Play"
             }</button>)}</div>
@@ -164,7 +168,7 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
       <div className="clash-choice">
         <span className="eyebrow">{pending.kind === "defense" || pending.kind === "reaction" ? "Incoming strike" : "Your decision"}</span>
         <h2 id="clash-choice-title">{choiceTitle(game, pending)}</h2>
-        <div className="clash-choice-options">{pending.options.map((option, index) => <button type="button" key={option.id} className={`button ${index === 0 ? "ghost" : "primary"}`} autoFocus={index === 0} onClick={() => choose(option.id)}>{option.label}</button>)}</div>
+        <div className="clash-choice-options">{pending.options.map((option, index) => <button type="button" key={option.id} className={`button ${index === 0 ? "ghost" : "primary"}`} autoFocus={index === 0} onClick={() => choose(option.id)}>{option.label}<PreviewChip line={option.id === "pass" ? previews.takeTheHit ?? undefined : previews.byCard[option.id]} inline /></button>)}</div>
       </div>
     </div>}
 
@@ -181,6 +185,13 @@ export default function ClashTable({ fighterId, opponents, onExit, onRematch, ar
       </div>
     </div>}
   </main>;
+}
+
+/** "4 dmg", "You take 0" and the numbers behind it. The words carry the meaning; the colour only echoes it. */
+function PreviewChip({ line, inline }: { line?: PreviewLine; inline?: boolean }) {
+  if (!line) return null;
+  const mark = line.tone === "lethal" ? "✖" : line.tone === "hit" ? "▲" : "●";
+  return <span className={`clash-preview clash-preview--${line.tone}${inline ? " is-inline" : ""}`} title={line.breakdown}><b><i aria-hidden="true">{mark}</i> {line.headline}</b><small>{line.detail}{line.hpAfter !== null && line.hpBefore !== null ? ` · HP ${line.hpBefore} → ${line.hpAfter}` : ""}</small></span>;
 }
 
 function CardTile({ card, art }: { card: EngineCard; art: string }) {

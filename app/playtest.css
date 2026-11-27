@@ -6626,3 +6626,13 @@ button.clash-seat:hover { transform: translateY(-2px); }
 /* Engine mat: station switcher inside the Ascend desk. */
 .playtest-shell--engine .ascend-desk-stations { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; border-bottom: 1px dashed var(--pf-line, rgba(230,212,164,.28)); }
 .playtest-shell--engine .ascend-desk-stations .button { min-height: 44px; }
+
+/* Live damage previews (Clash table chips; the engine table styles its own in the hand redesign). */
+.clash-preview { display: grid; gap: 1px; min-width: 0; border: 2px solid var(--pf-line-strong); border-radius: 8px 3px 8px 3px; padding: 4px 8px; color: var(--pf-ink); background: var(--pf-surface-raised); box-shadow: 2px 3px 0 var(--pf-line); font-family: var(--pf-label); }
+.clash-preview b { font-size: 13px; letter-spacing: .03em; text-transform: uppercase; }
+.clash-preview small { color: var(--pf-ink-soft); font-size: 11px; line-height: 1.25; }
+.clash-preview i { font-style: normal; }
+.clash-preview--hit { border-color: var(--pf-action); }
+.clash-preview--lethal { border-color: var(--pf-action-deep); background: color-mix(in srgb, var(--pf-action) 18%, var(--pf-surface-raised)); }
+.clash-preview--stopped, .clash-preview--avoided { border-style: dashed; }
+.clash-preview.is-inline { margin-top: 6px; text-align: left; font-weight: 400; text-transform: none; }
