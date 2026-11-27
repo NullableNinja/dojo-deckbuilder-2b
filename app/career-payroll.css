@@ -28,6 +28,55 @@
   .payroll-meter i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, var(--pf-brass) 0 6px, color-mix(in srgb, var(--pf-brass) 78%, var(--pf-surface-raised)) 6px 12px); }
   .payroll-open { justify-self: start; min-height: 44px; }
 
+  /* ---- Filing animation -------------------------------------------------------------------
+     The slip "prints" beat by beat (app/payroll-reveal.ts): pay lines stamp in, the totals count up,
+     stubs tear in as pips, the Merit meter fills, a level-up bursts, and the Paid stamp lands last.
+     Every moving part belongs to the slip. Reduced motion renders the finished slip with no movement. */
+  .payroll-lines > div { transition: background-color .4s ease; }
+  .payroll-lines > .is-pending { opacity: 0; transform: translateX(-14px); }
+  .payroll-level-up.is-pending { opacity: 0; transform: translateY(8px) scale(.98); }
+  .payroll-slip.is-filing .payroll-stamp:not(.is-stamped) { opacity: 0; }
+  .payroll-skip { position: absolute; right: 14px; bottom: 12px; min-height: 44px; padding-inline: 16px; }
+  .payroll-slip.is-filing { padding-bottom: 64px; }
+
+  .payroll-holdings { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .payroll-tickets { display: inline-block; }
+  .payroll-pips { display: inline-flex; gap: 4px; }
+  .payroll-pips i { position: relative; width: 22px; height: 14px; border: 1.5px dashed var(--pf-line-strong); border-radius: 2px; background: transparent; }
+  .payroll-pips i.is-held, .payroll-pips i.is-new { border-style: solid; border-color: var(--pf-brass); background: color-mix(in srgb, var(--pf-brass) 55%, var(--pf-surface-raised)); }
+  /* A stub is a small ticket: a notch on each side keeps the shape without relying on colour. */
+  .payroll-pips i.is-held::before, .payroll-pips i.is-new::before { content: ""; position: absolute; top: 3px; left: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--pf-surface-raised); box-shadow: 18px 0 0 var(--pf-surface-raised); }
+  .payroll-wallet small { font: 700 11px/1 var(--pf-mono); color: var(--pf-ink-soft); }
+  .payroll-meter i { transition: width 1.05s cubic-bezier(.22, .8, .25, 1); }
+  .payroll-meter i.is-reset { transition: none; }
+
+  .payroll-slip.is-still *, .payroll-slip.is-still *::before { animation: none !important; transition: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .payroll-slip *, .payroll-slip *::before { animation: none !important; transition: none !important; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .payroll-lines > div { transition: opacity .3s ease, transform .3s cubic-bezier(.2, .9, .25, 1), background-color .4s ease; }
+    .payroll-lines > .is-landing { animation: pf-payroll-line .7s cubic-bezier(.2, .9, .25, 1) both; }
+    .payroll-lines > .is-landing dd { animation: pf-payroll-value .7s ease-out both; }
+    .payroll-level-up { transition: opacity .35s ease, transform .35s cubic-bezier(.2, .9, .25, 1); }
+    .payroll-level-up.is-burst { animation: pf-payroll-burst .9s ease-out both; }
+    .payroll-level-up.is-burst li { animation: pf-payroll-reward .5s cubic-bezier(.2, .9, .25, 1) both; animation-delay: calc(.25s + var(--reward-index, 0) * .16s); }
+    .payroll-slip.is-flash::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--pf-brass); animation: pf-payroll-flash .8s ease-out both; }
+    .payroll-stamp.is-stamped { animation: pf-payroll-stamp .45s cubic-bezier(.2, 1.4, .4, 1) both; }
+    .payroll-tickets { animation: pf-payroll-bump .5s cubic-bezier(.2, 1.6, .4, 1); }
+    .payroll-pips i.is-new { animation: pf-payroll-stub .55s cubic-bezier(.2, 1.3, .4, 1) both; }
+    .payroll-slip.is-filing .payroll-meter i:not(.is-reset) { background-size: 17px 17px; animation: pf-payroll-barber 1.1s linear infinite; }
+  }
+  @keyframes pf-payroll-line { 0% { opacity: 0; transform: translateX(-18px); background-color: color-mix(in srgb, var(--pf-brass) 38%, transparent); } 60% { opacity: 1; transform: none; } 100% { background-color: transparent; } }
+  @keyframes pf-payroll-value { 0% { transform: scale(1.35); color: var(--pf-action); } 100% { transform: none; } }
+  @keyframes pf-payroll-burst { 0% { transform: scale(.94); box-shadow: 0 0 0 0 color-mix(in srgb, var(--pf-action) 60%, transparent); } 40% { transform: scale(1.04); box-shadow: 0 0 0 12px color-mix(in srgb, var(--pf-action) 0%, transparent); } 100% { transform: none; } }
+  @keyframes pf-payroll-reward { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+  @keyframes pf-payroll-flash { 0% { opacity: .28; } 100% { opacity: 0; } }
+  @keyframes pf-payroll-stamp { 0% { opacity: 0; transform: scale(2.6) rotate(-16deg); } 55% { opacity: 1; transform: scale(.94) rotate(10deg); } 100% { opacity: 1; transform: rotate(7deg); } }
+  @keyframes pf-payroll-bump { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: none; } }
+  @keyframes pf-payroll-stub { 0% { opacity: 0; transform: translateY(-14px) rotate(-18deg) scale(1.3); } 100% { opacity: 1; transform: none; } }
+  @keyframes pf-payroll-barber { to { background-position: 17px 0; } }
+
   /* Inside the Clash result dialog the slip sits on the dialog paper. */
   .clash-result .payroll-slip { margin: 6px 0 4px; }
 }
@@ -40,5 +89,8 @@
     .payroll-slip h3, .payroll-slip p { padding-right: 0; }
     .payroll-wallet { grid-template-columns: 1fr; }
     .payroll-open { justify-self: stretch; }
+    /* On a phone the Skip button joins the slip's flow instead of floating over the meter. */
+    .payroll-skip { position: static; justify-self: stretch; }
+    .payroll-slip.is-filing { padding-bottom: 14px; }
   }
 }

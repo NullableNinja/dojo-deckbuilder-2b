@@ -249,7 +249,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       <HudFighter seat={computer} side="ai" title={computer.isBoss ? bossTitle(game) : "COMPUTER"} />
     </header>
 
-    {over && <ResultCertificate game={game} payroll={<PayrollSlip session={session} />} onRematch={onRematch} onExit={onExit} />}
+    {over && <ResultCertificate game={game} payroll={<PayrollSlip session={session} motion={motion} startDelay={2000} />} onRematch={onRematch} onExit={onExit} />}
 
     <section className="playtest-arena">
       <div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>

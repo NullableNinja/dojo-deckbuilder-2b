@@ -1,11 +1,13 @@
 // "Department payroll": the stamped slip on an engine table's result screen. It records the finished
 // match in the career once (app/career-match.ts) and shows what it paid: Merit, tickets and stubs,
 // any Clearance Level reached with its rewards, and the wallet afterwards.
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { careerStore, economy, walletOf, type Payroll, type PayrollLine, type Reward } from "./career";
 import { recordSessionResult } from "./career-match";
 import type { EngineSession } from "./engine-session";
 import { navigate } from "./routing";
+import { cardMotionDisabled } from "./card-motion";
+import { revealBeats, revealState, type RevealInput } from "./payroll-reveal";
 import "./career-payroll.css";
 
 const titleCase = (key: string) => key.split(/[-:\s]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
@@ -52,7 +54,39 @@ const REFUSALS: Record<string, { stamp: string; text: () => string }> = {
   "already-paid": { stamp: "Paid", text: () => "This match has already been paid." },
 };
 
-export function PayrollSlip({ session }: { session: EngineSession }) {
+/** A number that counts toward its target (rAF); jumps straight there when motion is off. */
+function useTally(target: number, still: boolean, ms = 600) {
+  const [shown, setShown] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    if (still || from.current === target) { from.current = target; setShown(target); return; }
+    const start = performance.now(), origin = from.current;
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      const value = Math.round(origin + (target - origin) * (1 - (1 - t) ** 3));
+      from.current = value; setShown(value);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, still]); // eslint-disable-line react-hooks/exhaustive-deps
+  return shown;
+}
+
+/** Walks the reveal beats on a timer; `skip` jumps to the end. With motion off it starts finished. */
+function useReveal(beatMs: number[], still: boolean, startDelay: number) {
+  const [done, setDone] = useState(still ? beatMs.length : 0);
+  useEffect(() => {
+    if (done >= beatMs.length) return;
+    const timer = window.setTimeout(() => setDone(done + 1), done === 0 ? startDelay : beatMs[done - 1]);
+    return () => window.clearTimeout(timer);
+  }, [done, beatMs, startDelay]);
+  return { done, finished: done >= beatMs.length, skip: () => setDone(beatMs.length) };
+}
+
+/** `startDelay`: milliseconds to wait before the slip starts filing, e.g. for a K.O. slam to finish first. */
+export function PayrollSlip({ session, motion, startDelay = 450 }: { session: EngineSession; motion?: string; startDelay?: number }) {
   const [payroll] = useState<Payroll | null>(() => recordSessionResult(session));
   if (!payroll || payroll.reason === "unlock-everything") return null;
   if (!payroll.eligible) {
@@ -64,28 +98,65 @@ export function PayrollSlip({ session }: { session: EngineSession }) {
       <p>{refusal.text()}</p>
     </section>;
   }
+  return <FiledSlip payroll={payroll} motion={motion} startDelay={startDelay} />;
+}
+
+function FiledSlip({ payroll, motion, startDelay }: { payroll: Payroll; motion?: string; startDelay: number }) {
   const state = careerStore.get().state;
   const wallet = walletOf(state);
-  const progress = economy.levelProgress(state?.merit ?? 0);
+  const meritAfter = state?.merit ?? 0;
+  const [still] = useState(() => cardMotionDisabled(motion));
+  const input = useMemo<RevealInput>(() => {
+    const meritBefore = meritAfter - payroll.merit - payroll.meritFromTickets;
+    return { payroll, meritAfter, before: economy.levelProgress(meritBefore), after: economy.levelProgress(meritAfter) };
+  }, [payroll, meritAfter]);
+  const beats = useMemo(() => revealBeats(input), [input]);
+  const beatMs = useMemo(() => beats.map((beat) => beat.ms), [beats]);
+  const { done, finished, skip } = useReveal(beatMs, still, startDelay);
+  const shown = revealState(input, beats, done);
   const levelled = payroll.levelAfter > payroll.levelBefore;
-  return <section className={`payroll-slip${levelled ? " has-level-up" : ""}`} aria-labelledby="payroll-title">
-    <span className="payroll-stamp" aria-hidden="true">{levelled ? "Promoted" : "Paid"}</span>
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const merit = useTally(shown.totals.merit, still);
+  const meterMerit = useTally(shown.merit, still, 900);
+  const stampBeat = beats.findIndex((beat) => beat.kind === "stamp");
+  useEffect(() => {
+    // One short pulse as the stamp lands; a bonus on top of the stamp, never the only signal.
+    if (!still && stampBeat >= 0 && done === stampBeat + 1 && typeof navigator.vibrate === "function") navigator.vibrate(levelled ? [14, 40, 14] : 10);
+  }, [done]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Stub pips: the stubs held before, the new ones tearing in, then an exchange turning a full set into a ticket.
+  const rate = wallet.stubRate;
+  const heldBefore = Math.max(0, Math.min(rate, wallet.stubs - payroll.stubs + payroll.stubsExchanged * rate));
+  const held = shown.exchangeShown || finished ? wallet.stubs : Math.min(rate, heldBefore + shown.totals.stubs);
+  const pendingLineTickets = payroll.lines.slice(shown.linesShown).reduce((sum, line) => sum + (line.tickets ?? 0), 0);
+  const tickets = finished ? wallet.tickets : Math.max(0, wallet.tickets - pendingLineTickets - (shown.exchangeShown ? 0 : payroll.stubsExchanged));
+  const meterNext = shown.meter.level === input.before.level ? economy.levelProgress(input.meritAfter - payroll.merit - payroll.meritFromTickets).next : economy.levelProgress(meritAfter).next;
+  const headline = `+${payroll.merit} Merit${payroll.tickets ? ` · +${plural(payroll.tickets, "Booster Ticket")}` : ""}${payroll.stubs ? ` · +${plural(payroll.stubs, "Ticket Stub")}` : ""}`;
+  const skipNow = () => { skip(); headingRef.current?.focus(); };
+
+  return <section className={`payroll-slip${still ? " is-still" : ""}${levelled ? " has-level-up" : ""}${finished ? " is-filed" : " is-filing"}${shown.levelUpShown && !finished ? " is-flash" : ""}`} aria-labelledby="payroll-title" onClick={finished ? undefined : skipNow}>
+    <span className={`payroll-stamp${shown.stamped ? " is-stamped" : ""}`} aria-hidden="true">{levelled ? "Promoted" : "Paid"}</span>
     <span className="eyebrow">Department payroll · Form PF-1</span>
-    <h3 id="payroll-title">+{payroll.merit} Merit{payroll.tickets ? ` · +${plural(payroll.tickets, "Booster Ticket")}` : ""}{payroll.stubs ? ` · +${plural(payroll.stubs, "Ticket Stub")}` : ""}</h3>
+    <h3 id="payroll-title" ref={headingRef} tabIndex={-1} aria-label={headline}><span aria-hidden="true">+{merit} Merit{shown.totals.tickets ? ` · +${plural(shown.totals.tickets, "Booster Ticket")}` : ""}{shown.totals.stubs ? ` · +${plural(shown.totals.stubs, "Ticket Stub")}` : ""}</span></h3>
     <dl className="payroll-lines">
-      {payroll.lines.map((line) => <div key={line.id}><dt>{lineLabel(line)}</dt><dd>{lineValue(line) || "—"}</dd></div>)}
-      {payroll.stubsExchanged > 0 && <div><dt>Stubs exchanged</dt><dd>{plural(payroll.stubsExchanged * wallet.stubRate, "stub")} → {plural(payroll.stubsExchanged, "ticket")}</dd></div>}
-      {payroll.ticketsConverted > 0 && <div><dt>Collection complete</dt><dd>{plural(payroll.ticketsConverted, "ticket")} → +{payroll.meritFromTickets} Merit</dd></div>}
+      {payroll.lines.map((line, index) => <div key={line.id} className={index < shown.linesShown ? (index === shown.linesShown - 1 && !finished ? "is-landing" : "is-filed") : "is-pending"}><dt>{lineLabel(line)}</dt><dd>{lineValue(line) || "—"}</dd></div>)}
+      {payroll.stubsExchanged > 0 && <div className={shown.exchangeShown ? (finished ? "is-filed" : "is-landing") : "is-pending"}><dt>Stubs exchanged</dt><dd>{plural(payroll.stubsExchanged * wallet.stubRate, "stub")} → {plural(payroll.stubsExchanged, "ticket")}</dd></div>}
+      {payroll.ticketsConverted > 0 && <div className={shown.collectionShown ? (finished ? "is-filed" : "is-landing") : "is-pending"}><dt>Collection complete</dt><dd>{plural(payroll.ticketsConverted, "ticket")} → +{payroll.meritFromTickets} Merit</dd></div>}
     </dl>
-    {levelled && <div className="payroll-level-up" role="status">
+    {levelled && <div className={`payroll-level-up${shown.levelUpShown ? (finished ? " is-filed" : " is-burst") : " is-pending"}`} role="status">
       <b>Clearance Level {payroll.levelAfter}</b>
-      <ul>{payroll.levels.flatMap((entry) => entry.rewards.map((reward, index) => <li key={`${entry.level}-${entry.bonus ?? 0}-${index}`}>{rewardLabel(reward)}</li>))}</ul>
+      <ul>{payroll.levels.flatMap((entry) => entry.rewards.map((reward, index) => <li key={`${entry.level}-${entry.bonus ?? 0}-${index}`} style={{ "--reward-index": index } as React.CSSProperties}>{rewardLabel(reward)}</li>))}</ul>
     </div>}
     <div className="payroll-wallet">
-      <span><b>{plural(wallet.tickets, "Booster Ticket")}</b> · {wallet.stubs}/{wallet.stubRate} stubs</span>
-      <span className="payroll-level">Clearance Level {progress.level}{progress.next !== null && <> · {state?.merit.toLocaleString()} / {progress.next.toLocaleString()} Merit</>}</span>
-      <span className="payroll-meter" aria-hidden="true"><i style={{ width: `${progress.span ? Math.round((progress.into / progress.span) * 100) : 100}%` }} /></span>
+      <span className="payroll-holdings">
+        <b key={tickets} className="payroll-tickets">{plural(tickets, "Booster Ticket")}</b>
+        <span className="payroll-pips" role="img" aria-label={`${wallet.stubs} of ${rate} stubs`}>{Array.from({ length: rate }, (_, pip) => <i key={pip} className={pip < held ? (pip >= heldBefore && !finished ? "is-new" : "is-held") : ""} />)}</span>
+        <small aria-hidden="true">{held}/{rate} stubs</small>
+      </span>
+      <span className="payroll-level">Clearance Level {shown.meter.level}{meterNext !== null && <> · {meterMerit.toLocaleString()} / {meterNext.toLocaleString()} Merit</>}</span>
+      <span className="payroll-meter" aria-hidden="true"><i className={shown.meter.reset ? "is-reset" : ""} style={{ width: `${shown.meter.pct}%` }} /></span>
     </div>
-    {wallet.tickets > 0 && <button type="button" className="button ghost payroll-open" onClick={() => navigate({ page: "cards" })}>Open packs in the Card Library <span aria-hidden="true">→</span></button>}
+    {!finished && <button type="button" className="button ghost payroll-skip" onClick={(event) => { event.stopPropagation(); skipNow(); }}>Skip</button>}
+    {finished && wallet.tickets > 0 && <button type="button" className="button ghost payroll-open" onClick={() => navigate({ page: "cards" })}>Open packs in the Card Library <span aria-hidden="true">→</span></button>}
   </section>;
 }
