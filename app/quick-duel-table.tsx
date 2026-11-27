@@ -12,6 +12,7 @@ import { EngineSession, newSeed, type SessionMode, type TableOptions, type Engin
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, livePreviews, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase, type PreviewLine, type PreviewTone } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import { PayrollSlip } from "./career-payroll";
+import { beltRequirements, type BeltRequirements } from "./belt-progress.ts";
 import "./quick-duel-hand.css";
 
 const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
@@ -131,7 +132,8 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
 
   // The Ascend desk opens on its own when the player's Ascend begins.
   useEffect(() => {
-    if (phase === "player-ascend" && game.phase === "Ascend") setDeskView((current) => current ?? "market");
+    // Open on the Belt step when a promotion is already available, otherwise on the Market.
+    if (phase === "player-ascend" && game.phase === "Ascend") setDeskView((current) => current ?? (game.canPromote(game.players[HUMAN]) ? "belt" : "market"));
     if (phase !== "player-ascend") setDeskView(null);
   }, [phase, game.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -173,12 +175,11 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     act(action);
   };
   const zonePreview = useRef<PreviewLine["zones"] | null>(null);
-  /** A press on a hand card. Touch and Attacks select first (the card stands up); a second press uses it. */
-  const pressHandCard = (card: EngineCard, viaTouch: boolean) => {
-    if (!handCardEnabled(card)) return;
-    const isAttack = !handChoice && primaryAction(legal, card)?.type === "play-attack";
-    if (selectedId !== card.instanceId && (viaTouch || isAttack)) { setSelectedId(card.instanceId!); return; }
-    commitHandCard(card);
+  /** A press on a hand card. The first press stands the card up so its text and preview can be read, playable or not; a second press uses it. */
+  const pressHandCard = (card: EngineCard) => {
+    if (selectedId !== card.instanceId) { setSelectedId(card.instanceId!); return; }
+    if (handCardEnabled(card)) commitHandCard(card);
+    else setSelectedId(null);
   };
   const equipmentActions = legal.filter((action) => action.type === "activate-equipment");
   const currentLocation = game.currentLocation as MatCard | null;
@@ -199,6 +200,14 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     if (!(answering || selectedId) || !window.matchMedia("(max-width: 860px)").matches) return;
     shellRef.current?.querySelector(".combat-stage > .impact-readout")?.scrollIntoView({ block: "nearest", behavior: reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, [answering, selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Resting a mouse over the hand raises it like "Show hand"; leaving tucks it again after a beat so the gaps between cards do not flicker.
+  const hoverTimer = useRef<number | undefined>(undefined);
+  const hoverHand = (inside: boolean) => {
+    window.clearTimeout(hoverTimer.current);
+    if (inside) setHandOpen(true);
+    else hoverTimer.current = window.setTimeout(() => setHandOpen(answering), 260);
+  };
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   const toggleHand = () => { if (handRaised) setSelectedId(null); setHandOpen(!handRaised); };
   const modalOpen = Boolean(deskView || dialogChoice || equipChoices || inspected || logOpen);
   useEffect(() => {
@@ -213,6 +222,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
   }, [modalOpen, selectedId, handOpen]);
 
   const selectedUse = selected && handCardEnabled(selected) ? selected : null;
+  const promoteAction = phase === "player-ascend" ? legal.find((action) => action.type === "promote") : undefined;
   const passLabel = handChoice ? (handChoice.kind === "defense" ? "Take the hit" : handChoice.kind === "reversal" ? "Decline Reversal" : "No Reaction") : null;
   const pill = !over && <nav className={`qd-action-pill pill-${phase}`} aria-label="Next legal action">
     <dl className="qd-hand-counters" aria-label="Hand counters"><div><dt>Deck</dt><dd>{human.deck.length}</dd></div><div><dt>Discard</dt><dd>{human.discard.length}</dd></div><div><dt>Attacks</dt><dd>{human.attackCount ?? 0}</dd></div><div><dt>Practice</dt><dd>{human.practiceUsed ? "Used" : "Ready"}</dd></div><div className="is-focus"><dt>Focus</dt><dd>{human.focus}</dd></div></dl>
@@ -221,7 +231,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       {selectedUse && <button type="button" className="qd-pill-primary" onClick={() => commitHandCard(selectedUse)}>{useLabel(selectedUse, handChoice, primaryAction(legal, selectedUse))}</button>}
       {phase === "player-initiate" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Proceed to Yell →</button>}
       {phase === "player-yell" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>{selectedUse ? "Skip · Ascend" : "Proceed to Ascend →"}</button>}
-      {phase === "player-ascend" && <><button type="button" className="qd-pill-secondary" onClick={() => setDeskView(deskView ?? "market")}>Ascend desk</button>{pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Finish turn → Hide</button>}</>}
+      {phase === "player-ascend" && <>{promoteAction && <button type="button" className="qd-pill-primary is-promote" onClick={() => act(promoteAction)}>Promote to {game.definition.progression.belts[human.beltIndex + 1]?.name} Belt →</button>}<button type="button" className="qd-pill-secondary" onClick={() => setDeskView(deskView ?? (promoteAction ? "belt" : "market"))}>Ascend desk</button>{pass && <button type="button" className={selectedUse || promoteAction ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Finish turn → Hide</button>}</>}
       {passLabel && <button type="button" className={`${selectedUse ? "qd-pill-secondary" : "qd-pill-primary"}${previews.takeTheHit ? " has-preview" : ""}`} onClick={() => choose("pass")}>{passLabel}{previews.takeTheHit && <small className={previewClass(previews.takeTheHit)}><i aria-hidden="true">{PREVIEW_ICON[previews.takeTheHit.tone]}</i>{previews.takeTheHit.headline}{previews.takeTheHit.hpAfter !== null ? ` → HP ${previews.takeTheHit.hpAfter}` : ""}</small>}</button>}
       {selected && <button type="button" className="qd-pill-cancel" onClick={() => setSelectedId(null)} aria-label={`Put ${selected.name} back in your hand`} title="Put it back (Esc)">×</button>}
     </div>
@@ -253,7 +263,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       </section>
     </section>
 
-    <HandFan cards={human.hand} raised={handRaised} idle={phase === "player-initiate" && !human.hand.some(handCardEnabled)} answering={handChoice?.kind ?? null} heading={handHeading(game, phase, handChoice, human)} selectedId={selectedId} enabled={handCardEnabled} hintFor={(card) => handChoice ? answerHint(handChoice) : actionHint(primaryAction(legal, card))} previewFor={(card) => card.instanceId && handCardEnabled(card) ? previews.byCard[card.instanceId] ?? null : null} onPress={pressHandCard} onInspect={setInspected} onToggle={toggleHand}
+    <HandFan cards={human.hand} raised={handRaised} idle={phase === "player-initiate" && !human.hand.some(handCardEnabled)} answering={handChoice?.kind ?? null} heading={handHeading(game, phase, handChoice, human)} selectedId={selectedId} enabled={handCardEnabled} hintFor={(card) => handChoice ? answerHint(handChoice) : actionHint(primaryAction(legal, card))} previewFor={(card) => card.instanceId && handCardEnabled(card) ? previews.byCard[card.instanceId] ?? null : null} onPress={pressHandCard} onHover={hoverHand} onInspect={setInspected} onToggle={toggleHand}
       pill={pill} />
 
     {/* Mat utilities float as small chips beside the hand toggle (wide screens) or after the mat (phones). */}
@@ -422,7 +432,9 @@ type HandFanProps = {
   enabled: (card: EngineCard) => boolean;
   hintFor: (card: EngineCard) => string | undefined;
   previewFor: (card: EngineCard) => PreviewLine | null;
-  onPress: (card: EngineCard, viaTouch: boolean) => void;
+  onPress: (card: EngineCard) => void;
+  /** A mouse pointer entered or left the hand: raising it saves a click on "Show hand". */
+  onHover: (inside: boolean) => void;
   onInspect: (card: MatCard) => void;
   onToggle: () => void;
   pill: ReactNode;
@@ -433,8 +445,7 @@ type HandFanProps = {
  * keyboard focus, a tap, a selection or an answer window raises them. The ledger (counters) and
  * the action pill sit in their own columns, so the fan can never cover them.
  */
-function HandFan({ cards, raised, idle, answering, heading, selectedId, enabled, hintFor, previewFor, onPress, onInspect, onToggle, pill }: HandFanProps) {
-  const pointerKind = useRef("mouse");
+function HandFan({ cards, raised, idle, answering, heading, selectedId, enabled, hintFor, previewFor, onPress, onHover, onInspect, onToggle, pill }: HandFanProps) {
   const moveFocus = (event: ReactKeyboardEvent<HTMLOListElement>) => {
     const faces = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(".qd-hand-card-face"));
     const index = faces.findIndex((face) => face.parentElement?.contains(document.activeElement));
@@ -446,10 +457,10 @@ function HandFan({ cards, raised, idle, answering, heading, selectedId, enabled,
   };
   const middle = (cards.length - 1) / 2;
   return <section className={`qd-hand${raised ? " is-raised" : ""}${idle ? " is-idle" : ""}${answering ? ` is-answering is-answering--${answering}` : ""}${selectedId ? " has-selection" : ""}`} aria-label="Your hand">
-    <div className="qd-hand-fan-zone">
-      <ol className="qd-hand-fan" id="qd-hand-fan" aria-label={`Your hand, ${cards.length} card${cards.length === 1 ? "" : "s"}. ${heading}`} onKeyDown={moveFocus} onPointerDownCapture={(event) => { pointerKind.current = event.pointerType; }}>
+    <div className="qd-hand-fan-zone" onPointerEnter={(event) => event.pointerType === "mouse" && onHover(true)} onPointerLeave={(event) => event.pointerType === "mouse" && onHover(false)}>
+      <ol className="qd-hand-fan" id="qd-hand-fan" aria-label={`Your hand, ${cards.length} card${cards.length === 1 ? "" : "s"}. ${heading}`} onKeyDown={moveFocus}>
         {cards.map((card, index) => <HandCard key={card.instanceId} card={card} offset={index - middle} total={cards.length} selected={selectedId === card.instanceId} playable={enabled(card)} answer={Boolean(answering) && enabled(card)} hint={hintFor(card)} preview={previewFor(card)}
-          onPress={(viaKeyboard) => onPress(card, !viaKeyboard && pointerKind.current !== "mouse")} onInspect={() => onInspect(card)} />)}
+          onPress={() => onPress(card)} onInspect={() => onInspect(card)} />)}
       </ol>
     </div>
     <div className="qd-hand-bar">
@@ -473,17 +484,17 @@ function previewSentence(line: PreviewLine) {
   return `Preview for ${line.whose === "opponent" ? "the opponent" : "you"}: ${line.headline}. ${line.detail}.${hp ? ` ${hp}.` : ""}${zones}`;
 }
 
-function HandCard({ card, offset, total, selected, playable, answer, hint, preview, onPress, onInspect }: { card: MatCard; offset: number; total: number; selected: boolean; playable: boolean; answer: boolean; hint?: string; preview: PreviewLine | null; onPress: (viaKeyboard: boolean) => void; onInspect: () => void }) {
+function HandCard({ card, offset, total, selected, playable, answer, hint, preview, onPress, onInspect }: { card: MatCard; offset: number; total: number; selected: boolean; playable: boolean; answer: boolean; hint?: string; preview: PreviewLine | null; onPress: () => void; onInspect: () => void }) {
   const art = artistUrl(card);
   const kindLabel = String(card.details?.Type ?? card.subtype ?? card.cardType);
   const zone = card.zone && card.zone !== "—" ? card.zone : null;
   const focus = card.focusValue ?? card.details?.["Focus Value"];
   const action = playable && hint ? hint : null;
-  const label = `${card.name}, ${kindLabel}${zone ? `, ${zone}` : ""}. ${action ? (selected ? `Selected. Press again to ${action}.` : action) : "Not playable right now."}${preview ? ` ${previewSentence(preview)}` : ""}`;
+  const label = `${card.name}, ${kindLabel}${zone ? `, ${zone}` : ""}. ${selected ? (action ? `Selected. Press again to ${action}.` : "Selected. Not playable right now.") : action ? `Press to look closer, then again to ${action}.` : "Not playable right now. Press to look closer."}${preview ? ` ${previewSentence(preview)}` : ""}`;
   // The fan pose lives on the slot, so the card inside stays free for useCardMotion's draw animation.
   return <li className={`qd-hand-slot${playable ? " is-playable" : " is-unplayable"}${answer ? " is-answer" : ""}${selected ? " is-selected" : ""}`} style={{ "--fan-offset": offset, "--fan-total": total } as CSSProperties}>
     <article className={`qd-hand-card qd-hand-card--${cardKind(card)}`} draggable={playable} onDragStart={(event) => beginCardDrag(event, card, playable)} data-card-id={card.id}>
-      <button type="button" className="qd-hand-card-face" aria-disabled={!playable || undefined} aria-label={label} onClick={(event) => onPress(event.detail === 0)}>
+      <button type="button" className="qd-hand-card-face" aria-disabled={!playable || undefined} aria-label={label} onClick={onPress}>
         <span className="qd-hand-card-tab" aria-hidden="true"><b>{action ?? kindLabel}</b>{zone && <i>{zone}</i>}{focus !== undefined && focus !== null && focus !== "—" && <em title="Focus value">{focus}</em>}</span>
         <span className="qd-hand-card-art">{art ? <img src={art} alt="" loading="lazy" decoding="async" draggable={false} /> : <NativeCardArt card={card} />}</span>
         {preview && <span className={`qd-hand-card-preview ${previewClass(preview)}`} aria-hidden="true">
@@ -616,16 +627,52 @@ function Lane({ label, cards, onInspect }: { label: string; cards: EngineCard[];
   </section>;
 }
 
+const STATION_ORDER = ["market", "combo", "belt"] as const;
+const STATION_NAME: Record<DeskView, string> = { market: "Buy", combo: "Combo", belt: "Belt" };
+const STATION_TITLE: Record<DeskView, string> = { market: "Acquisition Desk", combo: "Combo Docket", belt: "Belt Check" };
+
+/** What the player should do at this station, in one sentence (live Ascend only). */
+function stationCoach(view: DeskView, req: BeltRequirements, offerName: string | null, canLearn: boolean, affordable: number): string {
+  if (req.ready && view !== "belt") return `You qualify for ${req.next?.name} Belt. Open the Belt step to promote.`;
+  if (view === "market") return affordable ? `Optional: buy up to what your Focus allows (${affordable} card${affordable === 1 ? "" : "s"} in reach). Then go on to the Combo step.` : "Nothing in the Market is in reach with your Focus. Go on to the Combo step.";
+  if (view === "combo") return offerName ? (canLearn ? `Optional: learn ${offerName} now, or pass on it. Then go on to the Belt step.` : `${offerName} is on offer but you cannot learn it right now. Go on to the Belt step.`) : "No Combo is on offer. Go on to the Belt step.";
+  return req.ready ? `Promote to ${req.next?.name} Belt, then finish your turn.` : `${req.nextStep} Then finish your turn.`;
+}
+
+function BeltCheck({ game, seat, req, live, promote, recover, onAct }: { game: EngineGame; seat: EngineSeat; req: BeltRequirements; live: boolean; promote?: EngineAction; recover?: EngineAction; onAct: (action: EngineAction) => void }) {
+  const belts = game.definition.progression.belts;
+  return <section className="ascend-belt belt-panel">
+    <span className="eyebrow">Certification ledger</span><h3>{belts[seat.beltIndex].name} Belt · {seat.xp} XP</h3>
+    <div className="belt-track">{belts.map((belt, index) => <span className={index <= seat.beltIndex ? "earned" : ""} key={belt.name} style={{ "--belt-rank": belt.color } as CSSProperties} title={`${belt.name} Belt · ${belt.xp} XP · ${belt.exam.title}`}>{belt.name.slice(0, 1)}</span>)}</div>
+    {req.next ? <div className={`belt-checklist${req.ready ? " is-ready" : ""}`} role="group" aria-label={`Requirements for ${req.next.name} Belt`}>
+      <header><span>Next: {req.next.name} Belt</span><em>{req.next.rewardSummary}</em></header>
+      <ul>
+        <li className={req.xp.met ? "is-met" : ""}><i aria-hidden="true">{req.xp.met ? "✓" : ""}</i><div><b>{req.xp.have} of {req.xp.need} XP</b><small>{req.xp.met ? "Enough XP." : `${req.xp.need - req.xp.have} more to go. Each Honor, card effects and knockouts pay XP.`}</small><progress max={req.xp.need} value={Math.min(req.xp.have, req.xp.need)} aria-label="XP toward the next Belt" /></div></li>
+        {req.exam && <li className={req.exam.done ? "is-met" : ""}><i aria-hidden="true">{req.exam.done ? "✓" : ""}</i><div><b>Exam: {req.exam.title}</b><small>{req.exam.summary}</small>
+          {!req.exam.done && req.exam.steps.length > 0 && <ul className="belt-exam-steps">{req.exam.steps.map((step) => <li key={step.label} className={step.met ? "is-met" : ""}><i aria-hidden="true">{step.met ? "✓" : ""}</i>{step.label}</li>)}</ul>}
+          {req.exam.done && <small>Exam passed.</small>}</div></li>}
+        <li className={req.checkUsed ? "is-note" : "is-met"}><i aria-hidden="true">{req.checkUsed ? "!" : "✓"}</i><div><b>{req.checkUsed ? "Belt Check used this turn" : "Belt Check available"}</b><small>You may promote once per turn, during Ascend.</small></div></li>
+      </ul>
+      <p className="belt-next-step" role="status">{live ? req.nextStep : "Promotion opens during your Ascend."}</p>
+      {promote && <button type="button" className="button primary belt-promote" onClick={() => onAct(promote)}>Promote to {req.next.name} Belt →</button>}
+    </div> : <p className="belt-top-rank" role="status">Every available Belt has been certified.</p>}
+    {recover && <button type="button" className="button ghost" onClick={() => onAct(recover)}>Recover a Training Stripe</button>}
+  </section>;
+}
+
 function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFinish }: { game: EngineGame; view: DeskView; legal: EngineAction[]; onView: (view: DeskView) => void; onAct: (action: EngineAction) => void; onInspect: (card: MatCard) => void; onClose: () => void; onFinish: (() => void) | null }) {
   const human = game.players[HUMAN];
-  const belts = game.definition.progression.belts;
-  const nextBelt = belts[human.beltIndex + 1];
   const offer = human.comboOffered as MatCard | null;
   const learn = legal.find((action) => action.type === "learn-combo");
   const decline = legal.find((action) => action.type === "decline-combo");
   const promote = legal.find((action) => action.type === "promote");
   const recover = legal.find((action) => action.type === "recover-training-stripe");
   const live = game.activePlayer === HUMAN && game.phase === "Ascend";
+  const req = beltRequirements(game, human);
+  const affordable = legal.filter((action) => action.type === "purchase").length;
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const stationIndex = STATION_ORDER.indexOf(view);
+  const following = STATION_ORDER[stationIndex + 1] as DeskView | undefined;
   const dialogRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -634,15 +681,19 @@ function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFi
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); previous?.focus?.(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!promote) setConfirmFinish(false); }, [promote]);
+  const stationNote = (station: DeskView) => station === "market" ? (affordable ? `${affordable} in reach` : "none in reach") : station === "combo" ? (offer ? "offer waiting" : "no offer") : req.ready ? "Promote now!" : req.checkUsed ? "check used" : req.xp.met && req.exam?.done ? "ready" : "requirements";
+  const finish = () => { if (promote) setConfirmFinish(true); else onFinish?.(); };
   return <div className="ascend-desk-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section ref={dialogRef} tabIndex={-1} className={`ascend-desk paper-stack ${live ? "ascend-desk--functional" : ""}`} role="dialog" aria-modal="true" aria-labelledby="ascend-desk-title">
       <header className="ascend-desk-header">
-        <div><span className="eyebrow">{live ? "Ascend review" : "Reference desk · inspection only"}</span><h2 id="ascend-desk-title">{view === "market" ? "Acquisition Desk" : view === "combo" ? "Combo Docket" : "Belt Check"}</h2><p>{live ? "Buy what you can afford, decide the Combo offer, and promote if you qualify. Finish the turn when you are done." : "Inspect this station without advancing the turn."}</p></div>
-        <div className="ascend-desk-balance"><span>Available Focus</span><b>{human.focus}</b><small>{legal.filter((action) => action.type === "purchase").length} of {game.market.length} Market cards in reach</small></div>
+        <div><span className="eyebrow">{live ? `Ascend review · step ${stationIndex + 1} of 3` : "Reference desk · inspection only"}</span><h2 id="ascend-desk-title">{STATION_TITLE[view]}</h2><p>{live ? stationCoach(view, req, offer?.name ?? null, Boolean(learn), affordable) : "Inspect this station without advancing the turn."}</p></div>
+        <div className="ascend-desk-balance"><span>Available Focus</span><b>{human.focus}</b><small>{affordable} of {game.market.length} Market cards in reach</small></div>
         <button className="modal-close" onClick={onClose} aria-label="Close Ascend Desk">×</button>
       </header>
-      <nav className="ascend-desk-stations" aria-label="Ascend stations">{(["market", "combo", "belt"] as const).map((station) => <button type="button" key={station} className={`button ${view === station ? "primary" : "ghost"}`} aria-current={view === station ? "page" : undefined} onClick={() => onView(station)}>{station === "market" ? "Market" : station === "combo" ? `Combo${offer ? " · offer" : ""}` : `Belt${promote ? " · ready" : ""}`}</button>)}</nav>
+      <nav className="ascend-desk-stations" aria-label="Ascend steps">{STATION_ORDER.map((station, index) => <button type="button" key={station} className={`button ${view === station ? "primary" : "ghost"}${station === "belt" && req.ready ? " is-ready" : ""}`} aria-current={view === station ? "step" : undefined} onClick={() => onView(station)}><b aria-hidden="true">{index + 1}</b><span>{STATION_NAME[station]}</span><small>{stationNote(station)}</small></button>)}</nav>
       <div className="ascend-desk-body">
+        {live && req.ready && view !== "belt" && <div className="ascend-promo-banner" role="status"><span><b>Promotion ready.</b> You qualify for {req.next?.name} Belt.</span><button type="button" className="button primary" onClick={() => onView("belt")}>Open Belt Check →</button></div>}
         {view === "market" && <section className="ascend-market" aria-label="Shared Market">
           <header><div><span className="eyebrow">{game.market.length} live records · full cards</span><h3>Choose with the text visible</h3></div><p>Each purchase is replaced by the top Market card.</p></header>
           <div className="ascend-market-grid">{game.market.map((card) => { const buy = legal.find((action) => action.type === "purchase" && action.cardId === card.instanceId); return <PlayCard key={card.instanceId} card={card} price={String(game.purchaseCost(human, card))} hint={buy ? "Buy" : undefined} disabled={!buy} onClick={buy ? () => onAct(buy) : undefined} onInspect={() => onInspect(card)} />; })}</div>
@@ -653,15 +704,16 @@ function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFi
           {(learn || decline) && <div className="combo-actions">{learn && <button className="button primary" onClick={() => onAct(learn)}>Learn {offer?.name}</button>}{decline && <button className="button ghost" onClick={() => onAct(decline)}>Pass Combo</button>}</div>}
           {human.learnedCombos.length > 0 && <div className="learned-combos">{human.learnedCombos.map((combo) => <button key={combo.instanceId} onClick={() => onInspect(combo)}><span>∞</span><b>{combo.name}</b><small>Learned</small></button>)}</div>}
         </section>}
-        {view === "belt" && <section className="ascend-belt belt-panel">
-          <span className="eyebrow">Certification ledger</span><h3>{belts[human.beltIndex].name} Belt · {human.xp} XP</h3>
-          <p>{nextBelt ? <><b>Next: {nextBelt.name} · {nextBelt.xp} XP.</b> {nextBelt.exam.summary} <em>{nextBelt.reward.summary}</em></> : "Every available Belt has been certified."}</p>
-          <div className="belt-track">{belts.map((belt, index) => <span className={index <= human.beltIndex ? "earned" : ""} key={belt.name} style={{ "--belt-rank": belt.color } as CSSProperties} title={`${belt.name} Belt · ${belt.xp} XP · ${belt.exam.title}`}>{belt.name.slice(0, 1)}</span>)}</div>
-          {promote ? <button className="button primary" onClick={() => onAct(promote)}>Promote to {nextBelt?.name} →</button> : nextBelt && <div className="belt-requirements" role="status"><span>{nextBelt.name} Belt · requirements</span><ul><li className={human.xp >= nextBelt.xp ? "is-met" : ""}><i aria-hidden="true">{human.xp >= nextBelt.xp ? "✓" : ""}</i>{nextBelt.xp} XP <small>{human.xp} filed</small></li><li><i aria-hidden="true" />{nextBelt.exam.title}</li>{!live && <li className="is-note"><i aria-hidden="true">!</i>Promotion opens during Ascend</li>}</ul></div>}
-          {recover && <button className="button ghost" onClick={() => onAct(recover)}>Recover a Training Stripe</button>}
-        </section>}
+        {view === "belt" && <BeltCheck game={game} seat={human} req={req} live={live} promote={promote} recover={recover} onAct={onAct} />}
       </div>
-      {onFinish && <footer className="ascend-desk-footer"><div className="ascend-guide-actions"><button className="button primary" onClick={onFinish}>Finish turn → Hide</button></div></footer>}
+      {onFinish && <footer className="ascend-desk-footer">
+        {confirmFinish ? <div className="ascend-finish-confirm" role="alertdialog" aria-label="Finish without promoting?"><p><b>You can still promote to {req.next?.name} Belt.</b> Finish your turn anyway?</p><div className="ascend-guide-actions"><button type="button" className="button primary" autoFocus onClick={() => { onView("belt"); setConfirmFinish(false); }}>Go to Belt Check</button><button type="button" className="button ghost" onClick={onFinish}>Finish without promoting</button></div></div>
+          : <div className="ascend-guide-actions">
+            {promote && view !== "belt" && <button type="button" className="button primary is-ready" onClick={() => onView("belt")}>Promote to {req.next?.name} →</button>}
+            {following && <button type="button" className={promote ? "button ghost" : "button primary"} onClick={() => onView(following)}>Next: {STATION_NAME[following]} →</button>}
+            <button type="button" className={following || promote ? "button ghost" : "button primary"} onClick={finish}>Finish turn → Hide</button>
+          </div>}
+      </footer>}
     </section>
   </div>;
 }

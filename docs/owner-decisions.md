@@ -65,3 +65,5 @@ None open right now.
 | 65–71 | Combo / Character / Market details | As implemented (Gramma Uppercut automatic; "temporary" bonus list; off-turn "first time" abilities; Three Squirrels counts your own turn; Swan Wing lasts the turn; Belt Collector counting; Aisle Map ends). | Claude | Kept |
 | 72 | Ronin Reroll | Automate it. | Claude | Backlog |
 | 73 | Card Library "Preview new recruit" | Keep it public as a clearly labelled teaser; Open Dojo stays the default until unlocks ship. | Claude | Done |
+| 74 | Ascend desk guidance | The engine table's Ascend desk is a guided three-step flow (Buy, Combo, Belt) with a coach line, a requirements checklist for the next Belt (XP, exam steps, Belt Check availability), a "Promotion ready" banner and pill button, and a confirm before finishing with a promotion still available. Opens on the Belt step when you can already promote. | Claude | Done |
+| 75 | Hand cards: look first | Every hand card (Kata, Defense, Junk, even unplayable ones) stands up and zooms on the first press so you can read it; a second press plays it. Hovering the hand with a mouse raises it like "Show hand". | Claude | Done |

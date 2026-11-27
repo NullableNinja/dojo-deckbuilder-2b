@@ -353,3 +353,62 @@
 .playtest-shell--engine.mat-v3 .fighter-panel.is-enemy .fighter-ability { background: rgba(5, 13, 23, .66) !important; }
 .playtest-shell--engine.mat-v3 .fighter-panel .fighter-ability span,
 .playtest-shell--engine.mat-v3 .fighter-panel.is-enemy .fighter-ability span { color: var(--stage-cream, #fffaf0) !important; }
+
+/* ==========================================================================
+   ASCEND DESK: GUIDED STEPS + BELT CHECKLIST (engine table)
+   Three numbered steps (Buy, Combo, Belt), a one-line coach in the header, a
+   promotion-ready banner, a requirements checklist on the Belt step and a
+   confirm before finishing with a promotion still on the table.
+   ========================================================================== */
+.playtest-shell--engine .ascend-desk-stations { gap: 8px; }
+.playtest-shell--engine .ascend-desk-stations .button { display: inline-grid; grid-template-columns: 26px auto; grid-template-rows: auto auto; column-gap: 8px; row-gap: 1px; align-content: center; align-items: center; justify-items: start; min-height: 48px; padding: 4px 14px 4px 8px; text-align: left; }
+.playtest-shell--engine .ascend-desk-stations .button b { grid-row: 1 / 3; display: grid; place-items: center; width: 26px; height: 26px; border: 2px solid currentColor; border-radius: 50%; font: 900 12px/1 var(--pf-display); }
+.playtest-shell--engine .ascend-desk-stations .button span { font-weight: 800; line-height: 1.1; }
+.playtest-shell--engine .ascend-desk-stations .button small { font-size: 10px; letter-spacing: .04em; opacity: .78; line-height: 1.1; }
+.playtest-shell--engine .ascend-desk-stations .button.is-ready { border-color: var(--pf-brass); box-shadow: 3px 4px 0 var(--pf-brass); }
+.playtest-shell--engine .ascend-desk-stations .button.is-ready small { font-weight: 900; opacity: 1; }
+
+.playtest-shell--engine .ascend-promo-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 10px 14px; color: var(--pf-ink); border: 2px solid var(--pf-brass); border-radius: 4px; background: var(--pf-surface-raised); box-shadow: 4px 5px 0 var(--pf-brass); }
+.playtest-shell--engine .ascend-promo-banner b { font-family: var(--pf-display); }
+
+.playtest-shell--engine .belt-checklist { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; color: var(--pf-ink); border: 1px dashed var(--pf-line-strong); border-radius: 4px; background: var(--pf-surface-raised); }
+.playtest-shell--engine .belt-checklist.is-ready { border: 2px solid var(--pf-brass); box-shadow: 4px 5px 0 var(--pf-brass); }
+.playtest-shell--engine .belt-checklist > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.playtest-shell--engine .belt-checklist > header span { font: 700 12px/1 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+.playtest-shell--engine .belt-checklist > header em { color: var(--pf-ink-soft); font-size: 12px; }
+.playtest-shell--engine .belt-checklist ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.playtest-shell--engine .belt-checklist li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; }
+.playtest-shell--engine .belt-checklist li > i,
+.playtest-shell--engine .belt-exam-steps li > i { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--pf-line-strong); border-radius: 3px; color: transparent; font-style: normal; font-size: 12px; font-weight: 900; }
+.playtest-shell--engine .belt-checklist li.is-met > i { border-color: var(--pf-action); color: var(--qd-on-action); background: var(--pf-action); transform: rotate(-4deg); }
+.playtest-shell--engine .belt-checklist li.is-note > i { border-color: var(--pf-brass); color: var(--pf-brass-text); }
+.playtest-shell--engine .belt-checklist li > div { display: grid; gap: 3px; min-width: 0; }
+.playtest-shell--engine .belt-checklist li b { font-size: 14px; }
+.playtest-shell--engine .belt-checklist small { color: var(--pf-ink-soft); font-size: 12px; line-height: 1.35; }
+.playtest-shell--engine .belt-checklist progress { width: min(100%, 320px); height: 8px; margin-top: 2px; accent-color: var(--pf-action); }
+.playtest-shell--engine .belt-exam-steps { gap: 4px; margin-top: 4px; }
+.playtest-shell--engine .belt-exam-steps li { grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12px; }
+.playtest-shell--engine .belt-exam-steps li.is-met { color: var(--pf-ink-soft); }
+.playtest-shell--engine .belt-next-step { margin: 0; padding-top: 8px; border-top: 1px dashed var(--pf-line); font-size: 13px; font-weight: 700; line-height: 1.4; }
+.playtest-shell--engine .belt-promote { justify-self: start; min-height: 48px; }
+.playtest-shell--engine .belt-top-rank { margin: 12px 0 0; font-weight: 700; }
+.playtest-shell--engine .ascend-finish-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; width: 100%; }
+.playtest-shell--engine .ascend-finish-confirm p { margin: 0; font-size: 13px; }
+.playtest-shell--engine .qd-action-pill .qd-pill-primary.is-promote { border-color: var(--pf-brass); box-shadow: 3px 4px 0 var(--pf-brass); }
+.playtest-shell--engine .ascend-desk-footer .ascend-finish-confirm p { color: #fffaf0; }
+.playtest-shell--engine .ascend-desk-footer .ascend-finish-confirm p b { color: #f2c65d; }
+
+/* The desk's rows size to their content so the step bar and the finish confirmation never overlap the body. */
+.playtest-shell--engine .ascend-desk-backdrop > .ascend-desk.ascend-desk--functional { grid-template-rows: auto auto minmax(0, 1fr) auto !important; }
+.playtest-shell--engine .ascend-desk-backdrop > .ascend-desk.ascend-desk--functional > .ascend-desk-header { min-height: 0; }
+.playtest-shell--engine .ascend-desk-backdrop > .ascend-desk.ascend-desk--functional > .ascend-desk-stations { grid-row: 2; }
+.playtest-shell--engine .ascend-desk-backdrop > .ascend-desk.ascend-desk--functional > .ascend-desk-footer { height: auto !important; min-height: 62px; max-height: none !important; }
+@media (max-width: 640px) {
+  .playtest-shell--engine .ascend-desk-stations { flex-wrap: nowrap; gap: 6px; padding: 8px 10px; }
+  .playtest-shell--engine .ascend-desk-stations .button { flex: 1 1 0; min-width: 0; grid-template-columns: 22px minmax(0, 1fr); column-gap: 6px; padding: 4px 6px; }
+  .playtest-shell--engine .ascend-desk-stations .button b { width: 22px; height: 22px; font-size: 11px; }
+  .playtest-shell--engine .ascend-desk-stations .button span,
+  .playtest-shell--engine .ascend-desk-stations .button small { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+  .playtest-shell--engine .ascend-desk-stations .button small { font-size: 9px; letter-spacing: 0; }
+  .playtest-shell--engine .ascend-desk-footer .ascend-guide-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
