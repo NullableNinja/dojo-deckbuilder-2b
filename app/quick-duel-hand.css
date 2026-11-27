@@ -1,0 +1,302 @@
+/* ==========================================================================
+   ENGINE TABLE HAND: A FREE-FLOATING FAN
+   No panel and no dock. The printed cards fan along the bottom edge of the
+   mat and rest tucked low, showing their top third (tab, name, kind). Hover,
+   keyboard focus, a tap, a selection or a Defense/Reaction window raises the
+   fan over the lower mat; the selected card stands upright in front of it
+   (the Design Lab hand treatment). The counters ledger and the action pill
+   live in their own columns (their own bar on phones), so the fan never
+   covers them. Modals and the Ascend desk sit above the hand's layer.
+   The fan pose lives on .qd-hand-slot; .qd-hand-card carries data-card-id
+   and is left alone for useCardMotion's draw animation.
+   ========================================================================== */
+.playtest-shell--engine {
+  --qd-card-w: clamp(108px, 9.2vw, 146px);
+  --qd-card-h: calc(var(--qd-card-w) * 15 / 11);
+  --qd-peek: calc(var(--qd-card-h) * .36);
+  --qd-tab-h: 22px;
+  --qd-lane-h: calc(var(--qd-peek) + var(--qd-tab-h) + 8px);
+  --qd-raise: calc(var(--qd-card-h) - var(--qd-peek) + 8px);
+  /* A card in hand focus (hovered, focused, selected) zooms so its printed text reads. */
+  --qd-zoom: 1.75;
+  /* How far the raised fan reaches above the lane into the arena: a zoomed card (tab included) at its tallest. */
+  --qd-overlay: calc(var(--qd-card-h) * var(--qd-zoom) - var(--qd-peek) + 12px);
+  --qd-side: clamp(226px, 21vw, 320px);
+  --qd-ease: cubic-bezier(.2, .9, .25, 1);
+  --qd-on-action: #fffaf0;
+}
+/* Dark ember is light; ink text keeps the action label readable. */
+:root[data-theme="dark"] .playtest-shell--engine { --qd-on-action: var(--pf-stage-edge); }
+
+.qd-hand { position: relative; z-index: var(--layer-floating); pointer-events: none; }
+.qd-hand :is(button, ol, li) { pointer-events: auto; }
+.qd-hand-fan { margin: 0; padding: 0; list-style: none; }
+
+/* ---------- Cards ---------- */
+.qd-hand-slot {
+  --qd-angle: calc(var(--fan-offset) * clamp(1deg, 16deg / var(--fan-total), 2.6deg));
+  --qd-drop: calc(var(--fan-offset) * var(--fan-offset) / var(--fan-total) * 5px);
+  --qd-lift: 0px;
+  --qd-scale: 1;
+  position: relative;
+  flex: 0 0 var(--qd-card-w);
+  width: var(--qd-card-w);
+  /* Outer cards zoom inward (origin toward the fan centre), so a zoomed edge card stays in the fan column. */
+  transform-origin: calc(50% + var(--fan-offset) / var(--fan-total) * 100%) 100%;
+  transform: translateY(calc(var(--qd-drop) - var(--qd-lift))) rotate(var(--qd-angle)) scale(var(--qd-scale));
+  transition: transform .22s var(--qd-ease), filter .18s ease;
+}
+.qd-hand-card { position: relative; }
+.qd-hand-card-face {
+  position: relative; display: block; width: 100%; margin: 0; padding: 0; border: 0; border-radius: 8px;
+  color: inherit; background: none; font: inherit; text-align: left; cursor: pointer;
+}
+.qd-hand-card-face[aria-disabled] { cursor: default; }
+.qd-hand-card-face:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 4px; }
+.qd-hand-card-art {
+  display: block; width: 100%; aspect-ratio: 11 / 15; overflow: hidden; border-radius: 8px;
+  background: var(--mat-dim); box-shadow: 0 0 0 2px var(--stage-ink-deep), 3px 4px 0 var(--stage-ink-deep);
+}
+.qd-hand-card-art > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.qd-hand-card-art .native-card-art { height: 100%; }
+
+/* The file tab: what the card does right now, its zone and its Focus value. Readable while tucked. */
+.qd-hand-card-tab {
+  position: absolute; top: calc(4px - var(--qd-tab-h)); left: 6px; z-index: 1; display: flex; align-items: center; gap: 4px;
+  max-width: calc(100% - 12px); height: var(--qd-tab-h); padding: 0 4px 0 7px;
+  border: 2px solid var(--stage-ink-deep); border-bottom: 0; border-radius: 6px 6px 0 0;
+  color: var(--mat-ink); background: var(--mat-raised);
+  font-family: var(--pf-label); font-size: 11px; font-weight: 700; letter-spacing: .06em; line-height: 1; text-transform: uppercase; white-space: nowrap;
+}
+.qd-hand-card-tab b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 800; }
+.qd-hand-card-tab i { flex: none; padding: 2px 4px; border-radius: 3px; color: var(--stage-cream); background: var(--stage-ink); font-size: 10px; font-style: normal; }
+.qd-hand-card-tab em {
+  flex: none; display: grid; place-items: center; width: 16px; height: 16px; border: 1.5px solid var(--stage-ink-deep); border-radius: 50%;
+  color: var(--stage-ink-deep); background: var(--pf-brass); font-family: var(--pf-impact); font-size: 9px; font-style: normal; letter-spacing: 0;
+}
+
+/* Playable for this phase: an ember tab and a lifted edge. Unplayable: dimmed and seated low. */
+.qd-hand-slot.is-playable { --qd-lift: 10px; }
+.qd-hand-slot.is-playable .qd-hand-card-tab { color: var(--qd-on-action); background: var(--pf-action); }
+.qd-hand-slot.is-playable .qd-hand-card-art { box-shadow: 0 0 0 2px var(--stage-ink-deep), 0 -3px 0 2px var(--pf-action), 3px 4px 0 var(--stage-ink-deep); }
+.qd-hand-slot.is-unplayable { filter: saturate(.35) brightness(.86); }
+:root[data-theme="dark"] .qd-hand-slot.is-unplayable { filter: saturate(.35) brightness(.6); }
+.qd-hand.is-answering .qd-hand-slot.is-unplayable { filter: saturate(.2) brightness(.72); }
+:root[data-theme="dark"] .qd-hand.is-answering .qd-hand-slot.is-unplayable { filter: saturate(.2) brightness(.5); }
+/* Initiate with nothing to equip: the hand rests instead of looking broken. */
+.qd-hand.is-idle .qd-hand-slot.is-unplayable { filter: saturate(.75) brightness(.97); }
+:root[data-theme="dark"] .qd-hand.is-idle .qd-hand-slot.is-unplayable { filter: saturate(.75) brightness(.85); }
+/* A Defense or Reaction window: the cards that can answer it stand tallest and glow (static, no pulse). */
+.qd-hand-slot.is-answer { --qd-lift: 18px; }
+.qd-hand-slot.is-answer .qd-hand-card-art {
+  box-shadow: 0 0 0 2px var(--stage-ink-deep), 0 0 0 5px var(--pf-action), 0 0 22px 6px color-mix(in srgb, var(--pf-action) 55%, transparent), 4px 6px 0 5px var(--stage-ink-deep);
+}
+
+/* Raised: the is-raised state, keyboard focus, or hover on fine pointers (so touch never sticks). */
+.qd-hand.is-raised .qd-hand-slot,
+.qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-slot { --qd-lift: var(--qd-raise); }
+.qd-hand.is-raised .qd-hand-slot.is-playable,
+.qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-slot.is-playable { --qd-lift: calc(var(--qd-raise) + 10px); }
+.qd-hand.is-raised .qd-hand-slot.is-answer,
+.qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-slot.is-answer { --qd-lift: calc(var(--qd-raise) + 16px); }
+@media (hover: hover) and (pointer: fine) {
+  .qd-hand-fan:hover .qd-hand-slot { --qd-lift: var(--qd-raise); }
+  .qd-hand-fan:hover .qd-hand-slot.is-playable { --qd-lift: calc(var(--qd-raise) + 10px); }
+  .qd-hand-fan:hover .qd-hand-slot.is-answer { --qd-lift: calc(var(--qd-raise) + 16px); }
+  .qd-hand-fan:hover .qd-hand-slot:hover { z-index: 7; --qd-angle: 0deg; --qd-scale: var(--qd-zoom); --qd-lift: var(--qd-raise); filter: none; }
+}
+.qd-hand-slot:has(.qd-hand-card-face:focus-visible) { z-index: 7; --qd-angle: 0deg; --qd-scale: var(--qd-zoom); --qd-lift: var(--qd-raise); filter: none; }
+/* The selected card stands upright and enlarged in front of the fan. */
+.qd-hand .qd-hand-slot.is-selected { z-index: 6; --qd-angle: 0deg; --qd-scale: var(--qd-zoom); --qd-lift: var(--qd-raise); filter: none; }
+.qd-hand-slot.is-selected .qd-hand-card-art { box-shadow: 0 0 0 3px var(--pf-action), 0 0 0 6px var(--stage-ink-deep), 4px 6px 0 6px var(--stage-ink-deep); }
+
+/* Inspect is a second file tab on the right, shown on the card in hand focus (hovered, focused or
+   selected). It never sits on the printed name. */
+.qd-hand-card-inspect {
+  position: absolute; top: calc(4px - var(--qd-tab-h)); right: 6px; z-index: 2; height: var(--qd-tab-h); padding: 0 7px;
+  border: 2px solid var(--stage-ink-deep); border-bottom: 0; border-radius: 6px 6px 0 0; color: var(--stage-cream); background: var(--stage-ink);
+  font-family: var(--pf-label); font-size: 11px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-transform: uppercase; cursor: pointer;
+  visibility: hidden;
+}
+/* 44px hit area around the tab. */
+.qd-hand-card-inspect::after { content: ""; position: absolute; inset: -12px -6px -12px -6px; }
+.qd-hand-card-inspect:hover { color: var(--qd-on-action); background: var(--pf-action); }
+.qd-hand-card-inspect:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 2px; }
+.qd-hand-slot:is(.is-selected, :focus-within) .qd-hand-card-inspect { visibility: visible; }
+.qd-hand-slot:is(.is-selected, :focus-within) .qd-hand-card-tab { max-width: calc(100% - 74px); }
+@media (hover: hover) and (pointer: fine) {
+  .qd-hand-slot:hover .qd-hand-card-inspect { visibility: visible; }
+  .qd-hand-slot:hover .qd-hand-card-tab { max-width: calc(100% - 74px); }
+}
+
+/* ---------- Live damage preview ----------
+   A stamped slip on each playable card, on its left edge (the edge the fan never overlaps) inside the
+   visible top third, so it reads while the card is tucked; it grows with the card when it zooms.
+   The stage repeats it for the selected card. */
+.qd-hand-card-preview {
+  position: absolute; top: calc(var(--qd-peek) - 36px); left: -6px; z-index: 1; display: -webkit-box; max-width: calc(100% - 2px); padding: 2px 6px;
+  border: 2px solid var(--stage-ink-deep); border-left-width: 5px; border-radius: 3px; color: var(--mat-ink); background: var(--mat-raised); box-shadow: 2px 2px 0 var(--stage-ink-deep);
+  font-family: var(--pf-label); font-size: 11px; font-weight: 800; letter-spacing: .02em; line-height: 1.1; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  transform: rotate(-3deg); pointer-events: none;
+}
+.qd-hand-card-preview--attack { border-left-color: var(--pf-action); }
+.qd-hand-card-preview--defense { border-left-color: var(--pf-brass); }
+.playtest-shell--engine .clash-preview {
+  position: absolute; left: 50%; bottom: 6px; z-index: 2; display: grid; justify-items: center; gap: 1px; max-width: min(92%, 420px); margin: 0; padding: 5px 14px 6px;
+  border: 2px solid var(--stage-ink-deep); border-top-width: 4px; border-radius: 4px; color: var(--mat-ink); background: var(--mat-raised); box-shadow: 3px 4px 0 var(--stage-ink-deep);
+  text-align: center; translate: -50% 0;
+}
+.playtest-shell--engine .clash-preview--attack { border-top-color: var(--pf-action); }
+.playtest-shell--engine .clash-preview--defense { border-top-color: var(--pf-brass); }
+.playtest-shell--engine .clash-preview span { color: var(--mat-ink-soft); font-family: var(--pf-label); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.playtest-shell--engine .clash-preview b { font-family: var(--pf-display); font-size: 18px; font-weight: 400; line-height: 1.05; }
+.playtest-shell--engine .clash-preview small { color: var(--mat-ink-soft); font-family: var(--pf-label); font-size: 12px; font-weight: 700; }
+
+/* ---------- Ledger: the hand counters as one small paper slip ---------- */
+.qd-hand-ledger dl { margin: 0; }
+.qd-hand-ledger dl > div { display: flex; align-items: baseline; gap: 5px; }
+.qd-hand-ledger dt { color: var(--mat-ink-soft); font-family: var(--pf-label); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.qd-hand-ledger dd { margin: 0; color: var(--mat-ink); font-family: var(--pf-label); font-size: 14px; font-weight: 800; }
+.qd-hand-ledger .is-focus dd { color: var(--pf-brass-text); }
+:root[data-theme="dark"] .qd-hand-ledger .is-focus dd { color: var(--pf-brass); }
+.qd-hand-toggle {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px;
+  border: 2px solid var(--stage-ink-deep); border-radius: 999px; color: var(--mat-ink); background: var(--mat-raised); box-shadow: 2px 3px 0 var(--stage-ink-deep);
+  font-family: var(--pf-label); font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+}
+.qd-hand-toggle i { font-style: normal; }
+.qd-hand-toggle:hover { border-color: var(--pf-action); }
+.qd-hand-toggle:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 2px; }
+
+/* ---------- The action pill: the next legal action, always reachable ---------- */
+.qd-action-pill { display: grid; gap: 6px; color: var(--mat-ink); }
+.qd-action-pill-status { display: flex; align-items: baseline; gap: 8px; min-width: 0; margin: 0; line-height: 1.15; }
+.qd-action-pill-status span { flex: none; color: var(--pf-action); font-family: var(--pf-impact); font-size: 11px; letter-spacing: .06em; }
+.qd-action-pill-status b { min-width: 0; font-family: var(--pf-label); font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+.qd-action-pill-buttons, .qd-action-pill-extras { display: flex; flex-wrap: wrap; gap: 6px; }
+.qd-action-pill button {
+  min-height: 44px; border: 2px solid var(--stage-ink-deep); border-radius: 8px 4px 8px 5px; padding: 0 14px;
+  color: var(--mat-ink); background: var(--mat-surface); box-shadow: 2px 3px 0 var(--stage-ink-deep);
+  font-family: var(--pf-label); font-size: 14px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; cursor: pointer;
+}
+.qd-action-pill button:focus-visible { outline: 3px solid var(--pf-brass); outline-offset: 2px; }
+.qd-action-pill .qd-pill-primary {
+  flex: 1 1 auto; min-height: 46px; border-width: 3px; color: var(--qd-on-action); background: var(--pf-action); box-shadow: 3px 4px 0 var(--stage-ink-deep);
+  font-family: var(--pf-display); font-size: 17px; font-weight: 400; letter-spacing: .02em;
+}
+.qd-action-pill .qd-pill-primary:hover { color: #fffaf0; background: var(--pf-action-deep); }
+.qd-action-pill .qd-pill-secondary { flex: 1 1 auto; }
+.qd-action-pill .qd-pill-secondary:hover, .qd-action-pill-extras button:hover { border-color: var(--pf-action); }
+.qd-action-pill .qd-pill-cancel { flex: none; width: 44px; padding: 0; font-family: var(--pf-display); font-size: 22px; line-height: 1; }
+.qd-action-pill-extras button { display: grid; justify-items: start; align-content: center; gap: 1px; padding: 4px 12px; border-color: var(--pf-brass); text-align: left; text-transform: none; }
+.qd-action-pill-extras button span { color: var(--mat-ink-soft); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+
+/* ---------- Wide screens: ledger | fan | pill along the bottom of the mat ---------- */
+@media (min-width: 861px) {
+  /* The arena takes the height the old hand panel used; only the tucked lane is reserved. */
+  .playtest-shell.playtest-shell--live.playtest-shell--engine.mat-v3 { --hand-h: calc(var(--qd-lane-h) - 8px); }
+  .qd-hand {
+    position: sticky; bottom: 52px; display: grid; grid-template-columns: var(--qd-side) minmax(0, 1fr) var(--qd-side);
+    /* One fixed row: anything taller than the lane (a two-row pill) grows upward, never under the footer. */
+    grid-template-rows: minmax(0, 1fr); grid-template-areas: "ledger fan pill"; height: var(--qd-lane-h); margin-top: 8px;
+  }
+  .qd-hand-bar { display: contents; }
+  .qd-hand-fan-zone {
+    grid-area: fan; position: relative; container-type: inline-size; min-width: 0;
+    /* Clip only below the lane: tucked cards sink out of sight, raised ones rise freely. */
+    clip-path: inset(-100vh -14px 0 -14px);
+  }
+  .qd-hand-fan { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding: var(--qd-tab-h) 30px 0; }
+  /* Focus scrolling only needs the tucked top of a card in view, not the part sunk below the lane. */
+  .qd-hand-card-face { scroll-margin-bottom: calc(var(--qd-peek) - var(--qd-card-h)); }
+  /* Overlap is computed from the hand size, so any hand fits the fan column. */
+  .qd-hand-slot { margin-inline: min(-2px, calc((100cqi - 60px - var(--fan-total) * var(--qd-card-w)) / (2 * var(--fan-total)))); }
+  .qd-hand-ledger { grid-area: ledger; display: flex; align-items: flex-end; gap: 8px; min-width: 0; padding: 0 0 6px 8px; }
+  .qd-hand-toggle { flex: none; flex-direction: column; justify-content: center; gap: 0; width: 52px; min-height: 52px; padding: 0; border-radius: 12px 6px 12px 8px; font-size: 11px; }
+  .qd-hand-toggle i { font-size: 16px; line-height: 1; }
+  .qd-hand-ledger dl {
+    display: grid; grid-template-columns: repeat(2, auto); gap: 1px 12px; min-width: 0; padding: 5px 10px;
+    border: 2px solid var(--mat-line-strong); border-radius: 8px; background: color-mix(in srgb, var(--mat-raised) 90%, transparent);
+  }
+  .qd-hand-ledger dd { font-size: 13px; }
+
+  /* The ring's readout rides directly under the clash. The zone board and filed-card trays hold the
+     bottom of the stage (at least --qd-overlay tall), so a raised hand only ever overlaps those. */
+  .playtest-shell.playtest-shell--engine.mat-v3 .playtest-combat-desk.combat-stage {
+    grid-template-rows: auto minmax(calc(var(--clash-card-h) + 48px), 1fr) auto auto auto minmax(calc(var(--qd-overlay) - 52px), auto) !important;
+  }
+  .playtest-shell--engine .combat-stage > .combat-stage-heading { grid-row: 1; }
+  .playtest-shell--engine .combat-stage > .clash-field { grid-row: 2; }
+  .playtest-shell--engine .combat-stage > .impact-readout { grid-row: 3; }
+  .playtest-shell--engine .combat-stage > .contextual-coach-slip { grid-row: 4; }
+  .playtest-shell--engine .combat-stage > .combat-zone-board { grid-row: 5; }
+  .playtest-shell--engine .combat-stage > .live-mat-play--stage { grid-row: 6; align-self: start; }
+  .qd-action-pill {
+    grid-area: pill; align-self: end; justify-self: end; width: calc(100% - 22px); margin: 0 8px 4px 0; padding: 8px 10px 10px;
+    border: 3px solid var(--stage-ink-deep); border-radius: 14px 6px 14px 8px; background: var(--mat-raised); box-shadow: 4px 5px 0 var(--stage-ink-deep);
+  }
+  .site-frame:has(.playtest-shell--engine) .paper-toast-stack { bottom: calc(var(--qd-lane-h, 110px) + 72px); }
+}
+@media (min-width: 1280px) {
+  .qd-hand-ledger dl { grid-template-columns: repeat(3, auto); }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .playtest-shell--engine { --qd-card-w: clamp(96px, 8vw, 118px); --qd-peek: calc(var(--qd-card-h) * .34); }
+}
+
+/* ---------- Phones and portrait tablets: a swipeable strip over the action bar ---------- */
+@media (max-width: 860px) {
+  .playtest-shell--engine { --qd-card-w: clamp(88px, 23vw, 118px); --qd-peek: calc(var(--qd-card-h) * .4); --qd-tab-h: 20px; --qd-zoom: 1.45; }
+  .qd-hand { position: fixed; inset: auto 0 0; z-index: var(--layer-drawer); display: grid; }
+  .qd-hand-fan {
+    display: flex; gap: 8px; height: calc(var(--qd-tab-h) + var(--qd-peek) + 6px); padding: calc(var(--qd-tab-h) + 6px) 12px 0;
+    overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 12px; scrollbar-width: none;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--mat-canvas) 75%, transparent) 75%);
+    transition: height .22s var(--qd-ease), padding .22s var(--qd-ease);
+  }
+  .qd-hand-fan::-webkit-scrollbar { display: none; }
+  .qd-hand-fan::after { content: ""; flex: 0 0 4px; }
+  .qd-hand-slot { --qd-angle: 0deg; --qd-drop: 0px; scroll-snap-align: start; }
+  .qd-hand-slot:is(.is-playable, .is-answer) { --qd-lift: 6px; }
+  /* Raised: the strip grows to show whole cards, with headroom for the zoomed (selected or focused) one. */
+  .qd-hand.is-raised .qd-hand-fan,
+  .qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-fan { height: calc(var(--qd-tab-h) * var(--qd-zoom) + var(--qd-card-h) * var(--qd-zoom) + 18px); padding-top: calc(var(--qd-tab-h) * var(--qd-zoom) + var(--qd-card-h) * (var(--qd-zoom) - 1) + 10px); }
+  .qd-hand.is-raised .qd-hand-slot,
+  .qd-hand.is-raised .qd-hand-slot:is(.is-playable, .is-answer),
+  .qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-slot,
+  .qd-hand:has(.qd-hand-card-face:focus-visible) .qd-hand-slot:is(.is-playable, .is-answer) { --qd-lift: 0px; }
+  .qd-hand .qd-hand-slot.is-selected,
+  .qd-hand .qd-hand-slot:has(.qd-hand-card-face:focus-visible) { --qd-lift: 0px; }
+
+  .qd-hand-bar {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "counts counts" "toggle pill"; gap: 6px 10px; align-items: center;
+    padding: 6px max(10px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+    border-top: 3px solid var(--stage-ink-deep); background: var(--mat-raised); box-shadow: 0 -4px 0 color-mix(in srgb, var(--stage-ink-deep) 35%, transparent);
+    pointer-events: auto;
+  }
+  .qd-hand-ledger { display: contents; }
+  .qd-hand-ledger dl { grid-area: counts; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .qd-hand-ledger dt { font-size: 10px; }
+  .qd-hand-ledger dd { font-size: 12px; }
+  .qd-hand-toggle { grid-area: toggle; padding: 0 12px; font-size: 12px; }
+  .qd-action-pill { grid-area: pill; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .qd-action-pill-status { flex: 1 1 110px; flex-direction: column; align-items: flex-start; gap: 1px; }
+  .qd-action-pill-status b { font-size: 13px; }
+  .qd-action-pill-buttons { flex: 1 1 auto; justify-content: flex-end; }
+  .qd-action-pill .qd-pill-primary { flex: 0 1 auto; padding: 0 12px; font-size: 15px; }
+  .qd-action-pill .qd-pill-secondary { flex: 0 1 auto; padding: 0 10px; font-size: 12px; }
+  .qd-action-pill-extras { flex: 1 1 100%; }
+
+  /* The page scrolls clear of the fixed hand; toasts float above it. */
+  .site-frame:has(.playtest-shell--engine) { padding-bottom: calc(190px + env(safe-area-inset-bottom, 0px)); }
+  .site-frame:has(.playtest-shell--engine) .paper-toast-stack { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 420px) {
+  .qd-hand-toggle { width: 44px; padding: 0; justify-content: center; font-size: 0; }
+  .qd-hand-toggle i { font-size: 18px; }
+}
+
+/* Every reduced-motion signal makes hand changes instant. Nothing floats or bobs. */
+@media (prefers-reduced-motion: reduce) { .qd-hand-slot, .qd-hand-fan { transition: none !important; } }
+:root[data-motion="reduced"] :is(.qd-hand-slot, .qd-hand-fan),
+.playtest-shell--engine:is(.motion-reduced, .motion-off) :is(.qd-hand-slot, .qd-hand-fan) { transition: none !important; }

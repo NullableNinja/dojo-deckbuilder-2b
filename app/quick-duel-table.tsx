@@ -1,7 +1,7 @@
 // Quick Duel on the canonical engine. The engine owns every rule; this component renders its
 // state with the Paper-Fu mat, offers the human seat its legal actions and choices, and lets the
 // computer seat play through EngineSession. No rules live here.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { artistUrl, fighterIllustrationUrl, locationTheme, presentationSlug } from "./card-art";
 import { cardMotionDisabled } from "./card-motion";
 import { SceneReveal } from "./scene-reveal";
@@ -10,6 +10,7 @@ import type { EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed, type SessionMode, type TableOptions, type EngineAction, type EngineGame, type EnginePending, type EngineSeat, type SavedSession } from "./engine-session.ts";
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
+import "./quick-duel-hand.css";
 
 const CardInspector = lazy(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
@@ -17,6 +18,8 @@ type MatCard = EngineCard & { timing?: string | null; flavorText?: string | null
 type VfxKind = "attack" | "hit" | "block" | "ko" | "certified" | "promotion";
 type Vfx = { id: number; human?: VfxKind; computer?: VfxKind; screen?: "impact" | "scene"; cue: string; cueScale?: number; tone: "attack" | "damage" | "block" | "certified" | "promotion" | "summary"; announcement: string; promotion?: { side: "human" | "computer"; belt: string; previous: string } };
 type DeskView = "market" | "combo" | "belt";
+/** A live damage preview for one card: `headline` is the badge ("→ 4 dmg if unblocked"), `detail` the stage's second line. */
+type CardPreview = { tone: "attack" | "defense"; headline: string; detail?: string };
 
 type TableProps = {
   session: EngineSession;
@@ -111,7 +114,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
 
   const afterMove = () => { onSave(session); rerender(); };
   const act = (action: EngineAction) => { if (session.act(action)) { setSelectedId(null); afterMove(); } };
-  const choose = (optionId: string) => { if (session.choose(optionId)) afterMove(); };
+  const choose = (optionId: string) => { if (session.choose(optionId)) { setSelectedId(null); afterMove(); } };
 
   // The computer seat (and automatic Honor) moves one visible beat at a time.
   useEffect(() => {
@@ -155,28 +158,65 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
 
   useCardMotion(shellRef, { deck: ids(human.deck), hand: ids(human.hand), discard: ids(human.discard), playArea: ids(human.played), market: ids(game.market) }, motion, sessionKey);
 
-  const useHandCard = (card: EngineCard) => {
-    if (handChoice) { if (handChoice.options.some((option) => option.id === card.instanceId)) choose(card.instanceId!); return; }
+  const handCardEnabled = (card: EngineCard) => handChoice ? handChoice.options.some((option) => option.id === card.instanceId) : !dialogChoice && Boolean(primaryAction(legal, card));
+  /** Uses a hand card: answers the open window, or takes its primary legal action. */
+  const commitHandCard = (card: EngineCard) => {
+    if (!handCardEnabled(card)) return;
+    if (handChoice) { choose(card.instanceId!); return; }
     const action = primaryAction(legal, card);
     if (!action) return;
     const variants = legal.filter((candidate) => candidate.type === action.type && candidate.cardId === card.instanceId);
     // Equipping over a full set of Hands discards Weapons; always ask first (owner decision 17).
     if (variants.length > 1 || variants.some((candidate) => candidate.replaceCardIds?.length)) { setEquipChoices(variants); return; }
-    if (action.type === "play-attack") setSelectedId((current) => current === card.instanceId ? null : card.instanceId!);
-    else act(action);
+    act(action);
   };
-  const handCardEnabled = (card: EngineCard) => handChoice ? handChoice.options.some((option) => option.id === card.instanceId) : !dialogChoice && Boolean(primaryAction(legal, card));
+  /** A press on a hand card. Touch and Attacks select first (the card stands up); a second press uses it. */
+  const pressHandCard = (card: EngineCard, viaTouch: boolean) => {
+    if (!handCardEnabled(card)) return;
+    const isAttack = !handChoice && primaryAction(legal, card)?.type === "play-attack";
+    if (selectedId !== card.instanceId && (viaTouch || isAttack)) { setSelectedId(card.instanceId!); return; }
+    commitHandCard(card);
+  };
   const equipmentActions = legal.filter((action) => action.type === "activate-equipment");
   const currentLocation = game.currentLocation as MatCard | null;
-  const stats = seatStats(game, human);
   const coach = coachLine(game, phase, legal, selected, handChoice);
+  // DAMAGE PREVIEW SLOT. Wire the engine's preview (engine/preview.mjs, via its app/mat-view.ts helper)
+  // here, for playable cards only. Until then it returns null and the hand badge and stage line stay hidden.
+  const damagePreviewFor = (_card: EngineCard): CardPreview | null => null;
+  const selectedPreview = selected ? damagePreviewFor(selected) : null;
 
-  const dock = !over && !deskView && <nav className={`playtest-action-dock dock-${phase}`} aria-label="Next legal action">
-    <div><span>{PHASE_WORD[phase]}</span><b>{dockLabel(game, phase, selected, handChoice)}</b></div>
-    {phase === "player-initiate" && pass && <button onClick={() => act(pass)}>Proceed to Yell →</button>}
-    {phase === "player-yell" && <div className="dock-action-group">{selectedAttack && <button onClick={() => act(selectedAttack)}>Declare Attack →</button>}{pass && <button className={selectedAttack ? "dock-secondary" : ""} onClick={() => act(pass)}>{selectedAttack ? "Skip · Ascend" : "Proceed to Ascend →"}</button>}</div>}
-    {phase === "player-ascend" && <div className="dock-action-group"><button className="dock-secondary" onClick={() => setDeskView(deskView ?? "market")}>Open Ascend desk</button>{pass && <button onClick={() => act(pass)}>Finish turn → Hide</button>}</div>}
-    {handChoice && <button onClick={() => choose("pass")}>{handChoice.kind === "defense" ? "Take the hit" : handChoice.kind === "reversal" ? "Decline Reversal" : "No Reaction"}</button>}
+  // The hand rests tucked low. A Defense or Reaction window raises it; so does a selected card.
+  const [handOpen, setHandOpen] = useState(false);
+  const answering = Boolean(handChoice);
+  useEffect(() => setHandOpen(answering), [answering]);
+  const handRaised = !over && (handOpen || Boolean(selected));
+  const toggleHand = () => { if (handRaised) setSelectedId(null); setHandOpen(!handRaised); };
+  const modalOpen = Boolean(deskView || dialogChoice || equipChoices || inspected || logOpen);
+  useEffect(() => {
+    if (modalOpen || (!selectedId && !handOpen)) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (selectedId) setSelectedId(null);
+      else setHandOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalOpen, selectedId, handOpen]);
+
+  const selectedUse = selected && handCardEnabled(selected) ? selected : null;
+  const passLabel = handChoice ? (handChoice.kind === "defense" ? "Take the hit" : handChoice.kind === "reversal" ? "Decline Reversal" : "No Reaction") : null;
+  const pill = !over && <nav className={`qd-action-pill pill-${phase}`} aria-label="Next legal action">
+    <p className="qd-action-pill-status"><span>{PHASE_WORD[phase]}</span><b>{dockLabel(game, phase, selected, handChoice)}</b></p>
+    <div className="qd-action-pill-buttons">
+      {selectedUse && <button type="button" className="qd-pill-primary" onClick={() => commitHandCard(selectedUse)}>{useLabel(selectedUse, handChoice, primaryAction(legal, selectedUse))}</button>}
+      {phase === "player-initiate" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Proceed to Yell →</button>}
+      {phase === "player-yell" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>{selectedUse ? "Skip · Ascend" : "Proceed to Ascend →"}</button>}
+      {phase === "player-ascend" && <><button type="button" className="qd-pill-secondary" onClick={() => setDeskView(deskView ?? "market")}>Ascend desk</button>{pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Finish turn → Hide</button>}</>}
+      {passLabel && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => choose("pass")}>{passLabel}</button>}
+      {selected && <button type="button" className="qd-pill-cancel" onClick={() => setSelectedId(null)} aria-label={`Put ${selected.name} back in your hand`} title="Put it back (Esc)">×</button>}
+    </div>
+    {handChoice && handChoice.options.some((option) => option.id.startsWith("activate:")) && <div className="qd-action-pill-extras" aria-label="Equipment you can use now">{handChoice.options.filter((option) => option.id.startsWith("activate:")).map((option) => { const item = findInstance(game, option.id.slice("activate:".length)); return <button type="button" onClick={() => choose(option.id)} key={option.id} title={item?.rulesText ?? undefined}><span>Equipment</span><b>{option.label}</b></button>; })}</div>}
+    {equipmentActions.length > 0 && <div className="qd-action-pill-extras" aria-label="Available Equipment actions">{equipmentActions.map((action) => { const item = findInstance(game, action.cardId!); return <button type="button" onClick={() => act(action)} key={action.cardId} title={item?.rulesText ?? undefined}><span>Exhaust</span><b>{item?.name ?? "Equipment"}</b></button>; })}</div>}
   </nav>;
 
   return <main ref={shellRef} className={`playtest-shell playtest-shell--live playtest-shell--engine mat-v3 location-${locationTheme(currentLocation)} motion-${motion}${guided ? " playtest-shell--guided" : ""}${over ? " playtest-shell--finished" : ""}${vfx?.screen === "impact" ? ` ddb-vfx-screen-impact ddb-vfx-screen-v${vfx.id % 5}` : ""}${vfx?.screen === "scene" ? " ddb-vfx-scene" : ""} shell`}>
@@ -196,23 +236,16 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       <section className="playtest-table">
         <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
         <div className="combat-stage-column">
-          <CombatStage game={game} phase={phase} location={currentLocation} selected={selected} incoming={incoming} exchange={exchange} log={log} coach={guided ? coach : null} onInspect={setInspected} onDropCard={(instanceId) => { const card = human.hand.find((entry) => entry.instanceId === instanceId); if (card) useHandCard(card); }} />
+          <CombatStage game={game} phase={phase} location={currentLocation} selected={selected} incoming={incoming} exchange={exchange} log={log} coach={guided ? coach : null} preview={selectedPreview} onInspect={setInspected} onDropCard={(instanceId) => { const card = human.hand.find((entry) => entry.instanceId === instanceId); if (card) commitHandCard(card); }} />
           {phase === "ai-ready" && !over && <span className="ai-thinking"><i /><i /><i /> {game.pendingChoice ? "Computer is deciding" : "Clipboard thinking"}</span>}
         </div>
         <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
       </section>
     </section>
 
-    <section className="playtest-workspace playtest-workspace--hand">
-      <section className={`hand-panel paper-stack${phase === "player-initiate" && !human.hand.some(handCardEnabled) ? " hand-panel--idle" : ""}`}>
-        <header><div><span className="eyebrow">Your hand · {human.hand.length} cards</span><h2>{handHeading(game, phase, handChoice, human)}</h2></div>
-          <div className="hand-counters"><span>Deck {human.deck.length}</span><span>Discard {human.discard.length}</span><span>Attacks {human.attackCount ?? 0}</span><span>Practice {human.practiceUsed ? "used" : "ready"}</span><span>Focus {human.focus}</span><span>ATK {stats.atk} · DEF {stats.def} · SPD {stats.speed}</span></div></header>
-        {handChoice && handChoice.options.some((option) => option.id.startsWith("activate:")) && <div className="equipment-reaction-strip" aria-label="Equipment you can use now"><span>Equipment reactions</span>{handChoice.options.filter((option) => option.id.startsWith("activate:")).map((option) => { const item = findInstance(game, option.id.slice("activate:".length)); return <button type="button" onClick={() => choose(option.id)} key={option.id}><b>{option.label}</b><small>{item?.rulesText?.slice(0, 64) ?? "Use it now"}</small></button>; })}</div>}
-        {equipmentActions.length > 0 && <div className="equipment-reaction-strip equipment-trigger-strip" aria-label="Available Equipment actions"><span>Equipment actions</span>{equipmentActions.map((action) => { const item = findInstance(game, action.cardId!); return <button type="button" onClick={() => act(action)} key={action.cardId}><b>Exhaust {item?.name ?? "Equipment"}</b><small>{item?.rulesText?.slice(0, 64) ?? "Activate"}</small></button>; })}</div>}
-        <div className="play-card-row">{human.hand.map((card, index) => <PlayCard key={card.instanceId} card={card} handIndex={index} handTotal={human.hand.length} selected={selectedId === card.instanceId} disabled={!handCardEnabled(card)} hint={handChoice ? undefined : actionHint(primaryAction(legal, card))} onClick={() => useHandCard(card)} onInspect={() => setInspected(card)} />)}</div>
-      </section>
-    </section>
-    {dock}
+    <HandFan cards={human.hand} raised={handRaised} idle={phase === "player-initiate" && !human.hand.some(handCardEnabled)} answering={handChoice?.kind ?? null} heading={handHeading(game, phase, handChoice, human)} selectedId={selectedId} enabled={handCardEnabled} hintFor={(card) => handChoice ? answerHint(handChoice) : actionHint(primaryAction(legal, card))} previewFor={(card) => handCardEnabled(card) ? damagePreviewFor(card) : null} onPress={pressHandCard} onInspect={setInspected} onToggle={toggleHand}
+      ledger={<dl><div><dt>Hand</dt><dd>{human.hand.length}</dd></div><div><dt>Deck</dt><dd>{human.deck.length}</dd></div><div><dt>Discard</dt><dd>{human.discard.length}</dd></div><div><dt>Attacks</dt><dd>{human.attackCount ?? 0}</dd></div><div><dt>Practice</dt><dd>{human.practiceUsed ? "Used" : "Ready"}</dd></div><div className="is-focus"><dt>Focus</dt><dd>{human.focus}</dd></div></dl>}
+      pill={pill} />
 
     <footer className="playtest-utility-dock" aria-label="Quick Duel utilities">
       <div className="playtest-utility-group"><button type="button" onClick={() => setLogOpen(true)}>Fight log</button><button type="button" onClick={() => setDeskView("market")}>Market</button><button type="button" onClick={() => setDeskView("belt")}>Belt ledger</button></div>
@@ -282,6 +315,17 @@ function actionHint(action: EngineAction | null) {
   return ({ "play-attack": "Attack", "play-card": "Play", practice: "Practice", "bad-habit-focus": "+1 Focus" } as Record<string, string>)[action.type];
 }
 
+function answerHint(choice: EnginePending) {
+  return choice.kind === "defense" ? "Block" : choice.kind === "reversal" ? "Counter" : "React";
+}
+
+/** The action pill's label for using the selected card. */
+function useLabel(card: EngineCard, handChoice: EnginePending | null, action: EngineAction | null) {
+  if (handChoice) return `${answerHint(handChoice)} · ${card.name}`;
+  if (action?.type === "play-attack") return "Declare Attack →";
+  return `${actionHint(action) ?? "Play"} · ${card.name}`;
+}
+
 function healthTier(hp: number, maxHp: number) {
   const ratio = maxHp > 0 ? hp / maxHp : 0;
   return ratio <= .34 ? "critical" : ratio <= .66 ? "warning" : "healthy";
@@ -349,17 +393,91 @@ function NativeCardArt({ card }: { card: MatCard }) {
   return <span className="native-card-art" aria-hidden="true"><span className="native-card-ribbon">{card.subtype || card.cardType}</span><b>{glyph}</b><strong>{card.name}</strong><small>{(card.rulesText ?? "No additional effect.").slice(0, 112)}</small><em>DDB · CERTIFIED COPY</em></span>;
 }
 
-function PlayCard({ card, selected, disabled, hint, onClick, onInspect, handIndex, handTotal, price }: { card: MatCard; selected?: boolean; disabled?: boolean; hint?: string; onClick?: () => void; onInspect: () => void; handIndex?: number; handTotal?: number; price?: string }) {
-  const art = artistUrl(card);
-  const kind = isAttackCard(card) ? "attack" : isDefenseCard(card) ? "defense" : card.subtype === "Kata" ? "kata" : card.cardType.toLocaleLowerCase();
-  const canDrag = !disabled && Boolean(onClick);
-  const beginDrag = (event: DragEvent<HTMLElement>) => {
-    if (!canDrag || !card.instanceId) { event.preventDefault(); return; }
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("application/x-dojo-card", card.instanceId);
+const cardKind = (card: EngineCard) => isAttackCard(card) ? "attack" : isDefenseCard(card) ? "defense" : card.subtype === "Kata" ? "kata" : card.cardType.toLocaleLowerCase();
+
+/** Starts a card drag the combat stage accepts as "use this card". */
+function beginCardDrag(event: DragEvent<HTMLElement>, card: EngineCard, allowed: boolean) {
+  if (!allowed || !card.instanceId) { event.preventDefault(); return; }
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("application/x-dojo-card", card.instanceId);
+}
+
+type HandFanProps = {
+  cards: EngineCard[];
+  raised: boolean;
+  idle: boolean;
+  answering: EnginePending["kind"] | null;
+  heading: string;
+  selectedId: string | null;
+  enabled: (card: EngineCard) => boolean;
+  hintFor: (card: EngineCard) => string | undefined;
+  previewFor: (card: EngineCard) => CardPreview | null;
+  onPress: (card: EngineCard, viaTouch: boolean) => void;
+  onInspect: (card: MatCard) => void;
+  onToggle: () => void;
+  ledger: ReactNode;
+  pill: ReactNode;
+};
+
+/**
+ * The hand as a free-floating fan along the bottom edge: no panel, cards tucked low until hover,
+ * keyboard focus, a tap, a selection or an answer window raises them. The ledger (counters) and
+ * the action pill sit in their own columns, so the fan can never cover them.
+ */
+function HandFan({ cards, raised, idle, answering, heading, selectedId, enabled, hintFor, previewFor, onPress, onInspect, onToggle, ledger, pill }: HandFanProps) {
+  const pointerKind = useRef("mouse");
+  const moveFocus = (event: ReactKeyboardEvent<HTMLOListElement>) => {
+    const faces = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(".qd-hand-card-face"));
+    const index = faces.findIndex((face) => face.parentElement?.contains(document.activeElement));
+    if (index < 0) return;
+    const target = ({ ArrowRight: index + 1, ArrowDown: index + 1, ArrowLeft: index - 1, ArrowUp: index - 1, Home: 0, End: faces.length - 1 } as Record<string, number>)[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    faces[Math.max(0, Math.min(faces.length - 1, target))]?.focus();
   };
-  const handStyle = handIndex === undefined ? undefined : { "--hand-index": handIndex, "--hand-total": handTotal ?? 1, "--hand-angle": `${(handIndex - ((handTotal ?? 1) - 1) / 2) * 5}deg`, "--hand-arc": (handIndex - ((handTotal ?? 1) - 1) / 2) ** 2 } as CSSProperties;
-  return <article className={`play-card play-card--${kind} ${selected ? "is-selected" : ""} ${disabled ? "is-disabled" : ""}`} style={handStyle} draggable={canDrag} onDragStart={beginDrag} data-card-id={card.id}>
+  const middle = (cards.length - 1) / 2;
+  return <section className={`qd-hand${raised ? " is-raised" : ""}${idle ? " is-idle" : ""}${answering ? ` is-answering is-answering--${answering}` : ""}${selectedId ? " has-selection" : ""}`} aria-label="Your hand">
+    <div className="qd-hand-fan-zone">
+      <ol className="qd-hand-fan" id="qd-hand-fan" aria-label={`Your hand, ${cards.length} card${cards.length === 1 ? "" : "s"}. ${heading}`} onKeyDown={moveFocus} onPointerDownCapture={(event) => { pointerKind.current = event.pointerType; }}>
+        {cards.map((card, index) => <HandCard key={card.instanceId} card={card} offset={index - middle} total={cards.length} selected={selectedId === card.instanceId} playable={enabled(card)} answer={Boolean(answering) && enabled(card)} hint={hintFor(card)} preview={previewFor(card)}
+          onPress={(viaKeyboard) => onPress(card, !viaKeyboard && pointerKind.current !== "mouse")} onInspect={() => onInspect(card)} />)}
+      </ol>
+    </div>
+    <div className="qd-hand-bar">
+      <div className="qd-hand-ledger">
+        <button type="button" className="qd-hand-toggle" aria-expanded={raised} aria-controls="qd-hand-fan" onClick={onToggle}><i aria-hidden="true">{raised ? "▾" : "▴"}</i>{raised ? "Tuck hand" : "Show hand"}</button>
+        {ledger}
+      </div>
+      {pill}
+    </div>
+  </section>;
+}
+
+function HandCard({ card, offset, total, selected, playable, answer, hint, preview, onPress, onInspect }: { card: MatCard; offset: number; total: number; selected: boolean; playable: boolean; answer: boolean; hint?: string; preview: CardPreview | null; onPress: (viaKeyboard: boolean) => void; onInspect: () => void }) {
+  const art = artistUrl(card);
+  const kindLabel = String(card.details?.Type ?? card.subtype ?? card.cardType);
+  const zone = card.zone && card.zone !== "—" ? card.zone : null;
+  const focus = card.focusValue ?? card.details?.["Focus Value"];
+  const action = playable && hint ? hint : null;
+  const label = `${card.name}, ${kindLabel}${zone ? `, ${zone}` : ""}. ${action ? (selected ? `Selected. Press again to ${action}.` : action) : "Not playable right now."}${preview ? ` ${preview.headline}.` : ""}`;
+  // The fan pose lives on the slot, so the card inside stays free for useCardMotion's draw animation.
+  return <li className={`qd-hand-slot${playable ? " is-playable" : " is-unplayable"}${answer ? " is-answer" : ""}${selected ? " is-selected" : ""}`} style={{ "--fan-offset": offset, "--fan-total": total } as CSSProperties}>
+    <article className={`qd-hand-card qd-hand-card--${cardKind(card)}`} draggable={playable} onDragStart={(event) => beginCardDrag(event, card, playable)} data-card-id={card.id}>
+      <button type="button" className="qd-hand-card-face" aria-disabled={!playable || undefined} aria-label={label} onClick={(event) => onPress(event.detail === 0)}>
+        <span className="qd-hand-card-tab" aria-hidden="true"><b>{action ?? kindLabel}</b>{zone && <i>{zone}</i>}{focus !== undefined && focus !== null && focus !== "—" && <em title="Focus value">{focus}</em>}</span>
+        <span className="qd-hand-card-art">{art ? <img src={art} alt="" loading="lazy" decoding="async" draggable={false} /> : <NativeCardArt card={card} />}</span>
+        {preview && <span className={`qd-hand-card-preview qd-hand-card-preview--${preview.tone}`} aria-hidden="true">{preview.headline}</span>}
+      </button>
+      <button type="button" className="qd-hand-card-inspect" onClick={onInspect} aria-label={`Inspect ${card.name}`}>Inspect</button>
+    </article>
+  </li>;
+}
+
+function PlayCard({ card, selected, disabled, hint, onClick, onInspect, price }: { card: MatCard; selected?: boolean; disabled?: boolean; hint?: string; onClick?: () => void; onInspect: () => void; price?: string }) {
+  const art = artistUrl(card);
+  const kind = cardKind(card);
+  const canDrag = !disabled && Boolean(onClick);
+  return <article className={`play-card play-card--${kind} ${selected ? "is-selected" : ""} ${disabled ? "is-disabled" : ""}`} draggable={canDrag} onDragStart={(event) => beginCardDrag(event, card, canDrag)} data-card-id={card.id}>
     <button className="play-card-main" disabled={disabled || !onClick} onClick={onClick} aria-label={`${hint ?? "Use"} ${card.name}`}>
       <span className="play-card-art-window">{art ? <img src={art} alt="" loading="lazy" decoding="async" /> : <NativeCardArt card={card} />}</span>
       <span className="play-card-kind">{hint && !disabled ? hint : card.subtype || card.cardType}</span>
@@ -425,7 +543,7 @@ function StageSlot({ card, side, label, onInspect }: { card: MatCard | null; sid
   </div>;
 }
 
-function CombatStage({ game, phase, location, selected, incoming, exchange, log, coach, onInspect, onDropCard }: { game: EngineGame; phase: MatPhase; location: MatCard | null; selected: EngineCard | null; incoming: EngineCard | null; exchange: Exchange | null; log: string[]; coach: string | null; onInspect: (card: MatCard) => void; onDropCard: (instanceId: string) => void }) {
+function CombatStage({ game, phase, location, selected, incoming, exchange, log, coach, preview, onInspect, onDropCard }: { game: EngineGame; phase: MatPhase; location: MatCard | null; selected: EngineCard | null; incoming: EngineCard | null; exchange: Exchange | null; log: string[]; coach: string | null; preview: CardPreview | null; onInspect: (card: MatCard) => void; onDropCard: (instanceId: string) => void }) {
   const humanCard = selected ?? (incoming ? null : exchange ? (exchange.attacker === HUMAN ? exchange.attackCard : exchange.defenseCard) : null);
   const computerCard = incoming ?? (exchange ? (exchange.attacker === COMPUTER ? exchange.attackCard : exchange.defenseCard) : null);
   const hotZone = game.pendingChoice?.zone ?? (selected ? selected.zone : exchange?.zone ?? exchange?.attackCard?.zone) ?? null;
@@ -438,6 +556,7 @@ function CombatStage({ game, phase, location, selected, incoming, exchange, log,
       <StageSlot card={humanCard as MatCard | null} side="player" label={incoming ? "Your response" : "Your declaration"} onInspect={onInspect} />
       <div className="clash-seal" aria-label={`${hotZone ?? "No"} combat zone`}><span>{settled ? (exchange.damage > 0 ? "HIT" : "BLOCK") : PHASE_WORD[phase]}</span><b>{(hotZone ?? "—").slice(0, 1)}</b><small>{hotZone ?? "Choose a card"}</small></div>
       <StageSlot card={computerCard as MatCard | null} side="ai" label={incoming ? "Incoming strike" : "Opponent filing"} onInspect={onInspect} />
+      {preview && selected && <p className={`clash-preview clash-preview--${preview.tone}`} role="status"><span>Preview · {selected.name}</span><b>{preview.headline}</b>{preview.detail && <small>{preview.detail}</small>}</p>}
     </div>
     <div className="combat-zone-board" aria-label="Combat zones">{["High", "Mid", "Low"].map((zone) => <span className={hotZone?.includes(zone) ? "is-hot" : ""} key={zone}><b>{zone.slice(0, 1)}</b>{zone}</span>)}</div>
     <div className="live-mat-play live-mat-play--stage">
