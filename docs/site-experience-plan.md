@@ -38,6 +38,7 @@ points you to another card, and the page cannot express "you do not own this yet
 | A | **"Filed" stamp moment** | Saving to the Binder thumps a FILED stamp onto the Dossier card; removing it shows a "withdrawn" ink mark. Instant under reduced motion. |
 | A | **Collection ledger + series filters** | A ledger of the eight booster series and the starter kits with progress bars; clicking a series filters the grid. The Fighter roster and Boss profiles have their own rows. |
 | B | **Sealed-envelope state (preview)** | Unowned pack cards render as sealed manila envelopes and unowned fighters and bosses as classified personnel files; both still show name and source. Default is **Open Dojo** (everything owned, clearly labelled); a "Preview new recruit" toggle shows what a level-1 profile would see. Nothing is ever really locked. Ownership is read from one module (`app/collection.ts`) so it can be wired to the career store later. |
+| A | **Pack-opening ceremony (preview)** | Owner feedback: breaking seals card by card was tedious. In the recruit preview each booster series has "Rip a pack": the wrapper tears and five unowned cards fan out and flip in one cascade, with "Keep going" and "Done". "Break every seal" opens the whole grid in one staggered wave; "Re-seal everything" starts over. Nothing is saved. |
 | B | **Related filings in the Dossier** | Up to six cards that share a series, build path or tag, as clickable thumbnails. |
 | B | **Dossier provenance strip** | "Found in Iron Wall packs" or "Joins the fighter roster by playing", plus on-loan, issued or sealed status. |
 | B | **Pull a random file** | A shuffle button that opens a random card in the current filter. |
@@ -112,7 +113,7 @@ Search already has a strong hero. **A:** recent searches as paper tabs, and a "T
 Market Mercy" suggestion row. Settings: **A:** a live "ID badge" preview that updates as you choose name,
 avatar and accent; **B:** a "certified" stamp when a preference saves.
 
-## Play (`#playtest`) setup
+## Play (`#play`) setup
 
 The live mats are out of scope here (other work owns them). The setup screen could later borrow the
 Home VS card for the chosen fighters.

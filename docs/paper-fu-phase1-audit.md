@@ -4,7 +4,7 @@ Date: 2026-11-14
 
 ## Structural inventory
 
-- Routes: Home, Play the Game (`#playtest`), Quick Start, Backstory, Full Rules, Card Library, Rulings & Variants, Glossary, and Search.
+- Routes: Home, Play the Game (`#play`; old `#playtest` links redirect), Quick Start, Backstory, Full Rules, Card Library, Rulings & Variants, Glossary, and Search.
 - Route shell: `app/companion-app.tsx` owns the global header, mobile menu, theme persistence, search, progress, toasts, modal primitive, footer, and most companion pages.
 - Route adapters: `app/routing.ts`, `app/site-navigation.ts`, and `app/search-page.tsx`.
 - Gameplay: `app/playtest.tsx`, `app/playtest.css`, runtime/bridge modules, and the engine. Mechanics and canonical data are out of scope for Phase 1.

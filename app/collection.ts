@@ -38,6 +38,7 @@ type RawRoster = { deck: string; starting: { catalogId: string }[] };
 type RawPacks = {
   status: string;
   unlockables: { characters: RawRoster; bosses: RawRoster };
+  boosterRules: { cardsPerPack: number };
   levelTrack: { levels: { level: number; rewards: { kind: string; pack?: string }[] }[] };
   packs: { id: string; kind: "starter" | "booster"; name: string; tagline: string; grant?: string; cards: { catalogId: string }[] }[];
 };
@@ -116,4 +117,24 @@ export function sourceProgress(snapshot: CollectionSnapshot): SourceProgress[] {
     total: source.catalogIds.length,
     locked: snapshot.view === "recruit-preview" && (source.unlockLevel ?? 1) > 1,
   }));
+}
+
+/** Cards per booster pack. Packs only ever hold cards you do not own yet; the last pack holds what is left. */
+export const CARDS_PER_PACK = raw.boosterRules.cardsPerPack;
+
+/**
+ * A preview pack: up to CARDS_PER_PACK still-sealed cards from one booster series, in catalog order once
+ * drawn. Preview only, so it uses the browser's randomness; real packs will be rolled from the profile seed.
+ * `mustInclude` puts a specific sealed card in the pack (opening a pack from that card's Dossier).
+ */
+export function drawPreviewPack(source: UnlockSource, isSealed: (catalogId: string) => boolean, mustInclude?: string, random = Math.random): string[] {
+  const sealed = source.catalogIds.filter(isSealed);
+  const pinned = mustInclude && sealed.includes(mustInclude) ? [mustInclude] : [];
+  const pool = sealed.filter((catalogId) => !pinned.includes(catalogId));
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(random() * (index + 1));
+    [pool[index], pool[swap]] = [pool[swap], pool[index]];
+  }
+  const pack = new Set([...pinned, ...pool.slice(0, CARDS_PER_PACK - pinned.length)]);
+  return source.catalogIds.filter((catalogId) => pack.has(catalogId));
 }

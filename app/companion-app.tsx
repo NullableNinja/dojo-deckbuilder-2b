@@ -199,7 +199,7 @@ const INDEX_ART: Partial<Record<SitePage, string>> = {
 };
 const VIEW_LABELS: Record<SitePage, string> = {
   home: "Dojo Desk",
-  playtest: "Field Test",
+  playtest: "Play the Game",
   quickstart: "Quick Start",
   story: "Backstory",
   rules: "Full Rules",
