@@ -51,3 +51,18 @@ test("the top Belt has nothing left to earn", () => {
   assert.equal(req.next, null);
   assert.equal(req.ready, false);
 });
+
+test("training stripes: held count, and why a recovery is blocked", async () => {
+  const { stripeStatus } = await import("../app/belt-progress.ts");
+  const { game } = session();
+  const seat = game.players[0];
+  assert.equal(stripeStatus(game, seat, false).enabled, true);
+  assert.equal(stripeStatus(game, seat, false).blocker, "No Training Stripe held yet.");
+  seat.trainingStripes = { held: 1, awarded: 1, provisional: true };
+  assert.match(stripeStatus(game, seat, false).blocker, /next turn/);
+  seat.trainingStripes.provisional = false;
+  assert.match(stripeStatus(game, seat, false).blocker, /HP is already full/);
+  seat.hp -= 4;
+  assert.equal(stripeStatus(game, seat, true).blocker, null);
+  assert.equal(stripeStatus(game, seat, true).held, 1);
+});

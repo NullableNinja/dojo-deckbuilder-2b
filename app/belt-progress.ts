@@ -89,3 +89,38 @@ export function beltRequirements(game: EngineGame, seat: EngineSeat): BeltRequir
           : nextStepFor(exam.kind ?? "", steps));
   return { next: { name: next.name, xp: next.xp, rewardSummary: next.reward.summary }, xp: { have: seat.xp, need: next.xp, met: xpMet }, exam: { title: exam.title, summary: exam.summary, done, steps }, checkUsed, ready, nextStep };
 }
+
+export type StripeStatus = {
+  /** False when this mode (or a fork) does not use Training Stripes. */
+  enabled: boolean;
+  held: number;
+  max: number;
+  healHp: number;
+  /** A Stripe earned at this turn's Belt Check can only be spent on a later turn. */
+  provisional: boolean;
+  /** Why a recovery cannot be taken right now, in a plain sentence; null when it can. */
+  blocker: string | null;
+  /** One sentence on how Stripes are earned. */
+  howEarned: string;
+};
+
+type StripeState = { held?: number; provisional?: boolean };
+
+/** Training Stripes (content/dojo-game.json progression.trainingStripes): held count, and what stops a recovery. */
+export function stripeStatus(game: EngineGame, seat: EngineSeat, canRecover: boolean): StripeStatus {
+  const rule = (game.definition.progression as { trainingStripes?: { enabled?: boolean; maxHeld?: number; spend?: { healHp?: number } } }).trainingStripes;
+  const mode = (game as EngineGame & { mode?: { trainingStripes?: boolean } }).mode;
+  const state = ((seat as EngineSeat & { trainingStripes?: StripeState }).trainingStripes ?? {}) as StripeState;
+  const enabled = Boolean(rule?.enabled) && mode?.trainingStripes !== false;
+  const held = state.held ?? 0;
+  const max = rule?.maxHeld ?? 3;
+  const healHp = rule?.spend?.healHp ?? 2;
+  const checkUsed = Boolean((seat as EngineSeat & ExamState).beltCheckActionUsed);
+  const blocker = canRecover ? null
+    : held === 0 ? "No Training Stripe held yet."
+    : state.provisional ? "This Stripe was just earned. You can spend it from your next turn."
+    : seat.hp >= seat.maxHp ? "Your HP is already full."
+    : checkUsed ? "Belt Check already used this turn."
+    : "Not available right now.";
+  return { enabled, held, max, healHp, provisional: Boolean(state.provisional), blocker, howEarned: `You earn a Stripe at Belt Check when you have the XP for your next Belt but have not passed its exam (up to ${max} per Belt). They clear when you promote.` };
+}

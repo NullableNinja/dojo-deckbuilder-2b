@@ -12,7 +12,7 @@ import { EngineSession, newSeed, type SessionMode, type TableOptions, type Engin
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, livePreviews, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase, type PreviewLine, type PreviewTone } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import { PayrollSlip } from "./career-payroll";
-import { beltRequirements, type BeltRequirements } from "./belt-progress.ts";
+import { beltRequirements, stripeStatus, type BeltRequirements, type StripeStatus } from "./belt-progress.ts";
 import "./quick-duel-hand.css";
 
 const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
@@ -223,6 +223,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
 
   const selectedUse = selected && handCardEnabled(selected) ? selected : null;
   const promoteAction = phase === "player-ascend" ? legal.find((action) => action.type === "promote") : undefined;
+  const recoverAction = phase === "player-ascend" ? legal.find((action) => action.type === "recover-training-stripe") : undefined;
   const passLabel = handChoice ? (handChoice.kind === "defense" ? "Take the hit" : handChoice.kind === "reversal" ? "Decline Reversal" : "No Reaction") : null;
   const pill = !over && <nav className={`qd-action-pill pill-${phase}`} aria-label="Next legal action">
     <dl className="qd-hand-counters" aria-label="Hand counters"><div><dt>Deck</dt><dd>{human.deck.length}</dd></div><div><dt>Discard</dt><dd>{human.discard.length}</dd></div><div><dt>Attacks</dt><dd>{human.attackCount ?? 0}</dd></div><div><dt>Practice</dt><dd>{human.practiceUsed ? "Used" : "Ready"}</dd></div><div className="is-focus"><dt>Focus</dt><dd>{human.focus}</dd></div></dl>
@@ -231,7 +232,7 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
       {selectedUse && <button type="button" className="qd-pill-primary" onClick={() => commitHandCard(selectedUse)}>{useLabel(selectedUse, handChoice, primaryAction(legal, selectedUse))}</button>}
       {phase === "player-initiate" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Proceed to Yell →</button>}
       {phase === "player-yell" && pass && <button type="button" className={selectedUse ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>{selectedUse ? "Skip · Ascend" : "Proceed to Ascend →"}</button>}
-      {phase === "player-ascend" && <>{promoteAction && <button type="button" className="qd-pill-primary is-promote" onClick={() => act(promoteAction)}>Promote to {game.definition.progression.belts[human.beltIndex + 1]?.name} Belt →</button>}<button type="button" className="qd-pill-secondary" onClick={() => setDeskView(deskView ?? (promoteAction ? "belt" : "market"))}>Ascend desk</button>{pass && <button type="button" className={selectedUse || promoteAction ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Finish turn → Hide</button>}</>}
+      {phase === "player-ascend" && <>{recoverAction && !promoteAction && <button type="button" className="qd-pill-secondary is-stripe" onClick={() => act(recoverAction)}>Spend Stripe · +{stripeStatus(game, human, true).healHp} HP</button>}{promoteAction && <button type="button" className="qd-pill-primary is-promote" onClick={() => act(promoteAction)}>Promote to {game.definition.progression.belts[human.beltIndex + 1]?.name} Belt →</button>}<button type="button" className="qd-pill-secondary" onClick={() => setDeskView(deskView ?? (promoteAction ? "belt" : "market"))}>Ascend desk</button>{pass && <button type="button" className={selectedUse || promoteAction ? "qd-pill-secondary" : "qd-pill-primary"} onClick={() => act(pass)}>Finish turn → Hide</button>}</>}
       {passLabel && <button type="button" className={`${selectedUse ? "qd-pill-secondary" : "qd-pill-primary"}${previews.takeTheHit ? " has-preview" : ""}`} onClick={() => choose("pass")}>{passLabel}{previews.takeTheHit && <small className={previewClass(previews.takeTheHit)}><i aria-hidden="true">{PREVIEW_ICON[previews.takeTheHit.tone]}</i>{previews.takeTheHit.headline}{previews.takeTheHit.hpAfter !== null ? ` → HP ${previews.takeTheHit.hpAfter}` : ""}</small>}</button>}
       {selected && <button type="button" className="qd-pill-cancel" onClick={() => setSelectedId(null)} aria-label={`Put ${selected.name} back in your hand`} title="Put it back (Esc)">×</button>}
     </div>
@@ -632,14 +633,28 @@ const STATION_NAME: Record<DeskView, string> = { market: "Buy", combo: "Combo", 
 const STATION_TITLE: Record<DeskView, string> = { market: "Acquisition Desk", combo: "Combo Docket", belt: "Belt Check" };
 
 /** What the player should do at this station, in one sentence (live Ascend only). */
-function stationCoach(view: DeskView, req: BeltRequirements, offerName: string | null, canLearn: boolean, affordable: number): string {
+function stationCoach(view: DeskView, req: BeltRequirements, offerName: string | null, canLearn: boolean, affordable: number, healHp: number | null): string {
   if (req.ready && view !== "belt") return `You qualify for ${req.next?.name} Belt. Open the Belt step to promote.`;
+  if (healHp !== null && view !== "belt") return `You hold a Training Stripe: spend it in the Belt step to recover ${healHp} HP.`;
   if (view === "market") return affordable ? `Optional: buy up to what your Focus allows (${affordable} card${affordable === 1 ? "" : "s"} in reach). Then go on to the Combo step.` : "Nothing in the Market is in reach with your Focus. Go on to the Combo step.";
   if (view === "combo") return offerName ? (canLearn ? `Optional: learn ${offerName} now, or pass on it. Then go on to the Belt step.` : `${offerName} is on offer but you cannot learn it right now. Go on to the Belt step.`) : "No Combo is on offer. Go on to the Belt step.";
+  if (healHp !== null && !req.ready) return `Spend a Training Stripe to recover ${healHp} HP, or work toward ${req.next?.name ?? "the next"} Belt. Then finish your turn.`;
   return req.ready ? `Promote to ${req.next?.name} Belt, then finish your turn.` : `${req.nextStep} Then finish your turn.`;
 }
 
+function StripeRack({ stripes, live, recover, onAct }: { stripes: StripeStatus; live: boolean; recover?: EngineAction; onAct: (action: EngineAction) => void }) {
+  return <div className={`belt-stripes${recover ? " is-ready" : ""}`} role="group" aria-label="Training Stripes">
+    <header><span>Training Stripes</span><b>{stripes.held} of {stripes.max} held</b></header>
+    <div className="belt-stripe-rack" role="img" aria-label={`${stripes.held} of ${stripes.max} Training Stripes held`}>{Array.from({ length: stripes.max }, (_, index) => <i key={index} className={index < stripes.held ? (stripes.provisional && index === stripes.held - 1 ? "is-new" : "is-held") : ""} />)}</div>
+    <p>Spend one to recover {stripes.healHp} HP instead of promoting (one Belt Check action per turn). {stripes.howEarned}</p>
+    {live && (recover
+      ? <button type="button" className="button primary" onClick={() => onAct(recover)}>Spend a Stripe: recover {stripes.healHp} HP</button>
+      : <p className="belt-stripe-blocker" role="status">{stripes.blocker}</p>)}
+  </div>;
+}
+
 function BeltCheck({ game, seat, req, live, promote, recover, onAct }: { game: EngineGame; seat: EngineSeat; req: BeltRequirements; live: boolean; promote?: EngineAction; recover?: EngineAction; onAct: (action: EngineAction) => void }) {
+  const stripes = stripeStatus(game, seat, Boolean(recover));
   const belts = game.definition.progression.belts;
   return <section className="ascend-belt belt-panel">
     <span className="eyebrow">Certification ledger</span><h3>{belts[seat.beltIndex].name} Belt · {seat.xp} XP</h3>
@@ -656,7 +671,7 @@ function BeltCheck({ game, seat, req, live, promote, recover, onAct }: { game: E
       <p className="belt-next-step" role="status">{live ? req.nextStep : "Promotion opens during your Ascend."}</p>
       {promote && <button type="button" className="button primary belt-promote" onClick={() => onAct(promote)}>Promote to {req.next.name} Belt →</button>}
     </div> : <p className="belt-top-rank" role="status">Every available Belt has been certified.</p>}
-    {recover && <button type="button" className="button ghost" onClick={() => onAct(recover)}>Recover a Training Stripe</button>}
+    {stripes.enabled && <StripeRack stripes={stripes} live={live} recover={recover} onAct={onAct} />}
   </section>;
 }
 
@@ -669,6 +684,7 @@ function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFi
   const recover = legal.find((action) => action.type === "recover-training-stripe");
   const live = game.activePlayer === HUMAN && game.phase === "Ascend";
   const req = beltRequirements(game, human);
+  const stripes = stripeStatus(game, human, Boolean(recover));
   const affordable = legal.filter((action) => action.type === "purchase").length;
   const [confirmFinish, setConfirmFinish] = useState(false);
   const stationIndex = STATION_ORDER.indexOf(view);
@@ -682,17 +698,18 @@ function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFi
     return () => { window.removeEventListener("keydown", onKey); previous?.focus?.(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!promote) setConfirmFinish(false); }, [promote]);
-  const stationNote = (station: DeskView) => station === "market" ? (affordable ? `${affordable} in reach` : "none in reach") : station === "combo" ? (offer ? "offer waiting" : "no offer") : req.ready ? "Promote now!" : req.checkUsed ? "check used" : req.xp.met && req.exam?.done ? "ready" : "requirements";
+  const stationNote = (station: DeskView) => station === "market" ? (affordable ? `${affordable} in reach` : "none in reach") : station === "combo" ? (offer ? "offer waiting" : "no offer") : req.ready ? "Promote now!" : recover ? "heal ready" : req.checkUsed ? "check used" : req.xp.met && req.exam?.done ? "ready" : "requirements";
   const finish = () => { if (promote) setConfirmFinish(true); else onFinish?.(); };
   return <div className="ascend-desk-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section ref={dialogRef} tabIndex={-1} className={`ascend-desk paper-stack ${live ? "ascend-desk--functional" : ""}`} role="dialog" aria-modal="true" aria-labelledby="ascend-desk-title">
       <header className="ascend-desk-header">
-        <div><span className="eyebrow">{live ? `Ascend review · step ${stationIndex + 1} of 3` : "Reference desk · inspection only"}</span><h2 id="ascend-desk-title">{STATION_TITLE[view]}</h2><p>{live ? stationCoach(view, req, offer?.name ?? null, Boolean(learn), affordable) : "Inspect this station without advancing the turn."}</p></div>
+        <div><span className="eyebrow">{live ? `Ascend review · step ${stationIndex + 1} of 3` : "Reference desk · inspection only"}</span><h2 id="ascend-desk-title">{STATION_TITLE[view]}</h2><p>{live ? stationCoach(view, req, offer?.name ?? null, Boolean(learn), affordable, recover ? stripes.healHp : null) : "Inspect this station without advancing the turn."}</p></div>
         <div className="ascend-desk-balance"><span>Available Focus</span><b>{human.focus}</b><small>{affordable} of {game.market.length} Market cards in reach</small></div>
         <button className="modal-close" onClick={onClose} aria-label="Close Ascend Desk">×</button>
       </header>
       <nav className="ascend-desk-stations" aria-label="Ascend steps">{STATION_ORDER.map((station, index) => <button type="button" key={station} className={`button ${view === station ? "primary" : "ghost"}${station === "belt" && req.ready ? " is-ready" : ""}`} aria-current={view === station ? "step" : undefined} onClick={() => onView(station)}><b aria-hidden="true">{index + 1}</b><span>{STATION_NAME[station]}</span><small>{stationNote(station)}</small></button>)}</nav>
       <div className="ascend-desk-body">
+        {live && !req.ready && recover && view !== "belt" && <div className="ascend-promo-banner" role="status"><span><b>Training Stripe ready.</b> Spend it to recover {stripes.healHp} HP ({human.hp}/{human.maxHp}).</span><button type="button" className="button primary" onClick={() => onView("belt")}>Open Belt Check →</button></div>}
         {live && req.ready && view !== "belt" && <div className="ascend-promo-banner" role="status"><span><b>Promotion ready.</b> You qualify for {req.next?.name} Belt.</span><button type="button" className="button primary" onClick={() => onView("belt")}>Open Belt Check →</button></div>}
         {view === "market" && <section className="ascend-market" aria-label="Shared Market">
           <header><div><span className="eyebrow">{game.market.length} live records · full cards</span><h3>Choose with the text visible</h3></div><p>Each purchase is replaced by the top Market card.</p></header>
