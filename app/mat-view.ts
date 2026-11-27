@@ -2,6 +2,7 @@
 // combat receipt, fight-log lines and decision prompts. Presentation only: no rules live here.
 import { clashCardByCatalogId, type EngineCard } from "./clash-engine.ts";
 import type { EngineEvent, EngineGame, EnginePending, EngineSeat, EngineStatus } from "./engine-session.ts";
+import { previewAttack, previewDefense } from "../engine/preview.mjs";
 
 export type MatPhase = "player-initiate" | "player-yell" | "player-ascend" | "defense-window" | "reversal-window" | "ai-ready";
 
@@ -164,4 +165,96 @@ export function findInstance(game: EngineGame, instanceId: string): EngineCard |
 
 export function reasonLabel(reason: string) {
   return ({ knockout: "knockout", "round-limit": "round limit", "last-fighter-standing": "last fighter standing", "black-belt": "Black Belt Victory" } as Record<string, string>)[reason] ?? reason;
+}
+
+// ---- Live damage previews ------------------------------------------------------------------
+// "What would this card do right now?", read from the engine's own combat numbers (engine/preview.mjs)
+// and worded for the hand and the combat stage. Nothing here decides a rule.
+
+export type PreviewTone = "hit" | "stopped" | "lethal" | "avoided";
+export type PreviewLine = {
+  /** Whose HP it concerns: the opponent for an Attack, you for a Defense or Reaction. */
+  whose: "opponent" | "you";
+  tone: PreviewTone;
+  /** Damage this would deal to that fighter. */
+  amount: number;
+  /** Short badge text, e.g. "4 dmg" or "You take 0". */
+  headline: string;
+  /** The numbers behind it, e.g. "6 ATK vs 2 DEF". */
+  detail: string;
+  /** Labelled contributions, e.g. "Card +3 · ATK +2 · Tempo +1 vs Guard +2 · DEF +3". */
+  breakdown: string;
+  hpBefore: number | null;
+  hpAfter: number | null;
+  /** Any-zone Attacks: damage in each zone, best first. */
+  zones?: { zone: string; amount: number }[];
+  zone?: string | null;
+};
+export type MatPreviews = {
+  /** Keyed by the hand card's instanceId. */
+  byCard: Record<string, PreviewLine>;
+  /** While a strike is incoming: what taking it leaves you with. */
+  takeTheHit: PreviewLine | null;
+};
+
+type Part = { label: string; value: number };
+const partsText = (parts: Part[] = []) => parts.map((part) => `${part.label} ${part.value > 0 ? "+" : ""}${part.value}`).join(" · ");
+
+function breakdownText(strike: { attackParts?: Part[]; blockParts?: Part[]; prevented?: number }) {
+  const attack = partsText(strike.attackParts);
+  const block = partsText(strike.blockParts);
+  const prevented = strike.prevented ? ` · prevents ${strike.prevented}` : "";
+  return `${attack || "no Attack"} vs ${block || "no Defense"}${prevented}`;
+}
+
+function attackLine(preview: any): PreviewLine {
+  const amount = Number(preview.damage ?? 0);
+  const tone: PreviewTone = preview.lethal ? "lethal" : amount > 0 ? "hit" : "stopped";
+  const zones = preview.byZone?.map((entry: any) => ({ zone: String(entry.zone), amount: Number(entry.damage) })).sort((left: any, right: any) => right.amount - left.amount);
+  return {
+    whose: "opponent", tone, amount,
+    headline: preview.lethal ? `${amount} dmg · K.O.!` : amount > 0 ? `${amount} dmg` : "0 dmg",
+    detail: preview.resolved ? `${preview.attack} ATK vs ${preview.block} DEF if unblocked` : "Resolves with a choice",
+    breakdown: breakdownText(preview),
+    hpBefore: preview.targetHp ?? null, hpAfter: preview.targetHpAfter ?? null,
+    zones, zone: preview.zone ?? null,
+  };
+}
+
+function defenseLine(option: any, isPass: boolean): PreviewLine {
+  const amount = Number(option.damage ?? 0);
+  const tone: PreviewTone = option.lethal ? "lethal" : option.avoided ? "avoided" : amount > 0 ? "hit" : "stopped";
+  const headline = option.lethal ? `You take ${amount} · K.O.!` : option.avoided ? "Strike avoided" : amount > 0 ? `You take ${amount}` : isPass ? "You take 0" : "Blocked · take 0";
+  return {
+    whose: "you", tone, amount, headline,
+    detail: option.resolved ? `${option.attack} ATK vs ${option.block} DEF` : "The Attack does not land",
+    breakdown: option.resolved ? breakdownText(option) : "",
+    hpBefore: option.hp ?? null, hpAfter: option.hpAfter ?? null,
+  };
+}
+
+/** Previews for the human seat: Attack cards during their Yell, every answer during a Reaction or Defense window. */
+export function livePreviews(game: EngineGame, human: number, targetId?: number): MatPreviews {
+  const empty: MatPreviews = { byCard: {}, takeTheHit: null };
+  if (game.winner !== null) return empty;
+  try {
+    const pending = game.pendingChoice;
+    if (pending?.playerId === human && (pending.kind === "defense" || pending.kind === "reaction")) {
+      const preview = previewDefense(game, human);
+      if (!preview) return empty;
+      const byCard: Record<string, PreviewLine> = {};
+      for (const option of preview.options as any[]) if (option.optionId !== "pass") byCard[option.optionId] = defenseLine(option, false);
+      return { byCard, takeTheHit: preview.takeTheHit ? defenseLine(preview.takeTheHit, true) : null };
+    }
+    if (pending || game.activePlayer !== human || game.phase !== "Yell") return empty;
+    const byCard: Record<string, PreviewLine> = {};
+    for (const action of game.getLegalActions(human)) {
+      if (action.type !== "play-attack" || !action.cardId) continue;
+      const preview = previewAttack(game, human, action.cardId, { targetId });
+      if (preview) byCard[action.cardId] = attackLine(preview);
+    }
+    return { byCard, takeTheHit: null };
+  } catch {
+    return empty;
+  }
 }
