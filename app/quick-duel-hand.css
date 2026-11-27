@@ -342,3 +342,14 @@
 @media (prefers-reduced-motion: reduce) { .qd-hand-slot, .qd-hand-fan { transition: none !important; } }
 :root[data-motion="reduced"] :is(.qd-hand-slot, .qd-hand-fan),
 .playtest-shell--engine:is(.motion-reduced, .motion-off) :is(.qd-hand-slot, .qd-hand-fan) { transition: none !important; }
+
+/* Fighter panels on the engine table: the ability row sizes to its text (the shared mat grid fixed it at
+   46px, which clipped every ability to an empty strip) and the art row gives up the difference. */
+.playtest-shell--engine.mat-v3 .fighter-panel.living-fighter-card,
+.playtest-shell--engine.mat-v3 .fighter-panel.living-fighter-card.is-enemy { grid-template-rows: 40px minmax(0, 1fr) 40px 34px 24px auto auto !important; }
+.playtest-shell--engine .fighter-ability { max-height: none !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+.playtest-shell--engine .fighter-ability span { display: -webkit-box !important; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden !important; font-size: 11.5px; line-height: 1.3; }
+.playtest-shell--engine.mat-v3 .fighter-panel .fighter-ability,
+.playtest-shell--engine.mat-v3 .fighter-panel.is-enemy .fighter-ability { background: rgba(5, 13, 23, .66) !important; }
+.playtest-shell--engine.mat-v3 .fighter-panel .fighter-ability span,
+.playtest-shell--engine.mat-v3 .fighter-panel.is-enemy .fighter-ability span { color: var(--stage-cream, #fffaf0) !important; }

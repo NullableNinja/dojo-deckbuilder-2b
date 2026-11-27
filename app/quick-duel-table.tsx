@@ -549,9 +549,9 @@ function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpe
     </div>
     <div className="fighter-status-tray" aria-label={`${fighter.name} current statuses`}>{statuses.length ? statuses.map((status) => <span key={status}>{status}</span>) : <span>Standing ready</span>}</div>
     <p className="fighter-ability"><b>Registered ability</b><span>{fighter.rulesText ?? "No additional ability."}</span></p>
-    <section className={`fighter-equipment-tabs is-open ${enemy ? "is-enemy" : ""}`} aria-label={`${enemy ? "Opponent" : "Your"} attached Equipment`}>
+    {seat.equipment.length > 0 && <section className={`fighter-equipment-tabs is-open ${enemy ? "is-enemy" : ""}`} aria-label={`${enemy ? "Opponent" : "Your"} attached Equipment`}>
       <div>{seat.equipment.map((item) => { const exhausted = seat.exhaustedEquipment.includes(item.instanceId ?? ""); return <button type="button" className={`fighter-equipment-tab ${exhausted ? "is-exhausted" : "is-ready"}`} onClick={() => onInspect(item)} title={`${item.name} · ${exhausted ? "Exhausted" : "Ready"}`} key={item.instanceId}><span>{(item.subtype ?? "E").slice(0, 1)}</span><b>{item.name}</b><small>{exhausted ? "EXHAUSTED" : "READY"}</small></button>; })}</div>
-    </section>
+    </section>}
     {onOpenCombo && <button type="button" className="fighter-combo-launch" onClick={onOpenCombo} aria-label={`Open Combo docket, ${seat.learnedCombos.length} of 2 learned`}><span>∞ COMBOS</span><b>{seat.learnedCombos.length}/2</b><small>Open docket</small></button>}
   </section>;
 }
