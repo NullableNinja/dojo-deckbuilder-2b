@@ -88,6 +88,8 @@ export type Economy = {
   chooseStarterKit(state: CareerState, kitId: string): CareerState;
   boosterBlocker(state: CareerState, seriesId: string): "unknown-series" | "locked" | "complete" | "no-ticket" | null;
   openBooster(state: CareerState, seriesId: string, at?: string | null): { state: CareerState; cards: string[]; error: string | null };
+  isCollectible(catalogId: string): boolean;
+  claimCard(state: CareerState, catalogId: string): { state: CareerState; cards: string[]; error: "not-collectible" | "owned" | null };
   applyMatchResult(state: CareerState, receipt: MatchReceipt): { state: CareerState; payroll: Payroll };
   manifest(state: CareerState): Manifest;
   poolIsPlayable(catalogIds: string[]): boolean;
@@ -318,6 +320,16 @@ export function createCareerStore({ storage, now = () => new Date(), random = Ma
         const opened = economy.openBooster(state, seriesId, now().toISOString());
         result = { cards: opened.cards, error: opened.error };
         return opened.error ? state : opened.state;
+      });
+      return result;
+    },
+    /** File one card outside a booster (the Card of the Day). */
+    claimCard(catalogId: string) {
+      let result: { cards: string[]; error: string | null } = { cards: [], error: get().status === "career" ? null : "no-career" };
+      update((state) => {
+        const claimed = economy.claimCard(state, catalogId);
+        result = { cards: claimed.cards, error: claimed.error };
+        return claimed.error ? state : claimed.state;
       });
       return result;
     },

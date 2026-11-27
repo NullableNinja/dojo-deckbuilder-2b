@@ -21,13 +21,15 @@ type PackCeremonyProps = {
   imageUrlFor: (card: CardEntry) => string;
   onKeepGoing: () => void;
   onDone: () => void;
+  /** One special card from the Card of the Day: no ticket, no "keep going". */
+  daily?: boolean;
 };
 
 const FOCUSABLE = "button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])";
 
-export function PackCeremony({ source, cards, packNumber, remaining, mode, tickets = 0, imageUrlFor, onKeepGoing, onDone }: PackCeremonyProps) {
+export function PackCeremony({ source, cards, packNumber, remaining, mode, tickets = 0, imageUrlFor, onKeepGoing, onDone, daily = false }: PackCeremonyProps) {
   const career = mode === "career";
-  const canKeepGoing = remaining > 0 && (!career || tickets > 0);
+  const canKeepGoing = !daily && remaining > 0 && (!career || tickets > 0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
@@ -62,16 +64,16 @@ export function PackCeremony({ source, cards, packNumber, remaining, mode, ticke
   }, [packNumber]);
 
   return createPortal(<div className="pack-ceremony-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onDone()}>
-    <div ref={dialogRef} className="pack-ceremony" role="dialog" aria-modal="true" aria-labelledby="pack-ceremony-title" aria-describedby="pack-ceremony-reveal">
+    <div ref={dialogRef} className={`pack-ceremony${daily ? " pack-ceremony--daily" : ""}`} role="dialog" aria-modal="true" aria-labelledby="pack-ceremony-title" aria-describedby="pack-ceremony-reveal">
       <header className="pack-ceremony-head">
-        <span className="eyebrow">{career ? `Pack ${packNumber} · filed to your collection` : `Preview only · pack ${packNumber}`}</span>
+        <span className="eyebrow">{daily ? "Card of the day · filed to your collection" : career ? `Pack ${packNumber} · filed to your collection` : `Preview only · pack ${packNumber}`}</span>
         <h2 id="pack-ceremony-title">{source.name}</h2>
         <p>{source.tagline}</p>
       </header>
       <div className="pack-ceremony-stage" key={packNumber}>
         {!reduced && <div className="pack-wrapper" aria-hidden="true">
           <span className="pack-wrapper-top" />
-          <span className="pack-wrapper-body"><b>{source.name}</b><small>{cards.length} cards · Department issue</small></span>
+          <span className="pack-wrapper-body"><b>{source.name}</b><small>{daily ? "Today's special issue" : `${cards.length} cards · Department issue`}</small></span>
         </div>}
         <ol className="pack-fan" style={{ ["--count" as string]: cards.length }}>
           {cards.map((card, index) => <li key={card.id} className="pack-card" style={{ ["--i" as string]: index, ["--offset" as string]: index - (cards.length - 1) / 2 }}>
@@ -86,7 +88,7 @@ export function PackCeremony({ source, cards, packNumber, remaining, mode, ticke
       </div>
       <p className="sr-only" id="pack-ceremony-reveal" aria-live="polite">Revealed{career ? " and added to your collection" : ""}: {cards.map((card) => card.name).join(", ")}.</p>
       <footer className="pack-ceremony-actions">
-        <span>{remaining ? `${remaining} still sealed in ${source.name}` : `${source.name} is complete`}{career && <> · <b className="pack-ceremony-tickets">{tickets} {tickets === 1 ? "ticket" : "tickets"} left</b></>}</span>
+        <span>{daily ? "Yours to keep. It is in your collection now." : remaining ? `${remaining} still sealed in ${source.name}` : `${source.name} is complete`}{career && !daily && <> · <b className="pack-ceremony-tickets">{tickets} {tickets === 1 ? "ticket" : "tickets"} left</b></>}</span>
         <div>
           {canKeepGoing && <button type="button" className="button primary" onClick={onKeepGoing}>{career ? "Spend a ticket" : "Keep going"} <span aria-hidden="true">→</span></button>}
           <button type="button" className={`button ${canKeepGoing ? "ghost" : "primary"}`} onClick={onDone}>Done</button>

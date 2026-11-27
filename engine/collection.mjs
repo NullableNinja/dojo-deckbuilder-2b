@@ -35,6 +35,7 @@ export function createEconomy(packs, cards) {
   const { characters, bosses } = packs.unlockables;
   const collectibleDecks = new Set(packs.collection.collectibleDecks);
   const collectibleIds = cards.filter((card) => collectibleDecks.has(card.deck)).map((card) => card.catalogId);
+  const collectibleSet = new Set(collectibleIds);
   const boosterIds = boosters.flatMap(packIds);
   const cardsPerPack = packs.boosterRules.cardsPerPack;
   const earn = packs.earnRules;
@@ -227,6 +228,17 @@ export function createEconomy(packs, cards) {
     return { state: settled.state, cards: pack, error: null, report: settled.report };
   }
 
+  /**
+   * File one card outside a booster (the Card of the Day): any collectible card the profile does not
+   * own yet. No ticket is spent; the card joins the collection like an opened one and may complete a series.
+   */
+  function claimCard(state, catalogId) {
+    if (!collectibleSet.has(catalogId)) return { state, cards: [], error: "not-collectible" };
+    if (ownedCards(state).has(catalogId)) return { state, cards: [], error: "owned" };
+    const settled = settle({ ...state, opened: [...state.opened, catalogId] });
+    return { state: settled.state, cards: [catalogId], error: null, report: settled.report };
+  }
+
   // ---- Matches ------------------------------------------------------------------------------
   const tableRule = (table) => earn.tables.find((entry) => entry.id === table)?.rewards ?? "none";
   const modeRule = (mode) => earn.modes.find((entry) => entry.mode === mode) ?? {};
@@ -369,7 +381,7 @@ export function createEconomy(packs, cards) {
   return {
     packs, unlockEverything, cardsPerPack, boosters, kits, everyProfile, levels,
     levelFor, levelProgress, diplomaFor, pendingKitChoices, ownedCards, seriesStatus, unlockedRoster, unlockSource,
-    collectionComplete, settle, newCareer, chooseStarterKit, boosterBlocker, openBooster, applyMatchResult,
+    collectionComplete, settle, newCareer, chooseStarterKit, boosterBlocker, openBooster, claimCard, isCollectible: (catalogId) => collectibleSet.has(catalogId), applyMatchResult,
     manifest, poolIsPlayable, resolveMatchPool, mergeCareers,
   };
 }

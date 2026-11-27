@@ -67,3 +67,11 @@
   .index-card-art--career b { font: 400 28px/1 var(--pf-display); color: var(--pf-ink); }
   .index-card-art--career small { display: block; font: 700 8px/1 var(--pf-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--pf-ink-soft); }
 }
+
+@layer components {
+  .cotd-claim { display: grid; gap: 8px; margin: 10px 0 4px; }
+  .cotd-claim-button { justify-self: start; min-height: 48px; }
+  .cotd-claim-status { margin: 0; padding: 8px 12px; border-left: 4px solid var(--pf-brass); color: var(--pf-ink-soft); background: color-mix(in srgb, var(--pf-brass) 10%, transparent); font-size: 14px; line-height: 1.4; }
+  .cotd-claim-status b { color: var(--pf-ink); }
+  .cotd-claim-link { padding: 0; border: 0; color: var(--pf-action); background: none; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; min-height: 44px; }
+}

@@ -7,6 +7,7 @@ import cardsJson from "./data/cards.json";
 import { careerStore, economy, walletOf, type CareerSnapshot } from "./career";
 import { COLLECTION_STATUS, drawPreviewPack, isUnlockable, readCollection, sourceFor, sourceProgress, unlockHint, UNLOCK_SOURCES, type CollectionSnapshot, type CollectionView, type UnlockSource } from "./collection";
 import { PackCeremony } from "./pack-ceremony";
+import { DailyClaim } from "./daily-claim";
 import { dayNumber, isFeaturable, pickBySeed } from "./daily-card";
 import { prefersReducedMotion, usePaperToast, type ToastInput } from "./paper-toast-context";
 import { PERSONAL_STORAGE_KEYS, readStoredList, writeStoredList } from "./personal-record";
@@ -129,6 +130,7 @@ function DailyFiling({ card, art, onOpen, onRandom }: { card: CardEntry; art: Ca
       <h2 id="daily-filing-title">{card.name}</h2>
       <p className="daily-filing-meta">{card.catalogId} · {card.cardType}{card.subtype && card.subtype !== card.cardType ? ` · ${card.subtype}` : ""}</p>
       <OriginTag card={card} />
+      <DailyClaim card={card} imageUrlFor={art.imageUrlFor} />
       {card.flavorText && <p className="daily-filing-flavor">{card.flavorText}</p>}
       <div className="daily-filing-actions">
         <button type="button" className="button primary" onClick={onOpen}>Open the dossier <span aria-hidden="true">→</span></button>

@@ -9,6 +9,10 @@
   .pack-ceremony-head h2 { margin: 0; font: 400 clamp(30px, 4vw, 46px)/1 var(--pf-display); text-transform: uppercase; }
   .pack-ceremony-head p { margin: 6px 0 0; color: var(--pf-ink-soft); font-size: 15px; }
 
+  /* One special card: bigger, centered, no fan. */
+  .pack-ceremony--daily { width: min(560px, 100%); }
+  .pack-ceremony--daily .pack-fan { grid-template-columns: minmax(0, 260px); }
+  .pack-ceremony--daily .pack-card { transform: none; }
   .pack-ceremony-stage { position: relative; min-height: 0; display: grid; place-items: start center; overflow: auto; padding: 22px 26px 44px; }
   .pack-fan { width: 100%; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 168px)); justify-content: center; gap: 14px; margin: auto 0; padding: 0; list-style: none; perspective: 1200px; }
   .pack-card { display: grid; gap: 8px; justify-items: center; transform: rotate(calc(var(--offset) * 2deg)) translateY(calc(var(--offset) * var(--offset) * 4px)); animation: pf-pack-fan .45s cubic-bezier(.2, .9, .3, 1.15) backwards; animation-delay: calc(.35s + var(--i) * .05s); }

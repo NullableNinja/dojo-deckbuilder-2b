@@ -354,3 +354,23 @@ test("a finished engine table becomes one receipt and pays once", async () => {
   const openDojo = new EngineSession({ mode: "quick-duel", seed: 41, fighters: [fighters[0], fighters[1]], humanSeats: [0], rulesVersion: "test", table: { cardPool: null } });
   assert.equal(matchReceipt({ ...openDojo, game: { ...openDojo.game, winner: 0, round: 9, events: [], players: openDojo.game.players }, setup: openDojo.setup }).table, "open-dojo");
 });
+
+// ---- Card of the Day -----------------------------------------------------------------------
+
+test("claiming a card files it without spending a ticket, once", () => {
+  const before = withTickets(fresh(), 1);
+  const owned = economy.ownedCards(before);
+  const target = firstBooster.cards.map((entry) => entry.catalogId).find((id) => !owned.has(id));
+  const claimed = economy.claimCard(before, target);
+  assert.equal(claimed.error, null);
+  assert.deepEqual(claimed.cards, [target]);
+  assert.ok(economy.ownedCards(claimed.state).has(target));
+  assert.equal(claimed.state.wallet["booster-ticket"], before.wallet["booster-ticket"], "no ticket is spent");
+  assert.equal(economy.claimCard(claimed.state, target).error, "owned");
+});
+
+test("only collectible cards can be claimed", () => {
+  const character = cards.find((card) => card.deck === packs.unlockables.characters.deck);
+  assert.equal(economy.claimCard(fresh(), character.catalogId).error, "not-collectible");
+  assert.equal(economy.claimCard(fresh(), "DDB-NOPE-000").error, "not-collectible");
+});

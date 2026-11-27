@@ -32,6 +32,7 @@ import SearchPage from "./search-page";
 import DesignLab from "./design-lab";
 import SettingsPage from "./settings-page";
 import CollectionPage from "./collection-page";
+import { DailyClaim } from "./daily-claim";
 import { CareerBand, CareerPanel, CareerRing, useCareerSummary } from "./career-ui";
 import { ModeCard, modeMetaFor } from "./mode-card";
 import { navigate, readRoute, replaceRoute, subscribeToRoute, topLevelRoute, type RulingsTab, type SitePage, type SiteRoute } from "./routing";
@@ -422,6 +423,7 @@ function HomeView({ goTo, displayName, avatar }: { goTo: (view: ViewId) => void;
         <h2 id="cotd-title">Card of the day: <em>{featuredCard.name}</em></h2>
         <p>{featuredCard.flavorText || featuredCard.rulesText || "Filed, stamped and ready for the mat."}</p>
         <dl><div><dt>Type</dt><dd>{featuredCard.cardType}{featuredCard.subtype ? ` · ${featuredCard.subtype}` : ""}</dd></div><div><dt>Filing</dt><dd>{featuredCard.catalogId}</dd></div></dl>
+        {cardSeed === dayNumber() && <DailyClaim card={featuredCard} imageUrlFor={cardImageUrl} />}
         <div className="cotd-actions"><button type="button" className="button primary" onClick={() => setCardSeed((seed) => seed + 1)}>Draw another <span aria-hidden="true">↻</span></button><button type="button" className="button ghost" onClick={() => goTo("cards")}>Browse all {cardData.total}</button></div>
       </div>
     </section>
