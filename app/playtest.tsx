@@ -3063,7 +3063,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     try { return window.localStorage.getItem(ENGINE_DUEL_STORAGE_KEY) ? { start: "resume", key: 0 } : null; } catch { return null; }
   });
   const [match, setRawMatch] = useState<Match | null>(() => {
-    try {
+    // The shared engine is the default game; an old saved Classic-mat game resumes only for players who chose Classic.
+    if (settings.rulesEngine === "classic") try {
       const saved = JSON.parse(window.localStorage.getItem("ddb-field-match") ?? "null") as Match | null;
       const validSavedMatch = saved?.schema === 8 && saved?.player?.fighterId && saved?.ai?.fighterId && saved.turnOrder?.length === 2 && cardFor(saved.player.fighterId) && cardFor(saved.ai.fighterId) ? saved : null;
       if (!validSavedMatch) return null;
@@ -3080,6 +3081,7 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
           : normalized.log,
       };
     } catch { return null; }
+    return null;
   });
   const setMatch = (update: SetStateAction<Match | null>) => setRawMatch((previous) => {
     let next = typeof update === "function" ? update(previous) : update;
