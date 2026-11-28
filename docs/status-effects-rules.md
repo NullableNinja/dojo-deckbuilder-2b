@@ -1,8 +1,9 @@
 # Status Effects: draft rules (arena variant)
 
 Status: **draft, for testing in the Test Arena (`#arena`)**. None of this is in the printed rules or normal play.
-Effects 1 to 9 are built and playable in the arena (`engine/arena-rules.mjs`, data in `content/experimental/status-effects.json`).
-Effects 10 to 13 (Shock, Haste, Barrier, Brittle) are written here as proposals; they are not built yet.
+All thirteen effects (and the Reimburse keyword) are built and playable in the arena (`engine/arena-rules.mjs`, data in
+`content/experimental/status-effects.json`). Revised for the **v1.7 audit** (`docs/v1.7-audit-response.md`): the balance
+guardrails in section 6 now apply, Barrier caps at 3, Laminate shuts only the Attack lane, and Rush Order's extra card is paid once.
 
 Every effect is a thing that happens to paper: it burns, smudges, gets laminated, stapled, cut, taped, stamped, soaked.
 Each keeps a plain-language alias (Burn, Poison, Freeze, Bleed, …) so players can talk about it the usual way.
@@ -57,12 +58,12 @@ Damage at Honor ignores DEF, Guard and Armor. It can knock a fighter out; check 
 
 ### 2.3 Laminated (Freeze)
 *The whole card is sealed in a glossy plastic pouch. The fighter can't move.*
-- **Until the end of your next turn:** you **cannot declare Attacks** and **cannot play Defense cards**. Your **Speed is 2 lower** (so you usually lose initiative and Tempo).
+- **Until the end of your next turn:** you **cannot declare Attacks** and your **Speed is 2 lower** (so you usually lose initiative and Tempo). You **can still play Defense cards**: Laminate shuts one lane, not all of them (guardrail 6.4).
 - **Tear:** the first Hit you take tears the pouch open: that Hit deals **+2 damage**, then Laminate ends.
 - **Immunity:** when Laminate ends for any reason, you cannot be Laminated again until after the next Honor.
 - Scorch melts it (see 2.1).
-- *Why it's fair:* the defender loses a turn of offence and Defense cards, but the next Hit frees them, so the attacker must choose between holding the lock and cashing it in for +2.
-- *Sample card:* **Laminating Press** (Kata, 3 Focus): "Your next Attack this turn, if it Hits, Laminates the target."
+- *Why it's fair:* the defender loses a turn of offence, but can still block, and the next Hit frees them, so the attacker must choose between holding the lock and cashing it in for +2.
+- *Sample card:* **Laminating Press** (Kata, 4 Focus): "Your next Attack this turn, if it Hits, Laminates the target."
 
 ### 2.4 Stapled (Pinned)
 *Big staples punch through the card and pin it to one spot on the mat.*
@@ -133,7 +134,7 @@ Variants to test later: a two-handed version that Reimburses on 3+ damage but tw
 
 ---
 
-## 4. Proposals: four more effects (not built yet)
+## 4. Four more effects (built in the arena)
 
 ### 4.1 Static Shock (Shock)
 *Sparks crackle along the card's edge; the fighter's hair stands up.*
@@ -145,7 +146,7 @@ Variants to test later: a two-handed version that Reimburses on 3+ damage but tw
 
 ### 4.2 Rush Order (Haste), a buff
 *A red RUSH ORDER sticker on the card; speed lines streak behind the fighter.*
-- **2 rounds:** **+2 Speed**, and **draw 1 extra card at your Initiate**.
+- **2 rounds:** **+2 Speed**, and **draw 1 extra card at your next Initiate** (once, not every turn: a cost-3 card may not give more than one net card plus a combat bonus, guardrail 6.1).
 - No stacks; refreshes.
 - *Design role:* the first positive status. It wins initiative and Tempo and smooths your hand.
 - *Sample card:* **Express Courier** (Consumable): "Play in your Ascend. Rush Order yourself."
@@ -154,7 +155,7 @@ Variants to test later: a two-handed version that Reimburses on 3+ damage but tw
 ### 4.3 Barrier (Filed Folder), a buff
 *A manila folder closes around the card; the tab shows how many sheets are left.*
 - **Barrier N** absorbs the next **N damage** from Hits (after DEF and Guard), then is used up. Effect damage at Honor is not absorbed.
-- **Stacks:** up to 5 (each stack is 1 point of absorption). **Duration:** until used up, or until the end of your next turn, whichever comes first.
+- **Stacks:** up to 3 (each stack is 1 point of absorption; guardrail 6.6). **Duration:** until used up, or until the end of your next turn, whichever comes first.
 - *Design role:* a short, readable shield; it pairs with Laminate (a Barrier fighter can survive the tear).
 - *Sample card:* **File in Triplicate** (Defense, Any, Guard 1): "If this Blocks, gain Barrier 2."
 - *Visual idea:* folder flaps fold over the card edges; each absorbed point tears one sheet out of the folder.
@@ -174,3 +175,23 @@ Variants to test later: a two-handed version that Reimburses on 3+ damage but tw
 2. Move its rule block into `content/dojo-game.json`, add an official ruling in `content/rules.json`, and add a glossary entry.
 3. Implement it in the engine's real resolvers (the arena variant is the reference) with the same tests.
 4. Write the card(s) that apply it, one card at a time (project rule), and give them art.
+
+---
+
+## 6. Balance guardrails (v1.7)
+Adopted from the v1.7 audit. Every status card is checked against these before it is approved.
+1. **Card advantage.** A cost-2 or cost-3 card gives at most one net card **and** a combat bonus in one resolution, unless the bonus is conditional (on a miss, a discard or self-damage).
+2. **Repeatable draw** says *once per turn* or *once per round*.
+3. **Damage statuses cap at 3 stacks** (Scorch 3, Paper Cut 3). Ink Blot keeps 4 because it fades every Honor (4 stacks = 4+3+2+1 = 10 HP if left completely alone; watch it in testing).
+4. **One lane per status.** Laminated, Stapled, Static Shock and Denied may each shut one lane (Attacks, zone choice, Tempo, the next card). No single status stops Attacking, Defending and Tempo at once, and the control statuses should not be chained to lock a fighter for more than one turn.
+5. **Separate setup from payoff.** Where possible a card either applies a status or cashes it in, not both on a cheap card.
+6. **Barrier** caps at 3 and never absorbs damage at Honor. It is a short shield, not a second Armor layer.
+7. **Full cancellation** of an Attack is once per game, a real choice, or replaced by a capped reduction.
+8. **Healing** (Reimburse, Expense Report Buckler, Correction Fluid) is once per round or once per turn.
+9. **Win-rate band.** 45–55% in repeated 1v1 tests is healthy; 55–60% is a watch list; over 60% across several opponents is a real balance signal.
+
+### 6.1 Where this differs from the audit's own glossary
+The audit proposed a lighter glossary (for example a Laminate that only stops Tempo and a Rush Order that is +1 damage on one
+Attack). We kept the richer definitions above, which the owner approved and which are built and tested in the arena, and took
+the audit's guardrails instead. The card texts in `docs/arena-card-proposals.md` are written against *this* document.
+

@@ -46,7 +46,7 @@ and each layer has one job.
 | Ink Blot | one blot | blot runs: drips down the face | a second blot, the stats smudge; at 4 the ink pools across the top |
 | Paper Cut | one slit | a second slit, steady drip | three slits, pooling at the bottom edge |
 | Red Tape | one band round the card | a second band crosses it with the 27-B seal | n/a |
-| Barrier | flaps with 1 sheet on the tab | more sheets; each absorbed point tears one out | 5 sheets |
+| Barrier | flaps with 1 sheet on the tab | 2 sheets; each absorbed point tears one out | 3 sheets (the cap) |
 | Dog-Eared | one crease and a folded corner | crumpled: second crease, paper goes soft and grey | n/a |
 
 ### 3. Moments (the feel layer)

@@ -44,11 +44,10 @@
       "duration": 1,
       "durationUnit": "ownTurns",
       "blocksAttacks": true,
-      "blocksDefense": true,
       "speedModifier": -2,
       "tearBonusDamage": 2,
       "graceRounds": 1,
-      "summary": "Sealed in a laminate pouch until the end of your next turn: you cannot declare Attacks or play Defense cards, and your Speed is 2 lower. The first Hit you take tears the pouch: +2 damage, and Laminate ends. When it ends you cannot be laminated again until after the next Honor."
+      "summary": "Sealed in a laminate pouch until the end of your next turn: you cannot declare Attacks, and your Speed is 2 lower. You can still play Defense cards. The first Hit you take tears the pouch: +2 damage, and Laminate ends. When it ends you cannot be laminated again until after the next Honor."
     },
     {
       "id": "stapled",
@@ -117,12 +116,12 @@
       "alias": "Guarded",
       "icon": "shield",
       "tone": "ice",
-      "maxStacks": 5,
+      "maxStacks": 3,
       "duration": 1,
       "durationUnit": "ownTurns",
       "refreshOnReapply": true,
       "absorbPerStack": 1,
-      "summary": "A filed folder of protection: each stack absorbs 1 damage from Hits (after DEF and Guard), and absorbed stacks are used up. Up to 5 stacks. Lasts until used up or the end of your next turn. Damage at Honor is not absorbed.",
+      "summary": "A filed folder of protection: each stack absorbs 1 damage from Hits (after DEF and Guard), and absorbed stacks are used up. Up to 3 stacks. Lasts until used up or the end of your next turn. Damage at Honor is not absorbed.",
       "buff": true
     },
     {
@@ -152,7 +151,8 @@
       "buff": true,
       "speedModifier": 2,
       "drawAtTurnStart": 1,
-      "summary": "A buff. Stamped RUSH for 2 rounds: +2 Speed, and draw 1 extra card at the start of each of your turns."
+      "summary": "A buff. Stamped RUSH for 2 rounds: +2 Speed, and draw 1 extra card at the start of your next turn (once).",
+      "drawOnce": true
     },
     {
       "id": "brittle",

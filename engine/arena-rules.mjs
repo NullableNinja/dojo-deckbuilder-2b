@@ -188,11 +188,17 @@ export class ArenaGame extends Game {
     return !this.arenaHas(fighter, "noTempo") && super.hasTempoAdvantage(fighter, opposing);
   }
 
-  /** Rush Order: an extra card at the start of your turn. */
+  /** Rush Order: an extra card at the start of your turn ("drawOnce" effects pay it out a single time). */
   startTurn(player) {
     super.startTurn(player);
-    const extra = this.arenaTotal(player, "drawAtTurnStart");
-    if (extra > 0 && player.hp > 0) { this.draw(player, extra); this.announce("rush-draw", player, { effect: "haste", amount: extra }); }
+    if (player.hp <= 0) return;
+    for (const entry of this.arenaState(player).effects) {
+      const rule = this.arenaRule(entry.id);
+      if (!rule?.drawAtTurnStart || (rule.drawOnce && entry.drawn)) continue;
+      entry.drawn = true;
+      this.draw(player, rule.drawAtTurnStart);
+      this.announce("rush-draw", player, { effect: entry.id, amount: rule.drawAtTurnStart });
+    }
   }
 
   // ---- Prices -----------------------------------------------------------------------------------------------------

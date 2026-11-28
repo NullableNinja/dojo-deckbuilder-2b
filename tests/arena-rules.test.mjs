@@ -42,10 +42,11 @@ test("Laminated: no Attacks, no Defense cards, Speed -2, and the first Hit tears
   const game = session.game; const [me, them] = game.players;
   const card = withAttack(session);
   const speed = game.currentSpeed(me);
+  const defenses = game.defenseOptions(me, { zone: "Mid" }).length;
   game.applyArenaEffect(me, "freeze");
   assert.equal(game.currentSpeed(me), speed - 2);
   assert.ok(!session.legalFor(0).some((action) => action.type === "play-attack"), "a laminated fighter cannot declare Attacks");
-  assert.deepEqual(game.defenseOptions(me, { zone: "Mid" }), []);
+  assert.equal(game.defenseOptions(me, { zone: "Mid" }).length, defenses, "Laminate shuts one lane (Attacks); Defense cards stay playable");
   game.dropArenaEffect(me, "freeze", "test");
   me.atk = 8; me.tempo = false; // Laminate's -2 Speed would otherwise hand the attacker Tempo, a separate real-rules bonus
   const plain = previewAttack(game, 0, card.instanceId);
@@ -151,6 +152,8 @@ test("Barrier absorbs Hit damage stack by stack and is used up", () => {
   assert.equal(shielded.damage, plain.damage - 2);
   game.applyArenaEffect(them, "barrier", { stacks: 1 });
   assert.equal(game.arenaEffect(them, "barrier").stacks, 3);
+  game.applyArenaEffect(them, "barrier", { stacks: 2 });
+  assert.equal(game.arenaEffect(them, "barrier").stacks, 3, "Barrier caps at 3 stacks");
 });
 
 test("Static Shock jolts the first card you play on your turn (once) and takes away Tempo", () => {
@@ -182,7 +185,10 @@ test("Rush Order gives +2 Speed and an extra card at the start of your turn", ()
   assert.equal(game.currentSpeed(me), speed + 2);
   const round = game.round;
   assert.ok(until(session, (s) => s.game.round > round && s.game.activePlayer === 0 && s.game.phase === "Initiate"));
-  assert.ok(events(game, "rush-draw").length >= 1);
+  assert.equal(events(game, "rush-draw").length, 1, "the extra card is paid out once");
+  const next = game.round;
+  assert.ok(until(session, (s) => s.game.round > next && s.game.activePlayer === 0 && s.game.phase === "Initiate"));
+  assert.equal(events(game, "rush-draw").length, 1, "no second extra card while Rush Order lasts");
 });
 
 test("Dog-Eared adds +1 damage per stack to Hits and lowers Guard", () => {
