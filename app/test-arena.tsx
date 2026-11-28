@@ -11,7 +11,7 @@ import dummyCard from "../content/experimental/arena-dummy.json";
 import { clashData, type EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed, type EngineAction, type EngineGame, type EngineSeat } from "./engine-session.ts";
 import { QuickDuelTable } from "./quick-duel-table";
-import { arenaCardDecor, type ArenaPulses } from "./arena-card-fx";
+import { arenaCardDecor, type ArenaMoment } from "./arena-card-fx";
 import { cardMotionDisabled } from "./card-motion";
 import { navigate } from "./routing";
 import "./test-arena.css";
@@ -44,18 +44,15 @@ function newArenaSession(fights: boolean) {
   }, fights ? undefined : passive);
 }
 
-/** The latest arena moment of each kind for one fighter, by event index, so the card can replay it once. */
-function pulsesFor(game: EngineGame, seatId: number): ArenaPulses {
-  const pulses: ArenaPulses = {};
+/** This fighter's arena events, newest last, each with its log position so its moment plays once. */
+function momentsFor(game: EngineGame, seatId: number): ArenaMoment[] {
+  const list: ArenaMoment[] = [];
   game.events.forEach((event, index) => {
     if (event.type !== "arena-effect" || event.player !== seatId) return;
-    const kind = String(event.kind);
-    pulses[kind] = index;
-    if (event.effect) pulses[`${kind}:${String(event.effect)}`] = index;
+    list.push({ index, kind: String(event.kind), effect: event.effect ? String(event.effect) : undefined, amount: event.amount === undefined ? undefined : Number(event.amount), stacks: event.stacks === undefined ? undefined : Number(event.stacks), reason: event.reason ? String(event.reason) : undefined });
   });
-  return pulses;
+  return list.slice(-6);
 }
-const lastHealFor = (game: EngineGame, seatId: number) => Number([...game.events].reverse().find((event) => event.type === "arena-effect" && event.kind === "reimburse" && event.player === seatId)?.amount ?? 1);
 
 export default function TestArena() {
   const [battle, setBattle] = useState(1);
@@ -76,7 +73,7 @@ export default function TestArena() {
       onSave={() => undefined}
       onExit={() => navigate({ page: "home" })}
       onRematch={() => setBattle((value) => value + 1)}
-      seatDecor={(seat) => arenaCardDecor((seat as ArenaSeat).arena, pulsesFor(session.game, seat.id), lastHealFor(session.game, seat.id))}
+      seatDecor={(seat) => arenaCardDecor((seat as ArenaSeat).arena, momentsFor(session.game, seat.id), seat.id === 0 ? "right" : "left")}
       nudge={nudge}
     />
     <button type="button" className="arena-console-tab" aria-expanded={open} aria-controls="arena-console" onClick={() => setOpen((value) => !value)}>{open ? "Hide console ▸" : "◂ Effects console"}</button>

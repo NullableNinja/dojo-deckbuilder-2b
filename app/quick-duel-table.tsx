@@ -21,7 +21,7 @@ const CardInspector = lazyWithRetry(() => import("./card-inspector").then((modul
 
 type MatCard = EngineCard & { timing?: string | null; flavorText?: string | null; details?: Record<string, string | number> };
 type VfxKind = "attack" | "hit" | "block" | "ko" | "certified" | "promotion";
-type Vfx = { id: number; human?: VfxKind; computer?: VfxKind; screen?: "impact" | "scene"; cue: string; cueScale?: number; tone: "attack" | "damage" | "block" | "certified" | "promotion" | "summary"; announcement: string; promotion?: { side: "human" | "computer"; belt: string; previous: string } };
+type Vfx = { id: number; accent?: string; human?: VfxKind; computer?: VfxKind; screen?: "impact" | "scene"; cue: string; cueScale?: number; tone: "attack" | "damage" | "block" | "certified" | "promotion" | "summary"; announcement: string; promotion?: { side: "human" | "computer"; belt: string; previous: string } };
 type DeskView = "market" | "combo" | "belt";
 
 type TableProps = {
@@ -256,7 +256,7 @@ export function QuickDuelTable({ session, sessionKey, agentName, guided, motion,
 
   return <main ref={shellRef} className={`playtest-shell playtest-shell--live playtest-shell--engine mat-v3 location-${locationTheme(currentLocation)} motion-${motion}${guided ? " playtest-shell--guided" : ""}${over ? " playtest-shell--finished" : ""}${vfx?.screen === "impact" ? ` ddb-vfx-screen-impact ddb-vfx-screen-v${vfx.id % 5}` : ""}${vfx?.screen === "scene" ? " ddb-vfx-scene" : ""} shell`}>
     {sceneReveal && !over && <SceneReveal key={sceneReveal.key} card={sceneReveal.card} art={artistUrl(sceneReveal.card)} previousName={sceneReveal.previous} round={game.round} opening={sceneReveal.opening} targetSelector=".playtest-shell--live .combat-stage-heading > button" reducedMotion={reducedMotion} onDone={() => setSceneReveal(null)} />}
-    {vfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${vfx.tone}`} style={{ "--cue-scale": vfx.cueScale ?? 1 } as CSSProperties} key={vfx.id}><strong>{vfx.cue}</strong><small>{vfx.announcement}</small></div>{vfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${vfx.promotion.side === "human" ? "player" : "ai"}`} key={`promotion-${vfx.id}`}><span>{vfx.promotion.side === "human" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{vfx.promotion.belt} BELT</strong><small>{vfx.promotion.previous} → {vfx.promotion.belt}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{vfx.announcement}</div></>}
+    {vfx && <><div className="playtest-vfx-layer" aria-hidden="true"><div className={`playtest-vfx-cue playtest-vfx-cue--combat playtest-vfx-cue--${vfx.tone}${vfx.accent ? ` arena-cue arena-cue--${vfx.accent}` : ""}`} style={{ "--cue-scale": vfx.cueScale ?? 1 } as CSSProperties} key={vfx.id}><strong>{vfx.cue}</strong><small>{vfx.announcement}</small></div>{vfx.promotion && <div className={`playtest-belt-promotion playtest-belt-promotion--${vfx.promotion.side === "human" ? "player" : "ai"}`} key={`promotion-${vfx.id}`}><span>{vfx.promotion.side === "human" ? "CERTIFICATION APPROVED" : "OPPONENT FILING"}</span><strong>{vfx.promotion.belt} BELT</strong><small>{vfx.promotion.previous} → {vfx.promotion.belt}</small></div>}</div><div className="playtest-vfx-announcer" role="status" aria-live="polite">{vfx.announcement}</div></>}
 
     <header className="playtest-topbar battle-versus-hud">
       <HudFighter seat={human} side="player" title={agentName} />
@@ -302,7 +302,7 @@ function hpMood(seat: EngineSeat) {
   const arena = (seat as EngineSeat & { arena?: { effects: { id: string; stacks: number }[] } }).arena?.effects ?? [];
   const has = (id: string) => arena.some((entry) => entry.id === id);
   const guarded = has("barrier") || seat.statuses.some((status) => status.action === "preventDamage" && Number(status.amount) > 0);
-  return [has("freeze") && "frozen", has("poison") && "poisoned", has("burn") && "burning", guarded && "guarded", has("papercut") && "bleeding", has("wetfloor") && "soaked"].filter(Boolean) as string[];
+  return [has("freeze") && "frozen", has("shock") && "shocked", has("poison") && "poisoned", has("burn") && "burning", guarded && "guarded", has("papercut") && "bleeding", has("wetfloor") && "soaked", has("brittle") && "creased", has("haste") && "rushed"].filter(Boolean) as string[];
 }
 
 function HudFighter({ seat, side, title }: { seat: EngineSeat; side: "player" | "ai"; title: string }) {
@@ -432,31 +432,39 @@ function coachLine(game: EngineGame, phase: MatPhase, legal: EngineAction[], sel
   return "The computer is taking its turn.";
 }
 
-/** Test Arena effects (engine/arena-rules.mjs `arena-effect` events) as mat cues: a word, a shake, a flash on the fighter. */
-const ARENA_CUE: Record<string, { cue: (name: string, event: { [key: string]: unknown }) => string; kind: VfxKind; shake: boolean; tone: Vfx["tone"]; rank: number }> = {
-  tear: { cue: () => "RIIIP!", kind: "hit", shake: true, tone: "damage", rank: 9 },
-  applied: { cue: (name) => `${name.toUpperCase()}!`, kind: "certified", shake: true, tone: "certified", rank: 8 },
-  stacked: { cue: (name, event) => `${name.toUpperCase()} ×${event.stacks}`, kind: "certified", shake: true, tone: "certified", rank: 8 },
-  denied: { cue: () => "DENIED!", kind: "block", shake: true, tone: "block", rank: 8 },
-  reimburse: { cue: (_name, event) => `PAID +${event.amount}`, kind: "certified", shake: false, tone: "certified", rank: 6 },
-  tick: { cue: (name, event) => `${name.toUpperCase()} −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 7 },
-  cut: { cue: (_name, event) => `PAPER CUT −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 5 },
-  "zone-locked": { cue: () => "STAPLED!", kind: "block", shake: false, tone: "block", rank: 4 },
-  absorbed: { cue: (_name, event) => `GUARDED −${event.amount}`, kind: "block", shake: false, tone: "block", rank: 6 },
-  resisted: { cue: () => "RESISTED", kind: "block", shake: false, tone: "block", rank: 3 },
-  ended: { cue: (name) => `${name.toUpperCase()} ENDS`, kind: "certified", shake: false, tone: "summary", rank: 1 },
-};
+/** Test Arena effects (engine/arena-rules.mjs `arena-effect` events) as mat cues: each effect has its own word and
+ *  colour, and only heavy, physical moments shake the screen (docs/status-effects-display.md). The prop itself plays
+ *  on the fighter's card (app/arena-card-fx.tsx). */
+const LAND_WORD: Record<string, string> = { burn: "FWOOSH!", poison: "SPLORT!", freeze: "SEALED!", stapled: "KA-CHUNK!", redtape: "ZZZIP!", denied: "DENIED!", papercut: "SHHK!", wetfloor: "SPLOOSH!", barrier: "SNAP!", shock: "ZZZT!", haste: "RUSH!", brittle: "CRUMPLE!" };
+const HEAVY = new Set(["stapled", "denied", "shock", "brittle"]);
+type ArenaCue = { cue: string; accent: string; shake: boolean; rank: number };
+function arenaCueFor(event: { [key: string]: unknown }): ArenaCue | null {
+  const effect = String(event.effect ?? ""); const amount = Number(event.amount ?? 0);
+  switch (event.kind) {
+    case "applied": case "stacked": return { cue: LAND_WORD[effect] ?? `${String(event.effectName ?? effect).toUpperCase()}!`, accent: effect, shake: HEAVY.has(effect), rank: 8 };
+    case "tear": return { cue: "RIIIP!", accent: "freeze", shake: true, rank: 9 };
+    case "tick": return { cue: effect === "burn" ? `SIZZLE −${amount}` : `DRIP −${amount}`, accent: effect, shake: false, rank: 7 };
+    case "jolt": return { cue: `ZZZT! −${amount}`, accent: "shock", shake: true, rank: 8 };
+    case "denied": return { cue: "VOID!", accent: "denied", shake: true, rank: 8 };
+    case "cut": return { cue: `SHHK! −${amount}`, accent: "papercut", shake: false, rank: 6 };
+    case "crease": return { cue: `CRINKLE +${amount}`, accent: "brittle", shake: false, rank: 5 };
+    case "absorbed": return { cue: `FILED! −${amount}`, accent: "barrier", shake: false, rank: 6 };
+    case "reimburse": return { cue: `KA-CHING! +${amount}`, accent: "reimburse", shake: false, rank: 6 };
+    case "zone-locked": return { cue: "PINNED!", accent: "stapled", shake: false, rank: 4 };
+    case "rush-draw": return { cue: "+1 CARD", accent: "haste", shake: false, rank: 3 };
+    case "resisted": return { cue: "RESISTED", accent: "stapled", shake: false, rank: 3 };
+    default: return null;
+  }
+}
 function arenaVfx(events: { type: string; [key: string]: unknown }[], side: (id: unknown) => "human" | "computer") {
-  const arena = events.filter((event) => event.type === "arena-effect" && ARENA_CUE[String(event.kind)]);
-  if (!arena.length) return null;
-  const top = arena.reduce((best, event) => (ARENA_CUE[String(event.kind)].rank > ARENA_CUE[String(best.kind)].rank ? event : best), arena[0]);
-  const rule = ARENA_CUE[String(top.kind)];
-  const cue = rule.cue(String(top.effectName ?? top.effect ?? ""), top);
-  const who = side(top.player);
-  const announcement = `${who === "human" ? "You" : "The opponent"}: ${cue.toLowerCase()}`;
+  const cues = events.filter((event) => event.type === "arena-effect").map((event) => ({ event, cue: arenaCueFor(event) })).filter((entry): entry is { event: typeof entry.event; cue: ArenaCue } => Boolean(entry.cue));
+  if (!cues.length) return null;
+  const top = cues.reduce((best, entry) => (entry.cue.rank > best.cue.rank ? entry : best), cues[0]);
+  const who = side(top.event.player);
+  const announcement = `${who === "human" ? "You" : "The opponent"}: ${top.cue.cue.toLowerCase()}`;
   return {
-    cue, cueScale: rule.rank >= 8 ? 1.4 : 1.1, announcement, overrideAttack: top.kind === "tear" || top.kind === "applied" || top.kind === "stacked",
-    vfx: { [who]: rule.kind, screen: rule.shake ? "impact" as const : undefined, cue, cueScale: rule.rank >= 8 ? 1.4 : 1.1, tone: rule.tone, announcement } as Omit<Vfx, "id">,
+    cue: top.cue.cue, cueScale: top.cue.rank >= 8 ? 1.35 : 1.1, announcement, overrideAttack: top.event.kind === "tear" || top.event.kind === "applied" || top.event.kind === "stacked", accent: top.cue.accent, shake: top.cue.shake,
+    vfx: { screen: top.cue.shake ? "impact" as const : undefined, cue: top.cue.cue, cueScale: top.cue.rank >= 8 ? 1.35 : 1.1, tone: "summary" as const, announcement, accent: top.cue.accent } as Omit<Vfx, "id">,
   };
 }
 
@@ -468,7 +476,7 @@ function vfxFor(events: { type: string; [key: string]: unknown }[], game: Engine
   const arena = arenaVfx(events, side);
   if (attack && arena?.overrideAttack) {
     const attacker = side(attack.attacker); const defender = side(attack.defender);
-    return { [attacker]: "attack" as VfxKind, [defender]: knockout ? "ko" as VfxKind : "hit" as VfxKind, screen: "impact", cue: knockout ? "K.O.!" : arena.cue, cueScale: knockout ? 1.7 : arena.cueScale ?? 1.4, tone: "damage", announcement: arena.announcement };
+    return { [attacker]: "attack" as VfxKind, [defender]: knockout ? "ko" as VfxKind : "hit" as VfxKind, screen: "impact", cue: knockout ? "K.O.!" : arena.cue, cueScale: knockout ? 1.7 : arena.cueScale ?? 1.4, tone: "damage", announcement: arena.announcement, accent: knockout ? undefined : arena.accent };
   }
   if (!attack && arena) return arena.vfx;
   if (attack) {

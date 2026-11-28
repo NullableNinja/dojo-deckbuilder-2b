@@ -18,6 +18,9 @@
   .playtest-shell.mat-v3 .battle-hud-fighter.hp-band-1 .hp-row > i > em.hp-fill { background: linear-gradient(180deg, #ff9aa8 0%, #ef2f4a 50%, #a8102a 100%) !important; }
 
   /* Status looks override the band colour (strongest first in the markup order). */
+  .playtest-shell.mat-v3 .battle-hud-fighter.hp-rushed .hp-row > i > em.hp-fill { background: linear-gradient(180deg, #fff0b0 0%, #ffc24a 50%, #d77f00 100%) !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter.hp-creased .hp-row > i > em.hp-fill { background: repeating-linear-gradient(115deg, rgba(23, 38, 58, .25) 0 2px, transparent 2px 14px), linear-gradient(180deg, #f2ede2 0%, #c8c2b4 50%, #8e897e 100%) !important; }
+  .playtest-shell.mat-v3 .battle-hud-fighter.hp-shocked .hp-row > i > em.hp-fill { background: repeating-linear-gradient(90deg, rgba(23, 38, 58, .35) 0 2px, transparent 2px 16px), linear-gradient(180deg, #fffbd0 0%, #ffe14a 50%, #d9a800 100%) !important; }
   .playtest-shell.mat-v3 .battle-hud-fighter.hp-soaked .hp-row > i > em.hp-fill { background: linear-gradient(180deg, #c9ecff 0%, #6ab8ee 50%, #2f7fc4 100%) !important; }
   .playtest-shell.mat-v3 .battle-hud-fighter.hp-bleeding .hp-row > i > em.hp-fill { background: linear-gradient(180deg, #ff8e9c 0%, #d81e3c 50%, #8e0a1f 100%) !important; }
   .playtest-shell.mat-v3 .battle-hud-fighter.hp-guarded .hp-row > i > em.hp-fill { background: linear-gradient(180deg, #cfe3ff 0%, #5f8fe8 50%, #2c4fb0 100%) !important; }
@@ -59,6 +62,7 @@
       & .hp-sparks i { animation: hp-spark 1.3s steps(6) infinite; }
       & .hp-sparks i:nth-child(2) { animation-delay: .35s; } & .hp-sparks i:nth-child(3) { animation-delay: .7s; } & .hp-sparks i:nth-child(4) { animation-delay: 1s; }
       & .hp-shield { animation: hp-shield 2.2s ease-in-out infinite; }
+      & .battle-hud-fighter.hp-shocked .hp-row > i > em.hp-fill { animation: hp-buzz .3s steps(2) infinite !important; }
     }
   }
   @keyframes hp-shine { 0%, 60% { left: -40px; } 100% { left: calc(100% + 40px); } }
@@ -70,5 +74,6 @@
   @keyframes hp-slosh { from { background-position: 0 0; } to { background-position: 20px 0; } }
   @keyframes hp-drip { 0% { transform: translateY(0) scale(.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(26px) scale(1); opacity: 0; } }
   @keyframes hp-spark { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(6px, -26px); opacity: 0; } }
+  @keyframes hp-buzz { 0% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
   @keyframes hp-shield { 0%, 100% { scale: 1; } 50% { scale: 1.08; } }
 }
