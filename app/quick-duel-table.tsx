@@ -34,6 +34,8 @@ type TableProps = {
   onRematch: () => void;
   /** Extra layers drawn over each fighter's art (the Test Arena's lingering effects). */
   seatOverlay?: (seat: EngineSeat) => ReactNode;
+  /** Effects on a fighter's whole card: a class for the panel and a layer drawn over it (the Test Arena). */
+  seatDecor?: (seat: EngineSeat) => { className?: string; panel?: ReactNode } | null;
   /** Change it to make the table re-read the game after an outside change (the Test Arena's console). */
   nudge?: number;
 };
@@ -89,7 +91,7 @@ const isAttackCard = (card: EngineCard) => num(card.stats?.["Attack Power"]) > 0
 const isDefenseCard = (card: EngineCard) => num(card.stats?.Guard) > 0 && (card.subtype === "Defense" || (card as MatCard).details?.Type === "Defense");
 
 /** The engine-driven game mat. Exported for the Test Arena, which hosts it with the arena rule variant. */
-export function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch, seatOverlay, nudge }: TableProps) {
+export function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch, seatOverlay, seatDecor, nudge }: TableProps) {
   const game = session.game;
   if (import.meta.env.DEV) (window as unknown as { __ddbSession?: EngineSession }).__ddbSession = session;
   const [tick, setTick] = useState(0);
@@ -266,12 +268,12 @@ export function QuickDuelTable({ session, sessionKey, agentName, guided, motion,
     <section className="playtest-arena">
       <div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>
       <section className="playtest-table">
-        <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} overlay={seatOverlay?.(human)} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
+        <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} overlay={seatOverlay?.(human)} decor={seatDecor?.(human)} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
         <div className="combat-stage-column">
           <CombatStage game={game} phase={phase} location={currentLocation} selected={selected} incoming={incoming} exchange={exchange} log={log} coach={guided ? coach : null} preview={selectedPreview} takeTheHit={previews.takeTheHit} onInspect={setInspected} onDropCard={(instanceId) => { const card = human.hand.find((entry) => entry.instanceId === instanceId); if (card) commitHandCard(card); }} />
           {phase === "ai-ready" && !over && <span className="ai-thinking"><i /><i /><i /> {game.pendingChoice ? "Computer is deciding" : "Clipboard thinking"}</span>}
         </div>
-        <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} overlay={seatOverlay?.(computer)} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
+        <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} overlay={seatOverlay?.(computer)} decor={seatDecor?.(computer)} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
       </section>
     </section>
 
@@ -579,7 +581,7 @@ function StatGlyph({ stat }: { stat: "HP" | "FP" | "ATK" | "DEF" | "SPD" }) {
   return <svg className={`fighter-stat-glyph stat-${stat.toLocaleLowerCase()}`} viewBox="0 0 24 24" aria-hidden="true">{paths[stat]}</svg>;
 }
 
-function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpenCombo, overlay }: { game: EngineGame; seat: EngineSeat; label: string; enemy?: boolean; vfx?: VfxKind; vfxVariant?: number; onInspect: (card: MatCard) => void; onOpenCombo?: () => void; overlay?: ReactNode }) {
+function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpenCombo, overlay, decor }: { game: EngineGame; seat: EngineSeat; label: string; enemy?: boolean; vfx?: VfxKind; vfxVariant?: number; onInspect: (card: MatCard) => void; onOpenCombo?: () => void; overlay?: ReactNode; decor?: { className?: string; panel?: ReactNode } | null }) {
   const belts = game.definition.progression.belts;
   const fighter = seat.character as MatCard;
   const art = fighterIllustrationUrl(fighter) ?? artistUrl(fighter) ?? cardPlaceholderUrl;
@@ -589,7 +591,7 @@ function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpe
   const hpProgress = Math.max(0, Math.min(100, seat.hp / Math.max(1, seat.maxHp) * 100));
   const stats = seatStats(game, seat);
   const statuses = statusLabels(seat);
-  return <section className={`fighter-panel fighter-dossier living-fighter-card paper-stack hp-tier-${healthTier(seat.hp, seat.maxHp)} ${enemy ? "is-enemy" : ""}${seat.isBoss ? " is-boss" : ""}${vfx ? ` ddb-vfx-${vfx} ddb-vfx-v${vfxVariant ?? 0}` : ""}`} data-side={enemy ? "ai" : "player"} data-fighter={presentationSlug(fighter.name)}>
+  return <section className={`fighter-panel fighter-dossier living-fighter-card paper-stack hp-tier-${healthTier(seat.hp, seat.maxHp)} ${enemy ? "is-enemy" : ""}${seat.isBoss ? " is-boss" : ""}${decor?.className ? ` ${decor.className}` : ""}${vfx ? ` ddb-vfx-${vfx} ddb-vfx-v${vfxVariant ?? 0}` : ""}`} data-side={enemy ? "ai" : "player"} data-fighter={presentationSlug(fighter.name)}>
     <i className="fighter-paperclip" aria-hidden="true" />
     <header className="fighter-card-heading"><div><span>{label}</span><button className="fighter-dossier-name" onClick={() => onInspect(fighter)}>{fighter.name}</button></div><b className="fighter-belt-badge" data-belt={presentationSlug(belt.name)}>{belt.name}<small>BELT</small></b></header>
     <div className="fighter-vitality" aria-label={`${fighter.name} has ${seat.hp} of ${seat.maxHp} HP`}>
@@ -610,6 +612,7 @@ function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpe
       <div>{seat.equipment.map((item) => { const exhausted = seat.exhaustedEquipment.includes(item.instanceId ?? ""); return <button type="button" className={`fighter-equipment-tab ${exhausted ? "is-exhausted" : "is-ready"}`} onClick={() => onInspect(item)} title={`${item.name} · ${exhausted ? "Exhausted" : "Ready"}`} key={item.instanceId}><span>{(item.subtype ?? "E").slice(0, 1)}</span><b>{item.name}</b><small>{exhausted ? "EXHAUSTED" : "READY"}</small></button>; })}</div>
     </section>}
     {onOpenCombo && <button type="button" className="fighter-combo-launch" onClick={onOpenCombo} aria-label={`Open Combo docket, ${seat.learnedCombos.length} of 2 learned`}><span>∞ COMBOS</span><b>{seat.learnedCombos.length}/2</b><small>Open docket</small></button>}
+    {decor?.panel}
   </section>;
 }
 

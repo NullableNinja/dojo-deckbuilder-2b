@@ -11,7 +11,7 @@ import dummyCard from "../content/experimental/arena-dummy.json";
 import { clashData, type EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed, type EngineAction, type EngineGame, type EngineSeat } from "./engine-session.ts";
 import { QuickDuelTable } from "./quick-duel-table";
-import { ArenaSeatEffects } from "./arena-effects";
+import { arenaCardDecor, type ArenaPulses } from "./arena-card-fx";
 import { cardMotionDisabled } from "./card-motion";
 import { navigate } from "./routing";
 import "./test-arena.css";
@@ -44,6 +44,19 @@ function newArenaSession(fights: boolean) {
   }, fights ? undefined : passive);
 }
 
+/** The latest arena moment of each kind for one fighter, by event index, so the card can replay it once. */
+function pulsesFor(game: EngineGame, seatId: number): ArenaPulses {
+  const pulses: ArenaPulses = {};
+  game.events.forEach((event, index) => {
+    if (event.type !== "arena-effect" || event.player !== seatId) return;
+    const kind = String(event.kind);
+    pulses[kind] = index;
+    if (event.effect) pulses[`${kind}:${String(event.effect)}`] = index;
+  });
+  return pulses;
+}
+const lastHealFor = (game: EngineGame, seatId: number) => Number([...game.events].reverse().find((event) => event.type === "arena-effect" && event.kind === "reimburse" && event.player === seatId)?.amount ?? 1);
+
 export default function TestArena() {
   const [battle, setBattle] = useState(1);
   const [fights, setFights] = useState(true);
@@ -63,7 +76,7 @@ export default function TestArena() {
       onSave={() => undefined}
       onExit={() => navigate({ page: "home" })}
       onRematch={() => setBattle((value) => value + 1)}
-      seatOverlay={(seat) => <ArenaSeatEffects arena={(seat as ArenaSeat).arena} />}
+      seatDecor={(seat) => arenaCardDecor((seat as ArenaSeat).arena, pulsesFor(session.game, seat.id), lastHealFor(session.game, seat.id))}
       nudge={nudge}
     />
     <button type="button" className="arena-console-tab" aria-expanded={open} aria-controls="arena-console" onClick={() => setOpen((value) => !value)}>{open ? "Hide console ▸" : "◂ Effects console"}</button>
