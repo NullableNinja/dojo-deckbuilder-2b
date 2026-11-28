@@ -427,3 +427,38 @@
 .playtest-shell--engine .belt-stripes .belt-stripe-blocker { color: var(--pf-ink); font-weight: 700; }
 .playtest-shell--engine .belt-stripes .button { justify-self: start; min-height: 48px; }
 .playtest-shell--engine .qd-action-pill .qd-pill-secondary.is-stripe { border-color: var(--pf-brass); }
+
+/* Bosses: their art is a standee cutout (scripts/make-boss-cutouts.py) or, failing that, a printed card. Never mirror
+   it (a flipped card reads backwards); the Boss already stands on the right, facing the player. */
+.playtest-shell--engine.mat-v3 .fighter-panel.is-enemy.is-boss .fighter-panel-art.fighter-card-illustration img,
+.playtest-shell--engine .fighter-panel.is-enemy.is-boss .fighter-card-illustration:hover img,
+.playtest-shell--engine .fighter-panel.is-boss .fighter-card-illustration img { transform: none !important; }
+
+/* Ascend desk, Combo step: the printed card beside what it needs, what it pays and what stops you learning it. */
+.playtest-shell--engine .combo-station { display: grid; gap: 14px; color: var(--pf-ink); }
+.playtest-shell--engine .combo-station > header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 6px 14px; }
+.playtest-shell--engine .combo-station > header h3 { margin: 2px 0 0; font: 400 22px/1.1 var(--pf-display); text-transform: uppercase; }
+.playtest-shell--engine .combo-station .combo-limit { padding: 4px 10px; border: 1.5px solid var(--pf-brass); border-radius: 3px; font: 700 11px/1 var(--pf-mono); letter-spacing: .08em; text-transform: uppercase; background: color-mix(in srgb, var(--pf-brass) 16%, transparent); }
+.playtest-shell--engine .combo-station-offer { display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); gap: 22px; align-items: start; padding: 16px; border: 2px solid var(--pf-brass); border-radius: 4px; background: var(--pf-surface-raised); box-shadow: 5px 6px 0 var(--pf-brass); }
+.playtest-shell--engine .combo-station-card { position: relative; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.playtest-shell--engine .combo-station-card img { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 4px 5px 0 var(--pf-stage-edge, rgba(0, 0, 0, .35)); transform: rotate(-1.5deg); transition: transform .2s ease; }
+.playtest-shell--engine .combo-station-card:hover img, .playtest-shell--engine .combo-station-card:focus-visible img { transform: rotate(0) scale(1.02); }
+.playtest-shell--engine .combo-station-card span { position: absolute; right: 8px; bottom: 8px; padding: 4px 8px; border-radius: 3px; color: #fffaf0; background: rgba(23, 38, 58, .86); font: 700 11px/1 var(--pf-mono); letter-spacing: .08em; text-transform: uppercase; }
+.playtest-shell--engine .combo-station-info { display: grid; gap: 10px; min-width: 0; }
+.playtest-shell--engine .combo-station-info h3 { margin: 0; font: 400 clamp(24px, 2.4vw, 32px)/1.05 var(--pf-display); text-transform: uppercase; }
+.playtest-shell--engine .combo-station-info dl { display: grid; gap: 0; margin: 0; }
+.playtest-shell--engine .combo-station-info dl > div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--pf-line); }
+.playtest-shell--engine .combo-station-info dt { font: 700 11px/1.4 var(--pf-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--pf-brass-text); }
+.playtest-shell--engine .combo-station-info dd { margin: 0; font-size: 15px; line-height: 1.45; }
+.playtest-shell--engine .combo-station-blocker { margin: 0; padding: 8px 12px; border-left: 4px solid var(--pf-brass); background: color-mix(in srgb, var(--pf-brass) 12%, transparent); font-size: 14px; font-weight: 700; }
+.playtest-shell--engine .combo-station-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.playtest-shell--engine .combo-station-actions .button { min-height: 48px; }
+.playtest-shell--engine .combo-station-empty { margin: 0; padding: 14px 16px; border: 1.5px dashed var(--pf-line-strong); border-radius: 4px; }
+.playtest-shell--engine .combo-station-known h4 { margin: 0 0 8px; font: 700 12px/1 var(--pf-label); letter-spacing: .1em; text-transform: uppercase; }
+.playtest-shell--engine .combo-station-known ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.playtest-shell--engine .combo-station-known button { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 8px; text-align: left; color: var(--pf-ink); border: 1.5px solid var(--pf-line-strong); border-radius: 4px; background: var(--pf-surface-raised); cursor: pointer; }
+.playtest-shell--engine .combo-station-known button:hover { border-color: var(--pf-action); }
+.playtest-shell--engine .combo-station-known img { width: 62px; height: auto; border-radius: 3px; }
+.playtest-shell--engine .combo-station-known b { display: block; font-size: 14px; }
+.playtest-shell--engine .combo-station-known small { display: block; margin-top: 2px; color: var(--pf-ink-soft); font-size: 12px; line-height: 1.35; }
+@media (max-width: 720px) { .playtest-shell--engine .combo-station-offer { grid-template-columns: 1fr; } .playtest-shell--engine .combo-station-card { max-width: 240px; justify-self: center; } .playtest-shell--engine .combo-station-info dl > div { grid-template-columns: 1fr; gap: 2px; } }

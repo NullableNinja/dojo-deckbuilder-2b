@@ -5,6 +5,7 @@ import CompanionApp from "../app/companion-app";
 import PlaytestCardRouteLifecycle from "../app/playtest-card-route-lifecycle";
 import "../app/card-inspector.css";
 import "../app/playtest.css";
+import "../app/a11y-contrast.css";
 import { reloadForNewVersion } from "../app/lazy-with-retry";
 import { applyThemeToDocument, readInitialTheme, readUserPreferences } from "../app/user-preferences";
 

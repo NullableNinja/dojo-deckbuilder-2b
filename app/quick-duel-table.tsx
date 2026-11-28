@@ -12,6 +12,7 @@ import { EngineSession, newSeed, type SessionMode, type TableOptions, type Engin
 import { choicePrompt, choiceTitle, fightLog, findInstance, incomingAttack, latestExchange, livePreviews, matPhase, reasonLabel, seatStats, statusLabels, type Exchange, type MatPhase, type PreviewLine, type PreviewTone } from "./mat-view.ts";
 import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import { PayrollSlip } from "./career-payroll";
+import { comboRequirementText } from "./combo-engine.ts";
 import { beltRequirements, stripeStatus, type BeltRequirements, type StripeStatus } from "./belt-progress.ts";
 import "./quick-duel-hand.css";
 
@@ -545,7 +546,7 @@ function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpe
   const hpProgress = Math.max(0, Math.min(100, seat.hp / Math.max(1, seat.maxHp) * 100));
   const stats = seatStats(game, seat);
   const statuses = statusLabels(seat);
-  return <section className={`fighter-panel fighter-dossier living-fighter-card paper-stack hp-tier-${healthTier(seat.hp, seat.maxHp)} ${enemy ? "is-enemy" : ""}${vfx ? ` ddb-vfx-${vfx} ddb-vfx-v${vfxVariant ?? 0}` : ""}`} data-side={enemy ? "ai" : "player"} data-fighter={presentationSlug(fighter.name)}>
+  return <section className={`fighter-panel fighter-dossier living-fighter-card paper-stack hp-tier-${healthTier(seat.hp, seat.maxHp)} ${enemy ? "is-enemy" : ""}${seat.isBoss ? " is-boss" : ""}${vfx ? ` ddb-vfx-${vfx} ddb-vfx-v${vfxVariant ?? 0}` : ""}`} data-side={enemy ? "ai" : "player"} data-fighter={presentationSlug(fighter.name)}>
     <i className="fighter-paperclip" aria-hidden="true" />
     <header className="fighter-card-heading"><div><span>{label}</span><button className="fighter-dossier-name" onClick={() => onInspect(fighter)}>{fighter.name}</button></div><b className="fighter-belt-badge" data-belt={presentationSlug(belt.name)}>{belt.name}<small>BELT</small></b></header>
     <div className="fighter-vitality" aria-label={`${fighter.name} has ${seat.hp} of ${seat.maxHp} HP`}>
@@ -675,6 +676,39 @@ function BeltCheck({ game, seat, req, live, promote, recover, onAct }: { game: E
   </section>;
 }
 
+/** The Combo step: the offered Combo as its printed card, what it needs and what it pays, why you cannot learn it, and the Combos you know. */
+function ComboStation({ game, offer, learn, decline, onAct, onInspect }: { game: EngineGame; offer: MatCard | null; learn?: EngineAction; decline?: EngineAction; onAct: (action: EngineAction) => void; onInspect: (card: MatCard) => void }) {
+  const human = game.players[HUMAN];
+  const price = offer ? Number(offer.fpCost ?? 0) : 0;
+  const blocker = !offer || learn ? null
+    : human.comboAttemptedThisTurn ? "You already took your Combo attempt this turn."
+    : human.learnedCombos.length >= 2 ? "You already know two Combos. That is the limit."
+    : price > human.focus ? `It costs ${price} Focus and you have ${human.focus}. Earn Focus in a Yell or from the Market and try again next turn.`
+    : "You cannot learn it right now.";
+  const art = (card: MatCard) => artistUrl(card) ?? cardPlaceholderUrl;
+  return <section className="ascend-combo combo-station" aria-label="Combo offer">
+    <header><div><span className="eyebrow">One face-up offer · one attempt per turn</span><h3>{human.learnedCombos.length} of 2 Combos learned</h3></div><span className="combo-limit">{human.comboAttemptedThisTurn ? "Attempt filed" : "Ready"}</span></header>
+    {offer ? <div className="combo-station-offer">
+      <button type="button" className="combo-station-card" onClick={() => onInspect(offer)} aria-label={`Inspect ${offer.name}`}><img src={art(offer)} alt={`${offer.name}, printed Combo card`} decoding="async" /><span>Inspect</span></button>
+      <div className="combo-station-info">
+        <span className="eyebrow">{offer.catalogId} · Combo</span>
+        <h3>{offer.name}</h3>
+        <dl>
+          <div><dt>You need</dt><dd>{comboRequirementText(offer)}</dd></div>
+          <div><dt>You get</dt><dd>{offer.rulesText || "No additional effect."}</dd></div>
+          <div><dt>Cost</dt><dd><b>{price} Focus</b> · you have {human.focus}</dd></div>
+        </dl>
+        {blocker && <p className="combo-station-blocker" role="status">{blocker}</p>}
+        <div className="combo-station-actions">
+          {learn && <button type="button" className="button primary" onClick={() => onAct(learn)}>Learn {offer.name} · {price} Focus</button>}
+          {decline && <button type="button" className="button ghost" onClick={() => onAct(decline)}>{learn ? "Pass on it" : "Pass Combo"}</button>}
+        </div>
+      </div>
+    </div> : <p className="combo-station-empty">No Combo is on offer right now. A new one is turned face up at each Ascend.</p>}
+    {human.learnedCombos.length > 0 && <div className="combo-station-known"><h4>Combos you know</h4><ul>{human.learnedCombos.map((combo) => <li key={combo.instanceId}><button type="button" onClick={() => onInspect(combo as MatCard)}><img src={art(combo as MatCard)} alt="" decoding="async" /><span><b>{combo.name}</b><small>{comboRequirementText(combo as MatCard)}</small></span></button></li>)}</ul></div>}
+  </section>;
+}
+
 function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFinish }: { game: EngineGame; view: DeskView; legal: EngineAction[]; onView: (view: DeskView) => void; onAct: (action: EngineAction) => void; onInspect: (card: MatCard) => void; onClose: () => void; onFinish: (() => void) | null }) {
   const human = game.players[HUMAN];
   const offer = human.comboOffered as MatCard | null;
@@ -715,12 +749,7 @@ function AscendDesk({ game, view, legal, onView, onAct, onInspect, onClose, onFi
           <header><div><span className="eyebrow">{game.market.length} live records · full cards</span><h3>Choose with the text visible</h3></div><p>Each purchase is replaced by the top Market card.</p></header>
           <div className="ascend-market-grid">{game.market.map((card) => { const buy = legal.find((action) => action.type === "purchase" && action.cardId === card.instanceId); return <PlayCard key={card.instanceId} card={card} price={String(game.purchaseCost(human, card))} hint={buy ? "Buy" : undefined} disabled={!buy} onClick={buy ? () => onAct(buy) : undefined} onInspect={() => onInspect(card)} />; })}</div>
         </section>}
-        {view === "combo" && <section className="ascend-combo combo-panel">
-          <header><div><span className="eyebrow">One face-up offer · one attempt per turn</span><h3>{human.learnedCombos.length}/2 learned</h3></div><span className="combo-limit">{human.comboAttemptedThisTurn ? "Attempt filed" : "Ready"}</span></header>
-          {offer ? <div className="combo-offer"><NativeCardArt card={offer} /><div><span>{offer.catalogId}</span><h3>{offer.name}</h3><p>{offer.rulesText}</p><div><b>{num(offer.fpCost)} Focus</b><button onClick={() => onInspect(offer)}>Inspect full card</button></div></div></div> : <p>No Combo is on offer right now.</p>}
-          {(learn || decline) && <div className="combo-actions">{learn && <button className="button primary" onClick={() => onAct(learn)}>Learn {offer?.name}</button>}{decline && <button className="button ghost" onClick={() => onAct(decline)}>Pass Combo</button>}</div>}
-          {human.learnedCombos.length > 0 && <div className="learned-combos">{human.learnedCombos.map((combo) => <button key={combo.instanceId} onClick={() => onInspect(combo)}><span>∞</span><b>{combo.name}</b><small>Learned</small></button>)}</div>}
-        </section>}
+        {view === "combo" && <ComboStation game={game} offer={offer} learn={learn} decline={decline} onAct={onAct} onInspect={onInspect} />}
         {view === "belt" && <BeltCheck game={game} seat={human} req={req} live={live} promote={promote} recover={recover} onAct={onAct} />}
       </div>
       {onFinish && <footer className="ascend-desk-footer">

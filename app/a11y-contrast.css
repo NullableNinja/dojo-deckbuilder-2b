@@ -1,0 +1,17 @@
+/* Contrast fixes found by sweeping every route in both themes (text vs its effective background).
+   In dark mode the ember action colour is light, so text on ember fills is ink, not cream (2.6:1 -> 5.4:1);
+   hover fills use the deeper ember, which keeps cream text. Kept in one late layer so it is easy to audit. */
+/* Unlayered on purpose: app/playtest.css is unlayered, so a layered rule here would lose to it. */
+  :root { --pf-on-action: #fffaf0; }
+  :root[data-theme="dark"] { --pf-on-action: #1b1410; }
+  :root[data-theme="dark"] :is(
+    .button.primary, .header-play, .thumb-bar-item.is-play, .index-button.is-open, .phase-explainer-letter,
+    .starter-example-card > header, .dossier-selection-mark, .character-card-check, .accent-choice-mark,
+    .settings-avatar-choice > b, .belt-requirements li.is-met i, .scene-reveal-stamp, .phase-ribbon-letters i.is-active,
+    .header-play span, .level-node-badge i, .user-menu-career-actions button.is-ticket, .quickstart-v2 .setup-checklist .is-ticked .setup-box
+  ) { color: var(--pf-on-action); }
+  :root[data-theme="dark"] :is(.button.primary:hover, .user-menu-settings:hover, .modal-close:hover) { color: #fffaf0; }
+  :root[data-theme="dark"][data-accent="hot-pink"] .button.primary { color: #23131c; }
+  /* Home: the fighter-count footnote under the bout was navy on the dark stage floor (1:1). */
+  :root[data-theme="dark"] .bout-note { color: var(--pf-ink-soft); }
+

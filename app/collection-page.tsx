@@ -124,7 +124,7 @@ export default function CollectionPage() {
       <ul className="unlock-grid">
         {unlocks.map((entry) => {
           const card = CARDS.get(entry.catalogId);
-          const art = card ? (entry.kind === "boss" ? artistUrl(card) : fighterIllustrationUrl(card) ?? artistUrl(card)) : undefined;
+          const art = card ? (fighterIllustrationUrl(card) ?? artistUrl(card)) : undefined;
           return <li key={entry.catalogId} className={`unlock-tile${entry.owned ? " is-owned" : ""} unlock-tile--${entry.kind}`}>
             <span className="unlock-art" aria-hidden="true">{art ? <img src={art} alt="" loading="lazy" decoding="async" /> : <em>{entry.name.slice(0, 1)}</em>}{!entry.owned && <i>Locked</i>}</span>
             <b>{entry.name}</b>
