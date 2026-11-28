@@ -42,28 +42,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
 
-      - name: Stamp deployment and bust stale app-shell caches
+      - name: Stamp deployment and bust stale stylesheet caches
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DDB_BUILD: ${{ github.sha }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile, writeFile } from "node:fs/promises";
-
-          const build = process.env.DDB_BUILD;
-          if (!build) throw new Error("DDB_BUILD was not provided.");
-
-          const indexPath = "dist/index.html";
-          let html = await readFile(indexPath, "utf8");
-          html = html.replace("__DDB_BUILD__", build);
-          html = html.replace(
-            /((?:src|href)="\/[^/]+\/assets\/[^"?]+\.(?:js|css))"/g,
-            (_, asset) => `${asset}?build=${build.slice(0, 12)}"`,
-          );
-
-          await writeFile(indexPath, html);
-          await writeFile("dist/build.json", `${JSON.stringify({ build })}\n`);
-          NODE
+        run: node scripts/stamp-build.mjs
 
       - name: Upload GitHub Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
