@@ -8,10 +8,11 @@
 import { useMemo, useState } from "react";
 import effectsJson from "../content/experimental/status-effects.json";
 import dummyCard from "../content/experimental/arena-dummy.json";
-import { clashData, type EngineCard } from "./clash-engine.ts";
+import experimentRegistry from "../content/experimental/experiments.json";
+import type { EngineCard } from "./clash-engine.ts";
 import { EngineSession, newSeed, type EngineAction, type EngineGame, type EngineSeat } from "./engine-session.ts";
 import { QuickDuelTable } from "./quick-duel-table";
-import { arenaCardDecor, type ArenaMoment } from "./arena-card-fx";
+import { arenaCardDecor, arenaMomentsFor } from "./arena-card-fx";
 import { cardMotionDisabled } from "./card-motion";
 import { navigate } from "./routing";
 import "./test-arena.css";
@@ -29,6 +30,8 @@ const EFFECTS = effectsJson.effects as { id: string; name: string; alias?: strin
 const REIMBURSE = effectsJson.keywords[0] as { name: string; alias?: string; summary: string };
 const DUMMY = dummyCard as unknown as EngineCard;
 const SIDES = [{ seat: 0 as const, label: "You" }, { seat: 1 as const, label: "Opponent" }];
+// The arena plays with every experimental update on: new cards in the Market, retunes, and summonable test cards.
+const ALL_EXPERIMENTS = experimentRegistry.modules.map((module) => module.id);
 const effectName = (id: string) => EFFECTS.find((effect) => effect.id === id)?.name ?? id;
 
 /** The opponent either plays to win (Certified) or stands still and takes everything (a practice dummy). */
@@ -40,18 +43,8 @@ const passive = {
 function newArenaSession(fights: boolean) {
   return new EngineSession({
     mode: "quick-duel", seed: newSeed(), fighters: [DUMMY.catalogId, DUMMY.catalogId], humanSeats: [0], rulesVersion: "arena",
-    table: { cardPool: null }, characterCards: [DUMMY], variant: "arena", ...(fights ? { difficulty: "certified" } : {}),
+    table: { cardPool: null, experiments: { modules: ALL_EXPERIMENTS } }, characterCards: [DUMMY], variant: "arena", ...(fights ? { difficulty: "certified" } : {}),
   }, fights ? undefined : passive);
-}
-
-/** This fighter's arena events, newest last, each with its log position so its moment plays once. */
-function momentsFor(game: EngineGame, seatId: number): ArenaMoment[] {
-  const list: ArenaMoment[] = [];
-  game.events.forEach((event, index) => {
-    if (event.type !== "arena-effect" || event.player !== seatId) return;
-    list.push({ index, kind: String(event.kind), effect: event.effect ? String(event.effect) : undefined, amount: event.amount === undefined ? undefined : Number(event.amount), stacks: event.stacks === undefined ? undefined : Number(event.stacks), reason: event.reason ? String(event.reason) : undefined });
-  });
-  return list.slice(-6);
 }
 
 export default function TestArena() {
@@ -73,7 +66,7 @@ export default function TestArena() {
       onSave={() => undefined}
       onExit={() => navigate({ page: "home" })}
       onRematch={() => setBattle((value) => value + 1)}
-      seatDecor={(seat) => arenaCardDecor((seat as ArenaSeat).arena, momentsFor(session.game, seat.id), seat.id === 0 ? "right" : "left")}
+      seatDecor={(seat) => arenaCardDecor((seat as ArenaSeat).arena, arenaMomentsFor(session.game, seat.id), seat.id === 0 ? "right" : "left")}
       nudge={nudge}
     />
     <button type="button" className="arena-console-tab" aria-expanded={open} aria-controls="arena-console" onClick={() => setOpen((value) => !value)}>{open ? "Hide console ▸" : "◂ Effects console"}</button>
@@ -87,7 +80,7 @@ function ArenaConsole({ game, fights, onFights, onChange, onNewBattle }: { game:
   const [query, setQuery] = useState("");
   const seats = game.players as ArenaSeat[];
   const act = (work: () => void) => { work(); onChange(); };
-  const cards = useMemo(() => (clashData().cards as EngineCard[]).filter((card) => card.cardType !== "Character" && !card.catalogId.startsWith("DDB-B")), []);
+  const cards = useMemo(() => ((game as unknown as { data: { cards: EngineCard[] } }).data.cards).filter((card) => card.cardType !== "Character" && !card.catalogId.startsWith("DDB-B")), []);
   const found = query.trim().length >= 2 ? cards.filter((card) => card.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8) : [];
   const hitter = target === 1 ? 0 : 1;
 

@@ -1,21 +1,41 @@
 # Paperwork module (v1.7): card build list
 
-Status: **approved for drafting, not for the canonical catalog.** This is the hand-off list for building the status-effect
-cards and the v1.7 balance retunes. It merges our 37 arena proposals with the v1.7 card, rules and balance audit
-(see `docs/v1.7-audit-response.md` for what was adopted, changed or rejected, and why).
+Status: **built as experimental updates, switchable in game.** Every card and change below is playable now: open the
+match setup and use **Experimental updates** to switch on a module, then open **Review the cards** to switch single cards
+or changes off. Each module and each card can be judged on its own; nothing touches the canonical catalog until it is
+approved and promoted (one card at a time, per the project rule). The Test Arena (`#arena`) has everything on.
 
-Everything here is written against:
-- the current catalog, **v2.3, 597 entries** (`app/data/cards.json`);
-- the status rules in `docs/status-effects-rules.md`, including its **guardrails (section 6)**.
+| Module (`content/experimental/experiments.json`) | What it switches on | Data |
+|---|---|---|
+| `status-effects` | the 13 statuses, Reimburse, the guardrails, Denied's discard-or-cancel | `status-effects.json`, `engine/arena-rules.mjs` |
+| `paperwork-cards` | Part A1 to A3: 30 cards, 4 Combos, 3 Locations (needs `status-effects`) | `experimental-cards.json` (group `paperwork`) |
+| `support-cards` | Part A4: 12 support cards (needs `status-effects`) | `experimental-cards.json` (group `support`) |
+| `retunes-draw` | Part B1: 14 retunes | `retunes.json` (group `draw`) |
+| `retunes-fortress` | Part B2: 12 retunes (their Barrier / Static Shock riders need `status-effects`) | `retunes.json` (group `fortress`) |
 
-Every new card can already be tried in the Test Arena (`#arena`) with **Put on now** or **Load onto next Hit**.
+**Test-version notes.** Where the built version differs from the text below, the data carries an `engineNote`, and the
+setup panel shows it under the card. The notable ones:
+- **Paper Trail** leaves out the Flow draw rider.
+- The three **Locations** leave out their Scene Change Triggers, and Archive Basement also leaves out its On Reveal.
+- **Carbon Copy** draws first, then puts back.
+- **Archive Dive** has no Barrier rider yet.
+- **Sensei's Advice** destroys a Junk card if you have one (not optional).
+- **Sensei's Disapproving Stare** only changes cost.
+- **Naihanchi** gives +1 to your next Attack in any zone and has no Barrier rider yet.
+- **Dojo Door's** "use Flow" means no Flow draw.
+
+Everything is written against the current catalog, **v2.3, 597 entries** (`app/data/cards.json`), and the status rules in
+`docs/status-effects-rules.md`, including its **guardrails (section 6)**. The v1.7 audit merge is explained in
+`docs/v1.7-audit-response.md`.
 
 ---
 
 ## 0. Brief for whoever builds these
 
-1. **Where they go.** Put new cards in `content/experimental/paperwork-cards.json` (same record shape as `app/data/cards.json`),
-   never straight into `app/data/cards.json` or `content/cards.json`. The module stays behind the arena variant until it is approved.
+1. **Where they go.** New cards live in `content/experimental/experimental-cards.json` (each entry: `group`, a `card` record in
+   the shape of `app/data/cards.json`, structured `effects`, and `requirements` for Combos); retunes live in
+   `content/experimental/retunes.json` (`patch` plus replacement `effects`). Never edit `app/data/cards.json` or
+   `content/cards.json` for these. `tests/experiments.test.mjs` plays them in real games.
 2. **One record per card**, so each card can be reviewed and approved on its own. Do not bulk-rewrite existing cards: the
    retunes in Part B are delivered as one proposed record each, with the current text alongside.
 3. **IDs.** New cards use provisional IDs `DDB-<TYPE>-PPR-NNN` ("PPR" = Paperwork module). Type codes match the catalog:
@@ -101,7 +121,7 @@ Every new card can already be tried in the Test Arena (`#arena`) with **Put on n
 | 31 | DDB-CMB-PPR-001 | **Slip and Seal** | 5 | Standard | Requirement: Wet Floor a fighter, then Hit them with a Low Attack in the same turn. Payoff: Laminate them, then draw 1 card and discard 1 card. | *The floor was slippery. The paperwork was permanent.* |
 | 32 | DDB-CMB-PPR-002 | **Inkfire** | 5 | Advanced | Requirement: Hit a fighter who has both Ink Blot and Scorch. Payoff: their Ink Blot and Scorch each deal their Honor damage now, then remove 1 Ink Blot and 1 Scorch. | *Toxic, flammable, and still awaiting approval.* |
 | 33 | DDB-CMB-PPR-003 | **Red Tape Bonfire** | 4 | Standard | Requirement: Hit a fighter who has Red Tape. Payoff: remove up to 2 Red Tape from them and Scorch them ×1 per stack removed. If you removed 2, draw 1 card, then discard 1 card. | *The fastest way through bureaucracy is apparently arson.* |
-| 34 | DDB-CMB-PPR-004 | **Paper Trail** | 4 | Basic | Requirement: two different Attacks you play this turn Hit the same fighter. Payoff: Paper Cut that fighter ×2. If the second Attack used Flow, draw 1 card. | *Every hit leaves a record.* |
+| 34 | DDB-CMB-PPR-004 | **Paper Trail** | 4 | Basic | Requirement: two Attacks you play this turn Hit the same fighter. Payoff: Paper Cut that fighter ×2. *(The audit's Flow draw rider is left out of the test version.)* | *Every hit leaves a record.* |
 
 ### A3. Locations (3)
 
@@ -185,10 +205,9 @@ Some guy named Steve (DDB-CHR-CORE-033), Venue Val (DDB-CHR-CORE-039) and Coach 
    `Sustain`, `Flow`, `Deck-Thin`, `Combo`).
 3. **Combo requirements**: each new Combo also needs a structured entry in `content/combo-requirements.json` so the engine can check it.
 
-## Part D: rules tasks (need the owner's call; not for the card builder)
-1. **Market access guardrail.** The audit proposes two "Support slots" in the seven-card row that stay one extra refill, or a
-   lighter "pay 1 extra Focus to look at the top 3 Market cards and buy one" once per turn. Note that v2.3 already keeps the row
-   between rounds (Market Mercy only refreshes it when nobody buys), so the problem is smaller than the audit assumed.
+## Part D: rules tasks
+1. **Market access guardrail: not adopted** (owner decision 92). The owner played with Market Scramble on and off and found
+   it a matter of taste, so the Market stays as it is and Market Scramble stays an optional house rule.
 2. **Promote the status glossary** into `content/dojo-game.json` and `content/rules.json` and the real engine once the arena
    numbers are signed off (`docs/status-effects-rules.md`, section 5).
 3. **Matchup testing** with the simulator: the audit's scenarios A–E (Starter vs Fortress, Draw vs Pressure, Status vs Tank,

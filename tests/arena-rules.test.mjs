@@ -33,7 +33,9 @@ const withAttack = (session) => { const game = session.game; const card = game.c
 
 test("only the arena variant builds an ArenaGame; a normal session is untouched", () => {
   assert.ok(arena().game instanceof ArenaGame);
+  assert.ok(arena().game.statusEffectsEnabled);
   assert.ok(!(arena(11, null).game instanceof ArenaGame));
+  assert.ok(!arena(11, null).game.statusEffectsEnabled);
 });
 
 test("Laminated: no Attacks, no Defense cards, Speed -2, and the first Hit tears it for +2", () => {
@@ -85,7 +87,7 @@ test("Wet Floor lowers Speed by 2 and DEF by 1 through the status channel", () =
   assert.equal(game.statusValue(me, "modifyDefense"), def - 1);
 });
 
-test("Denied voids the next card played: it is discarded, no Attack happens, the stamp is used up", () => {
+test("Denied on an Attack: cancel it (void) or discard another card to keep it; the stamp is used up either way", () => {
   const session = arena(7);
   assert.ok(until(session, atYell));
   const game = session.game; const me = game.players[0];
@@ -93,9 +95,44 @@ test("Denied voids the next card played: it is discarded, no Attack happens, the
   game.applyArenaEffect(me, "denied");
   const attacks = game.events.filter((event) => event.type === "attack").length;
   assert.ok(session.act({ type: "play-attack", playerId: 0, cardId: card.instanceId }));
-  assert.ok(me.discard.includes(card));
+  assert.equal(game.pendingChoice?.kind, "denied-attack");
+  assert.ok(game.pendingChoice.options.some((option) => option.id === "cancel"));
+  assert.ok(session.choose("cancel"));
+  assert.ok(me.discard.includes(card), "a cancelled Attack is void and discarded");
   assert.equal(game.events.filter((event) => event.type === "attack").length, attacks);
   assert.equal(game.arenaEffect(me, "denied"), null);
+  assert.equal(events(game, "denied").length, 1);
+});
+
+test("Denied on an Attack: paying a discard keeps the Attack", () => {
+  const session = arena(7);
+  assert.ok(until(session, atYell));
+  const game = session.game; const me = game.players[0];
+  const card = withAttack(session);
+  game.applyArenaEffect(me, "denied");
+  assert.ok(session.act({ type: "play-attack", playerId: 0, cardId: card.instanceId }));
+  const pay = game.pendingChoice.options.find((option) => option.id.startsWith("discard:"));
+  assert.ok(pay, "another card in hand can pay");
+  const paidId = pay.id.slice("discard:".length);
+  assert.ok(session.choose(pay.id));
+  assert.ok(me.discard.some((entry) => entry.instanceId === paidId), "the paid card is discarded");
+  assert.equal(game.arenaEffect(me, "denied"), null);
+  assert.equal(events(game, "denied-paid").length, 1);
+  assert.ok(until(session, (s) => s.game.events.some((event) => event.type === "attack" && event.card === card.catalogId && event.attacker === 0)), "the Attack went ahead");
+});
+
+test("Denied voids a non-Attack card outright", () => {
+  const session = arena(7);
+  assert.ok(until(session, atYell));
+  const game = session.game; const me = game.players[0];
+  const kata = game.cardInstance(game.data.cards.find((entry) => entry.subtype === "Kata"));
+  me.hand.push(kata);
+  game.applyArenaEffect(me, "denied");
+  const action = session.legalFor(0).find((entry) => entry.type === "play-card" && entry.cardId === kata.instanceId);
+  assert.ok(action);
+  assert.ok(session.act(action));
+  assert.ok(me.discard.includes(kata));
+  assert.equal(game.pendingChoice?.kind === "denied-attack", false);
   assert.equal(events(game, "denied").length, 1);
 });
 

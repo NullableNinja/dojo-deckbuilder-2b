@@ -5,7 +5,9 @@
  * ids, labels, defaults and parameters. Nothing here knows a card by name.
  */
 
-export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "balancedMarket", "houseRules", "cardPool"]);
+import { normaliseExperimentsOption } from "./experiments.mjs";
+
+export const TABLE_OPTION_IDS = Object.freeze(["tempo", "locations", "balancedMarket", "houseRules", "cardPool", "experiments"]);
 
 function optionDefinitions(definition) {
   const declared = Array.isArray(definition?.tableOptions) ? definition.tableOptions : [];
@@ -72,6 +74,9 @@ export function resolveTableOptions(definition, requested = {}) {
   // tables without a pool stay exactly as they were before pools existed.
   const cardPool = resolveCardPool(requested?.cardPool);
   if (cardPool) options.cardPool = cardPool;
+  // Experiments (engine/experiments.mjs) are recorded only when some are on, for the same reason.
+  const experiments = normaliseExperimentsOption(requested?.experiments);
+  if (experiments) options.experiments = experiments;
   return options;
 }
 

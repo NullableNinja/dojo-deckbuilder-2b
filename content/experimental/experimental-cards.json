@@ -1,0 +1,3820 @@
+{
+  "$comment": "Experimental cards (engine/experiments.mjs). Each entry: group (the module that adds it), card (a catalog record), effects (structured effects; status.* actions are resolved by engine/arena-rules.mjs), and for Combos requirements. engineNote says where this test version differs from docs/arena-card-proposals.md.",
+  "schemaVersion": 1,
+  "rulesVersion": "v1.7-draft",
+  "cards": [
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-hot-coffee-spill",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-001",
+          "Card Name": "Hot Coffee Spill",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Your next Attack this turn, if it Hits, Scorches the target ×1. If the target was already Scorched, draw 1 card, then discard 1 card.",
+          "Flavor Text": "The meeting was too calm. The coffee fixed that.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Hot Coffee Spill",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Your next Attack this turn, if it Hits, Scorches the target ×1. If the target was already Scorched, draw 1 card, then discard 1 card.",
+        "flavorText": "The meeting was too calm. The coffee fixed that.",
+        "tags": [
+          "Kata",
+          "Scorch",
+          "Status",
+          "Cycle"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9001,
+        "catalogId": "DDB-KAT-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-hot-coffee-arm",
+          "trigger": "onPlay",
+          "action": "status.arm",
+          "status": "burn",
+          "stacks": 1,
+          "cycleIf": {
+            "targetHasStatus": "burn"
+          }
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-toaster-uppercut",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-001",
+          "Card Name": "Toaster Uppercut",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "High",
+          "Timing": "Turn",
+          "Rules Text": "On Hit, Scorch the target ×1. If they were already Scorched, Scorch them ×2 instead.",
+          "Flavor Text": "Golden brown on both sides.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Toaster Uppercut",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "High",
+        "timing": "Turn",
+        "rulesText": "On Hit, Scorch the target ×1. If they were already Scorched, Scorch them ×2 instead.",
+        "flavorText": "Golden brown on both sides.",
+        "tags": [
+          "Punch",
+          "Hand",
+          "Scorch",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "4"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9002,
+        "catalogId": "DDB-ATK-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-toaster-double",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "burn",
+          "stacks": 2,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "burn"
+            }
+          ]
+        },
+        {
+          "id": "ppr-toaster-single",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "burn",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "notIncludes",
+              "value": "burn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-burn-after-reading",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-RIT-PPR-001",
+          "Card Name": "Burn After Reading",
+          "Card Type": "Item",
+          "Subtype": "Reaction Item",
+          "Category": "Reaction Item",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Reaction",
+          "Rules Text": "Reaction. After an opponent declares an Attack targeting you: if you Block that Attack, Scorch the attacker ×1, then draw 1 card and discard 1 card.",
+          "Flavor Text": "The warning was printed in very small, very hot type.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Burn After Reading",
+        "cardType": "Item",
+        "subtype": "Reaction Item",
+        "category": "Reaction Item",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Reaction",
+        "rulesText": "Reaction. After an opponent declares an Attack targeting you: if you Block that Attack, Scorch the attacker ×1, then draw 1 card and discard 1 card.",
+        "flavorText": "The warning was printed in very small, very hot type.",
+        "tags": [
+          "Reaction",
+          "Scorch",
+          "Status",
+          "Counter"
+        ],
+        "stats": {
+          "Guard": "0"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9003,
+        "catalogId": "DDB-RIT-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-burn-after-reading",
+          "trigger": "onAttackDeclared",
+          "action": "status.apply",
+          "status": "burn",
+          "stacks": 1,
+          "target": "opponent",
+          "whenBlocked": true,
+          "cycle": true,
+          "conditions": [
+            {
+              "kind": "incomingAttackTargetsSelf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-leaky-fountain-pen",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-WPN-PPR-001",
+          "Card Name": "Leaky Fountain Pen",
+          "Card Type": "Item",
+          "Subtype": "Weapon",
+          "Category": "Weapon",
+          "Focus Cost": 5,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Your first Attack each turn gets +1 Attack Power. If that Attack Hits, Ink Blot the target ×1.",
+          "Flavor Text": "Signed, sealed, smudged.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Leaky Fountain Pen",
+        "cardType": "Item",
+        "subtype": "Weapon",
+        "category": "Weapon",
+        "fpCost": 5,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Your first Attack each turn gets +1 Attack Power. If that Attack Hits, Ink Blot the target ×1.",
+        "flavorText": "Signed, sealed, smudged.",
+        "tags": [
+          "Weapon",
+          "Ink Blot",
+          "Status"
+        ],
+        "stats": {
+          "Attack Bonus": "1",
+          "Hands": "1"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9004,
+        "catalogId": "DDB-WPN-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-pen-first-attack",
+          "effect": "combat.modifyAttackPower",
+          "trigger": "onAttackDeclared",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "firstAttackThisTurn",
+              "operator": "eq",
+              "value": true
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "modifyAttackPower"
+        },
+        {
+          "id": "ppr-pen-ink",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "poison",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "firstAttackThisTurn",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-toner-cloud",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-001",
+          "Card Name": "Toner Cloud",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Yell: Ink Blot an opponent ×2. You lose 1 HP.",
+          "Flavor Text": "The copier jammed, and everyone became part of the document.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Toner Cloud",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Yell: Ink Blot an opponent ×2. You lose 1 HP.",
+        "flavorText": "The copier jammed, and everyone became part of the document.",
+        "tags": [
+          "Consumable",
+          "Ink Blot",
+          "Status"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9005,
+        "catalogId": "DDB-CON-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-toner-ink",
+          "trigger": "onPlay",
+          "action": "status.apply",
+          "status": "poison",
+          "stacks": 2,
+          "target": "opponent"
+        },
+        {
+          "id": "ppr-toner-cost",
+          "trigger": "onPlay",
+          "action": "status.loseHp",
+          "target": "self",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-correction-fluid",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-002",
+          "Card Name": "Correction Fluid",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Anytime",
+          "Rules Text": "Anytime: remove all Ink Blot from yourself, then recover 2 HP. Once per turn.",
+          "Flavor Text": "Mistakes were made. Mistakes were covered.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Sustain"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Correction Fluid",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Anytime",
+        "rulesText": "Anytime: remove all Ink Blot from yourself, then recover 2 HP. Once per turn.",
+        "flavorText": "Mistakes were made. Mistakes were covered.",
+        "tags": [
+          "Consumable",
+          "Ink Blot",
+          "Sustain"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9006,
+        "catalogId": "DDB-CON-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-correction-clean",
+          "trigger": "onPlay",
+          "action": "status.remove",
+          "status": "poison",
+          "amount": "all",
+          "target": "self",
+          "conditions": [
+            {
+              "kind": "oncePerTurn"
+            }
+          ]
+        },
+        {
+          "id": "ppr-correction-heal",
+          "trigger": "onPlay",
+          "action": "status.heal",
+          "target": "self",
+          "amount": 2,
+          "conditions": [
+            {
+              "kind": "oncePerTurn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-laminating-press",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-002",
+          "Card Name": "Laminating Press",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Your next Attack this turn, if it Hits, Laminates the target.",
+          "Flavor Text": "Permanent record.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Laminating Press",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Your next Attack this turn, if it Hits, Laminates the target.",
+        "flavorText": "Permanent record.",
+        "tags": [
+          "Kata",
+          "Laminate",
+          "Status",
+          "Control"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9007,
+        "catalogId": "DDB-KAT-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-laminating-press-arm",
+          "trigger": "onPlay",
+          "action": "status.arm",
+          "status": "freeze",
+          "stacks": 1
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-cold-storage-kick",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-002",
+          "Card Name": "Cold Storage Kick",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "Low",
+          "Timing": "Turn",
+          "Rules Text": "If this Hits a target with Wet Floor, remove their Wet Floor and Laminate them.",
+          "Flavor Text": "Slip, then seal.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Cold Storage Kick",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "Low",
+        "timing": "Turn",
+        "rulesText": "If this Hits a target with Wet Floor, remove their Wet Floor and Laminate them.",
+        "flavorText": "Slip, then seal.",
+        "tags": [
+          "Kick",
+          "Leg",
+          "Laminate",
+          "Wet Floor",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9008,
+        "catalogId": "DDB-ATK-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-cold-storage-seal",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "freeze",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "wetfloor"
+            }
+          ]
+        },
+        {
+          "id": "ppr-cold-storage-dry",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "wetfloor",
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "wetfloor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-laminate-ripper",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-003",
+          "Card Name": "Laminate Ripper",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Mid",
+          "Timing": "Turn",
+          "Rules Text": "+1 Attack Power against a Laminated target (the tear's +2 still applies).",
+          "Flavor Text": "Peel here.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Laminate Ripper",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Mid",
+        "timing": "Turn",
+        "rulesText": "+1 Attack Power against a Laminated target (the tear's +2 still applies).",
+        "flavorText": "Peel here.",
+        "tags": [
+          "Hand",
+          "Laminate",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9009,
+        "catalogId": "DDB-ATK-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-ripper-power",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "freeze"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-industrial-stapler",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-GEA-PPR-001",
+          "Card Name": "Industrial Stapler",
+          "Card Type": "Item",
+          "Subtype": "Gear",
+          "Category": "Gear",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Exhaust after you Block an Attack: Staple the attacker. Ready this during your next Initiate.",
+          "Flavor Text": "Holds up to 200 sheets and one martial artist.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter",
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Industrial Stapler",
+        "cardType": "Item",
+        "subtype": "Gear",
+        "category": "Gear",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Exhaust after you Block an Attack: Staple the attacker. Ready this during your next Initiate.",
+        "flavorText": "Holds up to 200 sheets and one martial artist.",
+        "tags": [
+          "Gear",
+          "Exhaust",
+          "Stapled",
+          "Status",
+          "Counter"
+        ],
+        "stats": {
+          "Slot": "Accessory"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9010,
+        "catalogId": "DDB-GEA-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-stapler-pin",
+          "trigger": "onBlock",
+          "action": "status.apply",
+          "status": "stapled",
+          "stacks": 1,
+          "target": "opponent"
+        },
+        {
+          "id": "ppr-stapler-exhaust",
+          "effect": "equipment.exhaust",
+          "trigger": "onBlock",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "equipment.structured",
+          "action": "exhaust"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-pinning-stance",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEF-PPR-001",
+          "Card Name": "Pinning Stance",
+          "Card Type": "Technique",
+          "Subtype": "Defense",
+          "Category": "Defense",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Reaction",
+          "Rules Text": "If this Blocks, Staple the attacker.",
+          "Flavor Text": "Stay right there.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter",
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Pinning Stance",
+        "cardType": "Technique",
+        "subtype": "Defense",
+        "category": "Defense",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Reaction",
+        "rulesText": "If this Blocks, Staple the attacker.",
+        "flavorText": "Stay right there.",
+        "tags": [
+          "Stance",
+          "Stapled",
+          "Status"
+        ],
+        "stats": {
+          "Guard": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9011,
+        "catalogId": "DDB-DEF-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-pinning-stance",
+          "trigger": "onBlock",
+          "action": "status.apply",
+          "status": "stapled",
+          "stacks": 1,
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-form-27-b",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-003",
+          "Card Name": "Form 27-B",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Yell: Red Tape an opponent ×2.",
+          "Flavor Text": "Request for Permission to Request Permission.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Form 27-B",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Yell: Red Tape an opponent ×2.",
+        "flavorText": "Request for Permission to Request Permission.",
+        "tags": [
+          "Consumable",
+          "Red Tape",
+          "Status",
+          "Control"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9012,
+        "catalogId": "DDB-CON-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-form-27b",
+          "trigger": "onPlay",
+          "action": "status.apply",
+          "status": "redtape",
+          "stacks": 2,
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-bureaucratic-wall",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEQ-PPR-001",
+          "Card Name": "Bureaucratic Wall",
+          "Card Type": "Item",
+          "Subtype": "Defense Equipment",
+          "Category": "Armor",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Equip",
+          "Rules Text": "Occupies one hand. +1 DEF against all zones. Once per round, when an opponent buys a Market card, Red Tape them ×1.",
+          "Flavor Text": "Every purchase requires a signature. Several.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Fortress",
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Bureaucratic Wall",
+        "cardType": "Item",
+        "subtype": "Defense Equipment",
+        "category": "Armor",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Equip",
+        "rulesText": "Occupies one hand. +1 DEF against all zones. Once per round, when an opponent buys a Market card, Red Tape them ×1.",
+        "flavorText": "Every purchase requires a signature. Several.",
+        "tags": [
+          "Armor",
+          "Red Tape",
+          "Status",
+          "Control"
+        ],
+        "stats": {
+          "Guard": "1",
+          "Slot": "1 Hand"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9013,
+        "catalogId": "DDB-DEQ-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-wall-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "ppr-wall-red-tape",
+          "trigger": "passive",
+          "action": "status.whenOpponentBuys",
+          "status": "redtape",
+          "stacks": 1
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-rubber-stamp-of-refusal",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-RIT-PPR-002",
+          "Card Name": "Rubber Stamp of Refusal",
+          "Card Type": "Item",
+          "Subtype": "Reaction Item",
+          "Category": "Reaction Item",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Reaction",
+          "Rules Text": "Reaction. Destroy this after an opponent declares an Attack targeting you: Deny that opponent.",
+          "Flavor Text": "No.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Rubber Stamp of Refusal",
+        "cardType": "Item",
+        "subtype": "Reaction Item",
+        "category": "Reaction Item",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Reaction",
+        "rulesText": "Reaction. Destroy this after an opponent declares an Attack targeting you: Deny that opponent.",
+        "flavorText": "No.",
+        "tags": [
+          "Reaction",
+          "Denied",
+          "Status",
+          "Control"
+        ],
+        "stats": {
+          "Guard": "0"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9014,
+        "catalogId": "DDB-RIT-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-rubber-stamp",
+          "trigger": "onAttackDeclared",
+          "action": "status.apply",
+          "status": "denied",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "incomingAttackTargetsSelf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-appeal-rejected",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-004",
+          "Card Name": "Appeal Rejected",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "High",
+          "Timing": "Turn",
+          "Rules Text": "If this Hits a fighter who Blocked one of your Attacks this round, Deny them.",
+          "Flavor Text": "Your objection has been noted and shredded.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Appeal Rejected",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "High",
+        "timing": "Turn",
+        "rulesText": "If this Hits a fighter who Blocked one of your Attacks this round, Deny them.",
+        "flavorText": "Your objection has been noted and shredded.",
+        "tags": [
+          "Punch",
+          "Hand",
+          "Denied",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9015,
+        "catalogId": "DDB-ATK-PPR-004",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-appeal-rejected",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "denied",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetBlockedThisRound",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-sharp-memo",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-005",
+          "Card Name": "Sharp Memo",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "Mid",
+          "Timing": "Turn",
+          "Rules Text": "On Hit, Paper Cut the target ×1.",
+          "Flavor Text": "Fresh off the printer.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Sharp Memo",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "Mid",
+        "timing": "Turn",
+        "rulesText": "On Hit, Paper Cut the target ×1.",
+        "flavorText": "Fresh off the printer.",
+        "tags": [
+          "Hand",
+          "Paper Cut",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9016,
+        "catalogId": "DDB-ATK-PPR-005",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-sharp-memo",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "papercut",
+          "stacks": 1,
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-envelope-edge",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-WPN-PPR-002",
+          "Card Name": "Envelope Edge",
+          "Card Type": "Item",
+          "Subtype": "Weapon",
+          "Category": "Weapon",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Once per turn, the first time your Attack Hits, Paper Cut the target ×1.",
+          "Flavor Text": "Lick it, and regret it.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Envelope Edge",
+        "cardType": "Item",
+        "subtype": "Weapon",
+        "category": "Weapon",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Once per turn, the first time your Attack Hits, Paper Cut the target ×1.",
+        "flavorText": "Lick it, and regret it.",
+        "tags": [
+          "Weapon",
+          "Paper Cut",
+          "Status"
+        ],
+        "stats": {
+          "Attack Bonus": "1",
+          "Hands": "1"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9017,
+        "catalogId": "DDB-WPN-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-envelope-edge",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "papercut",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "oncePerTurn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-first-aid-tape",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-004",
+          "Card Name": "First-Aid Tape",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Anytime",
+          "Rules Text": "Anytime: remove up to 2 Paper Cut from yourself, then draw 1 card.",
+          "Flavor Text": "Department-issued. Beige.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Sustain"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "First-Aid Tape",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Anytime",
+        "rulesText": "Anytime: remove up to 2 Paper Cut from yourself, then draw 1 card.",
+        "flavorText": "Department-issued. Beige.",
+        "tags": [
+          "Consumable",
+          "Paper Cut",
+          "Sustain",
+          "Draw"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9018,
+        "catalogId": "DDB-CON-PPR-004",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-first-aid-remove",
+          "trigger": "onPlay",
+          "action": "status.remove",
+          "status": "papercut",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "id": "ppr-first-aid-draw",
+          "trigger": "onPlay",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-mop-bucket",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-005",
+          "Card Name": "Mop Bucket",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Ascend",
+          "Rules Text": "Ascend: Wet Floor an opponent.",
+          "Flavor Text": "Caution sign sold separately.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Mop Bucket",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Ascend",
+        "rulesText": "Ascend: Wet Floor an opponent.",
+        "flavorText": "Caution sign sold separately.",
+        "tags": [
+          "Consumable",
+          "Wet Floor",
+          "Status"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9019,
+        "catalogId": "DDB-CON-PPR-005",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-mop-bucket",
+          "trigger": "onPlay",
+          "action": "status.apply",
+          "status": "wetfloor",
+          "stacks": 1,
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-slip-sweep",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-006",
+          "Card Name": "Slip Sweep",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Low",
+          "Timing": "Turn",
+          "Rules Text": "+2 Attack Power against a target with Wet Floor. If this Hits, the target loses Tempo.",
+          "Flavor Text": "Physics did most of the work.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure",
+          "Momentum"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Slip Sweep",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Low",
+        "timing": "Turn",
+        "rulesText": "+2 Attack Power against a target with Wet Floor. If this Hits, the target loses Tempo.",
+        "flavorText": "Physics did most of the work.",
+        "tags": [
+          "Kick",
+          "Leg",
+          "Sweep",
+          "Wet Floor",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9020,
+        "catalogId": "DDB-ATK-PPR-006",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-slip-sweep-power",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 2,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "wetfloor"
+            }
+          ]
+        },
+        {
+          "id": "ppr-slip-sweep-tempo",
+          "trigger": "onHit",
+          "action": "status.loseTempo",
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-file-in-triplicate",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEF-PPR-002",
+          "Card Name": "File in Triplicate",
+          "Card Type": "Technique",
+          "Subtype": "Defense",
+          "Category": "Defense",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Reaction",
+          "Rules Text": "If this Blocks, gain Barrier ×2.",
+          "Flavor Text": "One for you, one for them, one for the cabinet.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Fortress",
+          "Counter"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "File in Triplicate",
+        "cardType": "Technique",
+        "subtype": "Defense",
+        "category": "Defense",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Reaction",
+        "rulesText": "If this Blocks, gain Barrier ×2.",
+        "flavorText": "One for you, one for them, one for the cabinet.",
+        "tags": [
+          "Guard",
+          "Barrier",
+          "Status"
+        ],
+        "stats": {
+          "Guard": "1"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9021,
+        "catalogId": "DDB-DEF-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-triplicate",
+          "trigger": "onBlock",
+          "action": "status.apply",
+          "status": "barrier",
+          "stacks": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-accordion-folder",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEQ-PPR-002",
+          "Card Name": "Accordion Folder",
+          "Card Type": "Item",
+          "Subtype": "Defense Equipment",
+          "Category": "Armor",
+          "Focus Cost": 5,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Equip",
+          "Rules Text": "Occupies one hand. At the start of your turn, gain Barrier ×1 (this cannot take you above 2). If you began the turn with no Barrier, draw 1 card, then discard 1 card.",
+          "Flavor Text": "Expands under pressure.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Fortress",
+          "Flow"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Accordion Folder",
+        "cardType": "Item",
+        "subtype": "Defense Equipment",
+        "category": "Armor",
+        "fpCost": 5,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Equip",
+        "rulesText": "Occupies one hand. At the start of your turn, gain Barrier ×1 (this cannot take you above 2). If you began the turn with no Barrier, draw 1 card, then discard 1 card.",
+        "flavorText": "Expands under pressure.",
+        "tags": [
+          "Armor",
+          "Barrier",
+          "Status",
+          "Cycle"
+        ],
+        "stats": {
+          "Guard": "1",
+          "Slot": "1 Hand"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9022,
+        "catalogId": "DDB-DEQ-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-folder-draw",
+          "trigger": "onInitiate",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "selfHasStatus",
+              "operator": "notIncludes",
+              "value": "barrier"
+            }
+          ]
+        },
+        {
+          "id": "ppr-folder-discard",
+          "trigger": "onInitiate",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "selfHasStatus",
+              "operator": "notIncludes",
+              "value": "barrier"
+            }
+          ]
+        },
+        {
+          "id": "ppr-folder-barrier",
+          "trigger": "onInitiate",
+          "action": "status.apply",
+          "status": "barrier",
+          "stacks": 1,
+          "target": "self",
+          "upTo": 2
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-carpet-shuffle",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-003",
+          "Card Name": "Carpet Shuffle",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Your next Attack this turn, if it Hits, Shocks the target. If the target had Tempo, draw 1 card, then discard 1 card.",
+          "Flavor Text": "Socks, wool carpet, intent.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Momentum",
+          "Control"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Carpet Shuffle",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Your next Attack this turn, if it Hits, Shocks the target. If the target had Tempo, draw 1 card, then discard 1 card.",
+        "flavorText": "Socks, wool carpet, intent.",
+        "tags": [
+          "Kata",
+          "Static Shock",
+          "Status",
+          "Cycle"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9023,
+        "catalogId": "DDB-KAT-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-carpet-shuffle-arm",
+          "trigger": "onPlay",
+          "action": "status.arm",
+          "status": "shock",
+          "stacks": 1,
+          "cycleIf": {
+            "targetHasTempo": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-photocopier-jam",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-007",
+          "Card Name": "Photocopier Jam",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "Mid",
+          "Timing": "Turn",
+          "Rules Text": "If this Hits a target with Tempo, Shock them and they lose their Tempo.",
+          "Flavor Text": "PC LOAD LETTER.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control",
+          "Momentum"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Photocopier Jam",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "Mid",
+        "timing": "Turn",
+        "rulesText": "If this Hits a target with Tempo, Shock them and they lose their Tempo.",
+        "flavorText": "PC LOAD LETTER.",
+        "tags": [
+          "Hand",
+          "Static Shock",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9024,
+        "catalogId": "DDB-ATK-PPR-007",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-photocopier-shock",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "shock",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasTempo",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "ppr-photocopier-tempo",
+          "trigger": "onHit",
+          "action": "status.loseTempo",
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasTempo",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-express-courier",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-006",
+          "Card Name": "Express Courier",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Ascend",
+          "Rules Text": "Ascend: gain Rush Order.",
+          "Flavor Text": "Absolutely, positively, by Honor.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Momentum"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Express Courier",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Ascend",
+        "rulesText": "Ascend: gain Rush Order.",
+        "flavorText": "Absolutely, positively, by Honor.",
+        "tags": [
+          "Consumable",
+          "Rush Order",
+          "Status"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9025,
+        "catalogId": "DDB-CON-PPR-006",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-express-courier",
+          "trigger": "onPlay",
+          "action": "status.apply",
+          "status": "haste",
+          "stacks": 1,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-overnight-delivery-kick",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-008",
+          "Card Name": "Overnight Delivery Kick",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "High",
+          "Timing": "Turn",
+          "Rules Text": "If you have Rush Order, this gets +1 Attack Power. If it Hits, draw 1 card, then your Rush Order ends.",
+          "Flavor Text": "Signed for on arrival.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Momentum"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Overnight Delivery Kick",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "High",
+        "timing": "Turn",
+        "rulesText": "If you have Rush Order, this gets +1 Attack Power. If it Hits, draw 1 card, then your Rush Order ends.",
+        "flavorText": "Signed for on arrival.",
+        "tags": [
+          "Kick",
+          "Leg",
+          "Rush Order",
+          "Status",
+          "Draw"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9026,
+        "catalogId": "DDB-ATK-PPR-008",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-overnight-power",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "selfHasStatus",
+              "operator": "includes",
+              "value": "haste"
+            }
+          ]
+        },
+        {
+          "id": "ppr-overnight-draw",
+          "trigger": "onHit",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate"
+        },
+        {
+          "id": "ppr-overnight-end-rush",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "haste",
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-crumple-zone",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-009",
+          "Card Name": "Crumple Zone",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Low",
+          "Timing": "Turn",
+          "Rules Text": "On Hit, Dog-Ear the target ×1. If they were already Dog-Eared, draw 1 card, then discard 1 card.",
+          "Flavor Text": "Soft paper folds first.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Crumple Zone",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Low",
+        "timing": "Turn",
+        "rulesText": "On Hit, Dog-Ear the target ×1. If they were already Dog-Eared, draw 1 card, then discard 1 card.",
+        "flavorText": "Soft paper folds first.",
+        "tags": [
+          "Kick",
+          "Leg",
+          "Dog-Eared",
+          "Status",
+          "Cycle"
+        ],
+        "stats": {
+          "Attack Power": "3"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9027,
+        "catalogId": "DDB-ATK-PPR-009",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-crumple-draw",
+          "trigger": "onHit",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "brittle"
+            }
+          ]
+        },
+        {
+          "id": "ppr-crumple-discard",
+          "trigger": "onHit",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "brittle"
+            }
+          ]
+        },
+        {
+          "id": "ppr-crumple-dog-ear",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "brittle",
+          "stacks": 1,
+          "target": "opponent"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-paper-shredder",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-010",
+          "Card Name": "Paper Shredder",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 6,
+          "Focus Value": 1,
+          "Zone": "Mid",
+          "Timing": "Turn",
+          "Rules Text": "+1 Attack Power per Dog-Eared stack on the target (up to +2). If this Hits a Dog-Eared target, Paper Cut them ×1 and remove 1 Dog-Eared.",
+          "Flavor Text": "Cross-cut, for your safety.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Paper Shredder",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 6,
+        "focusValue": 1,
+        "zone": "Mid",
+        "timing": "Turn",
+        "rulesText": "+1 Attack Power per Dog-Eared stack on the target (up to +2). If this Hits a Dog-Eared target, Paper Cut them ×1 and remove 1 Dog-Eared.",
+        "flavorText": "Cross-cut, for your safety.",
+        "tags": [
+          "Hand",
+          "Dog-Eared",
+          "Paper Cut",
+          "Status"
+        ],
+        "stats": {
+          "Attack Power": "4"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9028,
+        "catalogId": "DDB-ATK-PPR-010",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-shredder-power",
+          "trigger": "onAttackDeclared",
+          "action": "status.powerPerStack",
+          "status": "brittle",
+          "amount": 1,
+          "max": 2
+        },
+        {
+          "id": "ppr-shredder-cut",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "papercut",
+          "stacks": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "brittle"
+            }
+          ]
+        },
+        {
+          "id": "ppr-shredder-uncrease",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "brittle",
+          "amount": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "brittle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-petty-cash-letter-opener",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-WPN-PPR-003",
+          "Card Name": "Petty Cash Letter Opener",
+          "Card Type": "Item",
+          "Subtype": "Weapon",
+          "Category": "Weapon",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Reimburse. (Once per round, when your Attack Hits for 2 or more damage, recover 1 HP.)",
+          "Flavor Text": "Every cut is an expense. Every expense is reimbursed.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Sustain",
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Petty Cash Letter Opener",
+        "cardType": "Item",
+        "subtype": "Weapon",
+        "category": "Weapon",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Reimburse. (Once per round, when your Attack Hits for 2 or more damage, recover 1 HP.)",
+        "flavorText": "Every cut is an expense. Every expense is reimbursed.",
+        "tags": [
+          "Weapon",
+          "Reimburse",
+          "Sustain"
+        ],
+        "stats": {
+          "Attack Bonus": "1",
+          "Hands": "1"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9029,
+        "catalogId": "DDB-WPN-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-letter-opener-reimburse",
+          "trigger": "passive",
+          "action": "status.reimburse"
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-expense-report-buckler",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEQ-PPR-003",
+          "Card Name": "Expense Report Buckler",
+          "Card Type": "Item",
+          "Subtype": "Defense Equipment",
+          "Category": "Armor",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Equip",
+          "Rules Text": "Occupies one hand. +1 DEF against all zones. Once per round, after you Block an Attack, recover 1 HP.",
+          "Flavor Text": "Itemised. Approved. Grudgingly.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Fortress",
+          "Sustain"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Expense Report Buckler",
+        "cardType": "Item",
+        "subtype": "Defense Equipment",
+        "category": "Armor",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Equip",
+        "rulesText": "Occupies one hand. +1 DEF against all zones. Once per round, after you Block an Attack, recover 1 HP.",
+        "flavorText": "Itemised. Approved. Grudgingly.",
+        "tags": [
+          "Armor",
+          "Sustain"
+        ],
+        "stats": {
+          "Guard": "1",
+          "Slot": "1 Hand"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9030,
+        "catalogId": "DDB-DEQ-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-buckler-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "ppr-buckler-heal",
+          "trigger": "onBlock",
+          "action": "status.heal",
+          "target": "self",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "oncePerRound"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-slip-and-seal",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CMB-PPR-001",
+          "Card Name": "Slip and Seal",
+          "Card Type": "Combo",
+          "Subtype": "Learned Combo",
+          "Category": "Combo",
+          "Focus Cost": 5,
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Combo",
+          "Rules Text": "Requirement: Wet Floor a fighter, then Hit them with a Low Attack in the same turn. Payoff: Laminate them, then draw 1 card and discard 1 card.",
+          "Flavor Text": "The floor was slippery. The paperwork was permanent.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Combo"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Slip and Seal",
+        "cardType": "Combo",
+        "subtype": "Learned Combo",
+        "category": "Combo",
+        "fpCost": 5,
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Combo",
+        "rulesText": "Requirement: Wet Floor a fighter, then Hit them with a Low Attack in the same turn. Payoff: Laminate them, then draw 1 card and discard 1 card.",
+        "flavorText": "The floor was slippery. The paperwork was permanent.",
+        "tags": [
+          "Learned Combo",
+          "Combo",
+          "Wet Floor",
+          "Laminate",
+          "Low"
+        ],
+        "stats": {
+          "Difficulty": "Standard"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Combo Deck",
+        "catalogOrder": 9031,
+        "catalogId": "DDB-CMB-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-slip-seal-laminate",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "freeze",
+          "stacks": 1,
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        },
+        {
+          "id": "ppr-slip-seal-draw",
+          "trigger": "onHit",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "combo.requirement"
+        },
+        {
+          "id": "ppr-slip-seal-discard",
+          "trigger": "onHit",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "combo.requirement"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "statusAppliedThisTurn",
+          "status": "wetfloor"
+        },
+        {
+          "kind": "currentCardMatches",
+          "family": "Attack",
+          "zone": "Low",
+          "hit": true
+        }
+      ],
+      "displayText": "Wet Floor a fighter, then Hit them with a Low Attack"
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-inkfire",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CMB-PPR-002",
+          "Card Name": "Inkfire",
+          "Card Type": "Combo",
+          "Subtype": "Learned Combo",
+          "Category": "Combo",
+          "Focus Cost": 5,
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Combo",
+          "Rules Text": "Requirement: Hit a fighter who has both Ink Blot and Scorch. Payoff: their Ink Blot and Scorch each deal their Honor damage now, then remove 1 Ink Blot and 1 Scorch.",
+          "Flavor Text": "Toxic, flammable, and still awaiting approval.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Combo"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Inkfire",
+        "cardType": "Combo",
+        "subtype": "Learned Combo",
+        "category": "Combo",
+        "fpCost": 5,
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Combo",
+        "rulesText": "Requirement: Hit a fighter who has both Ink Blot and Scorch. Payoff: their Ink Blot and Scorch each deal their Honor damage now, then remove 1 Ink Blot and 1 Scorch.",
+        "flavorText": "Toxic, flammable, and still awaiting approval.",
+        "tags": [
+          "Learned Combo",
+          "Combo",
+          "Ink Blot",
+          "Scorch",
+          "Status"
+        ],
+        "stats": {
+          "Difficulty": "Advanced"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Combo Deck",
+        "catalogOrder": 9032,
+        "catalogId": "DDB-CMB-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-inkfire-tick",
+          "trigger": "onHit",
+          "action": "status.tick",
+          "status": [
+            "poison",
+            "burn"
+          ],
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        },
+        {
+          "id": "ppr-inkfire-ink",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "poison",
+          "amount": 1,
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        },
+        {
+          "id": "ppr-inkfire-scorch",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "burn",
+          "amount": 1,
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "currentCardMatches",
+          "family": "Attack",
+          "hit": true
+        },
+        {
+          "kind": "targetHasStatus",
+          "statuses": [
+            "poison",
+            "burn"
+          ]
+        }
+      ],
+      "displayText": "Hit a fighter who has both Ink Blot and Scorch"
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-red-tape-bonfire",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CMB-PPR-003",
+          "Card Name": "Red Tape Bonfire",
+          "Card Type": "Combo",
+          "Subtype": "Learned Combo",
+          "Category": "Combo",
+          "Focus Cost": 4,
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Combo",
+          "Rules Text": "Requirement: Hit a fighter who has Red Tape. Payoff: remove up to 2 Red Tape from them and Scorch them ×1 per stack removed. If you removed 2, draw 1 card, then discard 1 card.",
+          "Flavor Text": "The fastest way through bureaucracy is apparently arson.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Combo"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Red Tape Bonfire",
+        "cardType": "Combo",
+        "subtype": "Learned Combo",
+        "category": "Combo",
+        "fpCost": 4,
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Combo",
+        "rulesText": "Requirement: Hit a fighter who has Red Tape. Payoff: remove up to 2 Red Tape from them and Scorch them ×1 per stack removed. If you removed 2, draw 1 card, then discard 1 card.",
+        "flavorText": "The fastest way through bureaucracy is apparently arson.",
+        "tags": [
+          "Learned Combo",
+          "Combo",
+          "Red Tape",
+          "Scorch",
+          "Control"
+        ],
+        "stats": {
+          "Difficulty": "Standard"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Combo Deck",
+        "catalogOrder": 9033,
+        "catalogId": "DDB-CMB-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-bonfire",
+          "trigger": "onHit",
+          "action": "status.convert",
+          "from": "redtape",
+          "to": "burn",
+          "max": 2,
+          "cycleAt": 2,
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "currentCardMatches",
+          "family": "Attack",
+          "hit": true
+        },
+        {
+          "kind": "targetHasStatus",
+          "statuses": [
+            "redtape"
+          ]
+        }
+      ],
+      "displayText": "Hit a fighter who has Red Tape"
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-paper-trail",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CMB-PPR-004",
+          "Card Name": "Paper Trail",
+          "Card Type": "Combo",
+          "Subtype": "Learned Combo",
+          "Category": "Combo",
+          "Focus Cost": 4,
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Combo",
+          "Rules Text": "Requirement: two Attacks you play this turn Hit the same fighter. Payoff: Paper Cut that fighter ×2.",
+          "Flavor Text": "Every hit leaves a record.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Combo"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Paper Trail",
+        "cardType": "Combo",
+        "subtype": "Learned Combo",
+        "category": "Combo",
+        "fpCost": 4,
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Combo",
+        "rulesText": "Requirement: two Attacks you play this turn Hit the same fighter. Payoff: Paper Cut that fighter ×2.",
+        "flavorText": "Every hit leaves a record.",
+        "tags": [
+          "Learned Combo",
+          "Combo",
+          "Attack",
+          "Paper Cut"
+        ],
+        "stats": {
+          "Difficulty": "Basic"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Combo Deck",
+        "catalogOrder": 9034,
+        "catalogId": "DDB-CMB-PPR-004",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-paper-trail",
+          "trigger": "onHit",
+          "action": "status.apply",
+          "status": "papercut",
+          "stacks": 2,
+          "target": "opponent",
+          "resolver": "combo.requirement"
+        }
+      ],
+      "engineNote": "The audit's extra rider (draw 1 if the second Attack used Flow) is left out of this test version.",
+      "requirements": [
+        {
+          "kind": "minimumAttackHits",
+          "amount": 2
+        },
+        {
+          "kind": "currentCardMatches",
+          "family": "Attack",
+          "hit": true
+        }
+      ],
+      "displayText": "Two of your Attacks Hit this turn"
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-server-room",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-LOC-PPR-001",
+          "Card Name": "Server Room",
+          "Card Type": "Location",
+          "Subtype": "Location",
+          "Category": "Location",
+          "Focus Cost": "—",
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Scene",
+          "Rules Text": "On Reveal: each fighter with Tempo loses it. Ongoing: Static Shock lasts one extra turn. A Hit of 2 or less does not tear Laminate.",
+          "Flavor Text": "The fans are loud and the tournament has entered maintenance mode.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [],
+        "rulesVersion": "v1.7-draft",
+        "name": "Server Room",
+        "cardType": "Location",
+        "subtype": "Location",
+        "category": "Location",
+        "fpCost": "—",
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Scene",
+        "rulesText": "On Reveal: each fighter with Tempo loses it. Ongoing: Static Shock lasts one extra turn. A Hit of 2 or less does not tear Laminate.",
+        "flavorText": "The fans are loud and the tournament has entered maintenance mode.",
+        "tags": [
+          "Location",
+          "Static Shock",
+          "Laminate"
+        ],
+        "stats": {
+          "Intensity": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Location Deck",
+        "catalogOrder": 9035,
+        "catalogId": "DDB-LOC-PPR-001",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-server-room-reveal",
+          "trigger": "onReveal",
+          "action": "status.loseTempo",
+          "target": "self"
+        },
+        {
+          "id": "ppr-server-room-shock",
+          "trigger": "statusRule",
+          "action": "status.rule",
+          "status": "shock",
+          "set": {
+            "duration": 2
+          }
+        },
+        {
+          "id": "ppr-server-room-laminate",
+          "trigger": "statusRule",
+          "action": "status.rule",
+          "status": "freeze",
+          "set": {
+            "tearMinDamage": 3
+          }
+        }
+      ],
+      "engineNote": "Scene Change Trigger from the audit draft left out; the Location changes the usual way."
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-break-room-sink",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-LOC-PPR-002",
+          "Card Name": "Break Room Sink",
+          "Card Type": "Location",
+          "Subtype": "Location",
+          "Category": "Location",
+          "Focus Cost": "—",
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Scene",
+          "Rules Text": "On Reveal: each fighter removes 1 Scorch from themselves. Ongoing: at Honor, Scorch loses a stack. Wet Floor lasts one extra round.",
+          "Flavor Text": "Someone left the faucet running. Someone else challenged the faucet.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [],
+        "rulesVersion": "v1.7-draft",
+        "name": "Break Room Sink",
+        "cardType": "Location",
+        "subtype": "Location",
+        "category": "Location",
+        "fpCost": "—",
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Scene",
+        "rulesText": "On Reveal: each fighter removes 1 Scorch from themselves. Ongoing: at Honor, Scorch loses a stack. Wet Floor lasts one extra round.",
+        "flavorText": "Someone left the faucet running. Someone else challenged the faucet.",
+        "tags": [
+          "Location",
+          "Scorch",
+          "Wet Floor",
+          "Sustain"
+        ],
+        "stats": {
+          "Intensity": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Location Deck",
+        "catalogOrder": 9036,
+        "catalogId": "DDB-LOC-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-sink-reveal",
+          "trigger": "onReveal",
+          "action": "status.remove",
+          "status": "burn",
+          "amount": 1,
+          "target": "self"
+        },
+        {
+          "id": "ppr-sink-scorch",
+          "trigger": "statusRule",
+          "action": "status.rule",
+          "status": "burn",
+          "set": {
+            "decayPerRound": 1
+          }
+        },
+        {
+          "id": "ppr-sink-wet",
+          "trigger": "statusRule",
+          "action": "status.rule",
+          "status": "wetfloor",
+          "set": {
+            "duration": 3
+          }
+        }
+      ],
+      "engineNote": "Scene Change Trigger from the audit draft left out; the Location changes the usual way."
+    },
+    {
+      "group": "paperwork",
+      "card": {
+        "id": "experimental-archive-basement",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-LOC-PPR-003",
+          "Card Name": "Archive Basement",
+          "Card Type": "Location",
+          "Subtype": "Location",
+          "Category": "Location",
+          "Focus Cost": "—",
+          "Focus Value": "—",
+          "Zone": "—",
+          "Timing": "Scene",
+          "Rules Text": "Ongoing: Ink Blot fades only every other Honor. The first time each round a player destroys a Junk card, they draw 1 card, then discard 1 card.",
+          "Flavor Text": "The dust is poisonous and the filing system is somehow excellent.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [],
+        "rulesVersion": "v1.7-draft",
+        "name": "Archive Basement",
+        "cardType": "Location",
+        "subtype": "Location",
+        "category": "Location",
+        "fpCost": "—",
+        "focusValue": "—",
+        "zone": "—",
+        "timing": "Scene",
+        "rulesText": "Ongoing: Ink Blot fades only every other Honor. The first time each round a player destroys a Junk card, they draw 1 card, then discard 1 card.",
+        "flavorText": "The dust is poisonous and the filing system is somehow excellent.",
+        "tags": [
+          "Location",
+          "Ink Blot",
+          "Deck Control"
+        ],
+        "stats": {
+          "Intensity": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Location Deck",
+        "catalogOrder": 9037,
+        "catalogId": "DDB-LOC-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "ppr-archive-ink",
+          "trigger": "statusRule",
+          "action": "status.rule",
+          "status": "poison",
+          "set": {
+            "decayEvery": 2
+          }
+        },
+        {
+          "id": "ppr-archive-draw",
+          "trigger": "onJunkDestroyed",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "oncePerRound"
+            }
+          ]
+        },
+        {
+          "id": "ppr-archive-discard",
+          "trigger": "onJunkDestroyed",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "oncePerRound"
+            }
+          ]
+        }
+      ],
+      "engineNote": "The audit draft's On Reveal (look at the top 2 cards) and Scene Change Trigger are left out of this test version."
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-margin-notes",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-007",
+          "Card Name": "Margin Notes",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 2,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Discard 1 card, then draw 2 cards. If you discarded a Junk card, destroy it and draw only 1 card instead.",
+          "Flavor Text": "The important part was underlined.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Flow",
+          "Deck-Thin"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Margin Notes",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 2,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Discard 1 card, then draw 2 cards. If you discarded a Junk card, destroy it and draw only 1 card instead.",
+        "flavorText": "The important part was underlined.",
+        "tags": [
+          "Consumable",
+          "Cycle",
+          "Deck-Thin",
+          "Draw"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9038,
+        "catalogId": "DDB-CON-PPR-007",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-margin-notes",
+          "trigger": "onPlay",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "ifJunk": {
+            "destroy": true,
+            "draw": 1
+          },
+          "otherwise": {
+            "draw": 2
+          }
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-index-finger-feng-shui",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-004",
+          "Card Name": "Index Finger Feng Shui",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Look at the top 5 cards of your deck. Put 1 into your hand and the rest on the bottom in any order.",
+          "Flavor Text": "The whole deck moved two inches and became spiritually organised.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Momentum"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Index Finger Feng Shui",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Look at the top 5 cards of your deck. Put 1 into your hand and the rest on the bottom in any order.",
+        "flavorText": "The whole deck moved two inches and became spiritually organised.",
+        "tags": [
+          "Kata",
+          "Tutor",
+          "Draw"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9039,
+        "catalogId": "DDB-KAT-PPR-004",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-feng-shui-look",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "lookCount",
+              "value": 5
+            },
+            {
+              "kind": "keepCount",
+              "value": 1
+            },
+            {
+              "kind": "restAction",
+              "value": "bottom"
+            }
+          ],
+          "resolver": "kata.deckLook"
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-carbon-copy",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-DEF-PPR-003",
+          "Card Name": "Carbon Copy",
+          "Card Type": "Technique",
+          "Subtype": "Defense",
+          "Category": "Defense",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Any",
+          "Timing": "Reaction",
+          "Rules Text": "If this Blocks, you may put a Kata or Consumable from your discard pile on the bottom of your deck. If you do, draw 1 card.",
+          "Flavor Text": "The duplicate was somehow more official.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter",
+          "Flow"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Carbon Copy",
+        "cardType": "Technique",
+        "subtype": "Defense",
+        "category": "Defense",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Any",
+        "timing": "Reaction",
+        "rulesText": "If this Blocks, you may put a Kata or Consumable from your discard pile on the bottom of your deck. If you do, draw 1 card.",
+        "flavorText": "The duplicate was somehow more official.",
+        "tags": [
+          "Guard",
+          "Recursion",
+          "Draw"
+        ],
+        "stats": {
+          "Guard": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9040,
+        "catalogId": "DDB-DEF-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-carbon-copy-draw",
+          "trigger": "onBlock",
+          "action": "draw",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate"
+        },
+        {
+          "id": "sup-carbon-copy-recycle",
+          "trigger": "onBlock",
+          "action": "recycle",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "eligibleSubtypes",
+              "value": [
+                "Kata",
+                "Consumable"
+              ]
+            }
+          ],
+          "resolver": "kata.recycle"
+        }
+      ],
+      "engineNote": "Test version: you draw 1 card first, then may put back a Kata or Consumable; the draw happens even when there is nothing to put back."
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-footnote-feint",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-011",
+          "Card Name": "Footnote Feint",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Mid",
+          "Timing": "Turn",
+          "Rules Text": "If you drew a card earlier this turn (not counting Initiate), this gets +2 Attack Power. If it Hits, you may discard 1 card to draw 1 card.",
+          "Flavor Text": "The real argument was in the footnote.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Momentum",
+          "Flow"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Footnote Feint",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Mid",
+        "timing": "Turn",
+        "rulesText": "If you drew a card earlier this turn (not counting Initiate), this gets +2 Attack Power. If it Hits, you may discard 1 card to draw 1 card.",
+        "flavorText": "The real argument was in the footnote.",
+        "tags": [
+          "Hand",
+          "Feint",
+          "Draw",
+          "Cycle"
+        ],
+        "stats": {
+          "Attack Power": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9041,
+        "catalogId": "DDB-ATK-PPR-011",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-footnote-power",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 2,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "drewCardThisTurn",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "sup-footnote-cycle",
+          "trigger": "onHit",
+          "action": "cycleDiscardDraw",
+          "target": "self",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-archive-dive",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-005",
+          "Card Name": "Archive Dive",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Return 1 card from your discard pile to your hand, then discard 1 card. If you returned a Defense, gain Barrier ×1.",
+          "Flavor Text": "Full of things you swore you had thrown away.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Flow",
+          "Fortress"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Archive Dive",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Return 1 card from your discard pile to your hand, then discard 1 card. If you returned a Defense, gain Barrier ×1.",
+        "flavorText": "Full of things you swore you had thrown away.",
+        "tags": [
+          "Kata",
+          "Recursion",
+          "Barrier"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9042,
+        "catalogId": "DDB-KAT-PPR-005",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-archive-dive",
+          "trigger": "onPlay",
+          "action": "recoverThenDiscard",
+          "target": "chosen-card",
+          "resolver": "kata.recoverThenDiscard"
+        }
+      ],
+      "engineNote": "The Barrier rider for returning a Defense is not built yet."
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-staple-remover",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-008",
+          "Card Name": "Staple Remover",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Anytime",
+          "Rules Text": "Anytime: remove Stapled or Laminated from yourself. If you removed one, draw 1 card.",
+          "Flavor Text": "The tool is tiny. The liberation is not.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Utility"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Staple Remover",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Anytime",
+        "rulesText": "Anytime: remove Stapled or Laminated from yourself. If you removed one, draw 1 card.",
+        "flavorText": "The tool is tiny. The liberation is not.",
+        "tags": [
+          "Consumable",
+          "Stapled",
+          "Laminate",
+          "Draw"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9043,
+        "catalogId": "DDB-CON-PPR-008",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-staple-remover",
+          "trigger": "onPlay",
+          "action": "status.remove",
+          "status": [
+            "stapled",
+            "freeze"
+          ],
+          "amount": "all",
+          "target": "self",
+          "thenDraw": 1
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-red-pen",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-WPN-PPR-004",
+          "Card Name": "Red Pen",
+          "Card Type": "Item",
+          "Subtype": "Weapon",
+          "Category": "Weapon",
+          "Focus Cost": 4,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Your first Attack each turn against a fighter with Red Tape or Denied gets +1 Attack Power. If it Hits, you may remove 1 Red Tape from them.",
+          "Flavor Text": "The correction is final, legible and deeply personal.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Control",
+          "Pressure"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Red Pen",
+        "cardType": "Item",
+        "subtype": "Weapon",
+        "category": "Weapon",
+        "fpCost": 4,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Your first Attack each turn against a fighter with Red Tape or Denied gets +1 Attack Power. If it Hits, you may remove 1 Red Tape from them.",
+        "flavorText": "The correction is final, legible and deeply personal.",
+        "tags": [
+          "Weapon",
+          "Red Tape",
+          "Denied",
+          "Control"
+        ],
+        "stats": {
+          "Attack Bonus": "1",
+          "Hands": "1"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9044,
+        "catalogId": "DDB-WPN-PPR-004",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-red-pen-tape",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "firstAttackThisTurn",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "redtape"
+            }
+          ]
+        },
+        {
+          "id": "sup-red-pen-denied",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "firstAttackThisTurn",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "kind": "targetHasStatus",
+              "operator": "notIncludes",
+              "value": "redtape"
+            },
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "denied"
+            }
+          ]
+        },
+        {
+          "id": "sup-red-pen-strip",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "redtape",
+          "amount": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "firstAttackThisTurn",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "redtape"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-binder-clip",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-GEA-PPR-002",
+          "Card Name": "Binder Clip",
+          "Card Type": "Item",
+          "Subtype": "Gear",
+          "Category": "Gear",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Equip",
+          "Rules Text": "Once per turn, the second time you draw a card outside your Initiate draw that turn, gain 1 Focus or gain Barrier ×1.",
+          "Flavor Text": "Prevents the plan from becoming a wind event.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Flow",
+          "Economy"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Binder Clip",
+        "cardType": "Item",
+        "subtype": "Gear",
+        "category": "Gear",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Equip",
+        "rulesText": "Once per turn, the second time you draw a card outside your Initiate draw that turn, gain 1 Focus or gain Barrier ×1.",
+        "flavorText": "Prevents the plan from becoming a wind event.",
+        "tags": [
+          "Gear",
+          "Draw",
+          "Barrier",
+          "Focus"
+        ],
+        "stats": {
+          "Slot": "Accessory"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9045,
+        "catalogId": "DDB-GEA-PPR-002",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-binder-clip",
+          "trigger": "passive",
+          "action": "status.drawWatch",
+          "threshold": 2
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-recycling-kick",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-ATK-PPR-012",
+          "Card Name": "Recycling Kick",
+          "Card Type": "Technique",
+          "Subtype": "Attack",
+          "Category": "Attack",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "Low",
+          "Timing": "Turn",
+          "Rules Text": "If you discarded a card this turn, this gains Flow. If it Hits, you may put 1 card from your discard pile on the bottom of your deck.",
+          "Flavor Text": "Nothing is wasted, especially not the kick you regret.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Flow"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Recycling Kick",
+        "cardType": "Technique",
+        "subtype": "Attack",
+        "category": "Attack",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "Low",
+        "timing": "Turn",
+        "rulesText": "If you discarded a card this turn, this gains Flow. If it Hits, you may put 1 card from your discard pile on the bottom of your deck.",
+        "flavorText": "Nothing is wasted, especially not the kick you regret.",
+        "tags": [
+          "Kick",
+          "Leg",
+          "Flow",
+          "Recursion"
+        ],
+        "stats": {
+          "Attack Power": "2"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9046,
+        "catalogId": "DDB-ATK-PPR-012",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-recycling-flow",
+          "trigger": "onAttackDeclared",
+          "action": "custom",
+          "target": "self",
+          "resolver": "attack.currentAttackFlow",
+          "conditions": [
+            {
+              "kind": "discardedCardThisTurn",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "sup-recycling-recycle",
+          "trigger": "onHit",
+          "action": "recycle",
+          "target": "chosen-card",
+          "resolver": "kata.recycle"
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-unfiled-appeal",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-RIT-PPR-003",
+          "Card Name": "Unfiled Appeal",
+          "Card Type": "Item",
+          "Subtype": "Reaction Item",
+          "Category": "Reaction Item",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Reaction",
+          "Rules Text": "Reaction. When a card or status an opponent controls would make you discard a card, discard this instead and draw 1 card.",
+          "Flavor Text": "Never filed, but it arrived exactly on time.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Counter"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Unfiled Appeal",
+        "cardType": "Item",
+        "subtype": "Reaction Item",
+        "category": "Reaction Item",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Reaction",
+        "rulesText": "Reaction. When a card or status an opponent controls would make you discard a card, discard this instead and draw 1 card.",
+        "flavorText": "Never filed, but it arrived exactly on time.",
+        "tags": [
+          "Reaction",
+          "Draw",
+          "Anti-Control"
+        ],
+        "stats": {
+          "Guard": "0"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9047,
+        "catalogId": "DDB-RIT-PPR-003",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-unfiled-appeal",
+          "trigger": "replacement",
+          "action": "status.discardShield"
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-open-hand-ledger",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-KAT-PPR-006",
+          "Card Name": "Open-Hand Ledger",
+          "Card Type": "Technique",
+          "Subtype": "Kata",
+          "Category": "Kata",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Reveal the top 3 cards of your deck. Put a card with Focus Value 2 or more into your hand and return the rest in any order. If none qualify, draw 1 card.",
+          "Flavor Text": "The books are open. The auditor is impressed.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Economy"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Open-Hand Ledger",
+        "cardType": "Technique",
+        "subtype": "Kata",
+        "category": "Kata",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Reveal the top 3 cards of your deck. Put a card with Focus Value 2 or more into your hand and return the rest in any order. If none qualify, draw 1 card.",
+        "flavorText": "The books are open. The auditor is impressed.",
+        "tags": [
+          "Kata",
+          "Tutor",
+          "Economy"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Technique Deck",
+        "catalogOrder": 9048,
+        "catalogId": "DDB-KAT-PPR-006",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-ledger-look",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "lookCount",
+              "value": 3
+            },
+            {
+              "kind": "keepCount",
+              "value": 1
+            },
+            {
+              "kind": "minFocusValue",
+              "value": 2
+            },
+            {
+              "kind": "drawIfNoMatch",
+              "value": 1
+            },
+            {
+              "kind": "restAction",
+              "value": "reorder"
+            }
+          ],
+          "resolver": "kata.deckLook"
+        }
+      ]
+    },
+    {
+      "group": "support",
+      "card": {
+        "id": "experimental-clean-counter",
+        "image": null,
+        "lineage": null,
+        "chiCost": null,
+        "details": {
+          "Catalog ID": "DDB-CON-PPR-009",
+          "Card Name": "Clean Counter",
+          "Card Type": "Item",
+          "Subtype": "Consumable",
+          "Category": "Consumable",
+          "Focus Cost": 3,
+          "Focus Value": 1,
+          "Zone": "—",
+          "Timing": "Turn",
+          "Rules Text": "Destroy 1 Junk card from your hand or discard pile. The next card you buy this turn costs 1 less Focus (minimum 1).",
+          "Flavor Text": "A clean counter is a beautiful thing. It will not stay that way.",
+          "Availability": "Proposed",
+          "Rules Version": "v1.7-draft"
+        },
+        "buildPaths": [
+          "Deck-Thin",
+          "Economy"
+        ],
+        "rulesVersion": "v1.7-draft",
+        "name": "Clean Counter",
+        "cardType": "Item",
+        "subtype": "Consumable",
+        "category": "Consumable",
+        "fpCost": 3,
+        "focusValue": 1,
+        "zone": "—",
+        "timing": "Turn",
+        "rulesText": "Destroy 1 Junk card from your hand or discard pile. The next card you buy this turn costs 1 less Focus (minimum 1).",
+        "flavorText": "A clean counter is a beautiful thing. It will not stay that way.",
+        "tags": [
+          "Consumable",
+          "Deck-Thin",
+          "Economy"
+        ],
+        "stats": {
+          "Value": "—"
+        },
+        "sourceSheet": "Paperwork module (v1.7 draft)",
+        "deck": "Item Deck",
+        "catalogOrder": 9049,
+        "catalogId": "DDB-CON-PPR-009",
+        "availability": "Proposed",
+        "v2Status": "Proposed",
+        "sourceRulesVersion": "v1.7-draft"
+      },
+      "effects": [
+        {
+          "id": "sup-clean-counter-destroy",
+          "trigger": "onPlay",
+          "action": "destroy",
+          "target": "chosen-card",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "cardType",
+              "value": "Junk"
+            },
+            {
+              "kind": "zones",
+              "value": [
+                "hand",
+                "discard"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sup-clean-counter-discount",
+          "effect": "economy.modifyCost",
+          "trigger": "onPlay",
+          "target": "self",
+          "amount": -1,
+          "duration": "nextPurchase",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "nextPurchaseOnly",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "kind": "minimumFinalCost",
+              "value": 1,
+              "operator": "eq"
+            }
+          ],
+          "action": "custom"
+        }
+      ]
+    }
+  ]
+}

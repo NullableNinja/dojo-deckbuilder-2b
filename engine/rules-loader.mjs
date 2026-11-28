@@ -18,5 +18,13 @@ export async function loadGameData() {
   const cardEffectById = new Map(Object.entries(cardEffects.cards ?? {}));
   const comboRequirements = await readJson("app/data/combo-requirements.json");
   if (comboRequirements.rulesVersion !== definition.rulesVersion || comboRequirements.rulesRevision !== definition.rulesRevision) throw new Error("Combo requirement registry version does not match engine definition");
-  return { definition, cards: catalog.cards, rules, cardEffects, cardEffectById, comboRequirements, byId };
+  const [registry, experimentalCards, retunes, statusEffects] = await Promise.all([
+    readJson("content/experimental/experiments.json"),
+    readJson("content/experimental/experimental-cards.json"),
+    readJson("content/experimental/retunes.json"),
+    readJson("content/experimental/status-effects.json"),
+  ]);
+  // Experiments (engine/experiments.mjs) stay inert until a table switches them on.
+  const experiments = { registry, cards: experimentalCards, retunes, statusEffects };
+  return { definition, cards: catalog.cards, rules, cardEffects, cardEffectById, comboRequirements, byId, experiments };
 }

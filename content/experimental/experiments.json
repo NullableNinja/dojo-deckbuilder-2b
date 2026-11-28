@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "description": "Experimental updates a table can switch on to test before they become official (engine/experiments.mjs). Status: v1.7 test package. Each module can be toggled; each card or retune inside a module can be switched off on its own (table option experiments.exclude). Nothing here changes the canonical game unless a table switches it on.",
+  "modules": [
+    {
+      "id": "status-effects",
+      "name": "Status effects",
+      "kind": "rules",
+      "statusEffects": true,
+      "summary": "The thirteen Paperwork statuses (Scorch, Ink Blot, Laminated, Stapled, Red Tape, Denied, Paper Cut, Wet Floor, Barrier, Static Shock, Rush Order, Dog-Eared) and the Reimburse keyword, with the v1.7 guardrails. Denied voids your next card; an Attack may instead be kept by discarding another card.",
+      "docs": "docs/status-effects-rules.md"
+    },
+    {
+      "id": "paperwork-cards",
+      "name": "Paperwork cards",
+      "kind": "cards",
+      "group": "paperwork",
+      "requires": ["status-effects"],
+      "summary": "30 new Market cards that apply and cash in the statuses, 4 Combos and 3 Locations.",
+      "docs": "docs/arena-card-proposals.md"
+    },
+    {
+      "id": "support-cards",
+      "name": "Draw and deck-thin support cards",
+      "kind": "cards",
+      "group": "support",
+      "requires": ["status-effects"],
+      "summary": "12 new cards for draw, cycling, tutoring and deck-thinning decks.",
+      "docs": "docs/arena-card-proposals.md"
+    },
+    {
+      "id": "retunes-draw",
+      "name": "v1.7 retunes: draw and deck-thinning",
+      "kind": "retunes",
+      "group": "draw",
+      "summary": "14 existing draw, cycle and Junk-removal cards get cheaper or gain a Junk rider.",
+      "docs": "docs/arena-card-proposals.md"
+    },
+    {
+      "id": "retunes-fortress",
+      "name": "v1.7 retunes: Fortress and tank counterplay",
+      "kind": "retunes",
+      "group": "fortress",
+      "summary": "8 defensive cards are toned down and 4 anti-armour cards get cheaper (their Barrier and Static Shock riders need Status effects).",
+      "docs": "docs/arena-card-proposals.md"
+    }
+  ]
+}

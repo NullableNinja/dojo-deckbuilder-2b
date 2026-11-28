@@ -5,6 +5,10 @@ import catalog from "./data/cards.json" with { type: "json" };
 import rules from "./data/rules.json" with { type: "json" };
 import cardEffects from "./data/card-effects.json" with { type: "json" };
 import comboRequirements from "./data/combo-requirements.json" with { type: "json" };
+import experimentRegistry from "../content/experimental/experiments.json" with { type: "json" };
+import experimentalCards from "../content/experimental/experimental-cards.json" with { type: "json" };
+import experimentRetunes from "../content/experimental/retunes.json" with { type: "json" };
+import statusEffects from "../content/experimental/status-effects.json" with { type: "json" };
 import { Game } from "../engine/core.mjs";
 
 export type EngineCard = { id: string; catalogId: string; name: string; cardType: string; subtype?: string; zone?: string; rulesText?: string | null; stats: Record<string, string>; fpCost?: number | string; focusValue?: number | string; image?: string; instanceId?: string; tags?: string[] };
@@ -22,11 +26,18 @@ export function clashData() {
     cardEffectById: new Map(Object.entries((cardEffects as unknown as { cards: Record<string, unknown> }).cards ?? {})),
     comboRequirements,
     byId: new Map(cards.map((card) => [card.catalogId, card])),
+    // Experiments (engine/experiments.mjs) stay inert until a table switches them on.
+    experiments: { registry: experimentRegistry, cards: experimentalCards, retunes: experimentRetunes, statusEffects },
   };
   return cached;
 }
 
-export const clashCardByCatalogId = (catalogId: string) => (clashData().byId as Map<string, EngineCard>).get(catalogId);
+let experimentalById: Map<string, EngineCard> | null = null;
+/** A card by Catalog ID: the catalog first, then the experimental cards (engine/experiments.mjs), so logs can name them. */
+export const clashCardByCatalogId = (catalogId: string) => {
+  experimentalById ??= new Map((experimentalCards as unknown as { cards: { card: EngineCard }[] }).cards.map((entry) => [entry.card.catalogId, entry.card]));
+  return (clashData().byId as Map<string, EngineCard>).get(catalogId) ?? experimentalById.get(catalogId);
+};
 
 export type ClashSetup = { fighterId: string; opponents: number; seed?: number };
 

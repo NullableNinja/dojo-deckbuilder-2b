@@ -12,6 +12,18 @@ export type ArenaSeatState = { effects: ArenaEntry[]; armed: { effect: string; s
 /** One arena event for this fighter, with its position in the game's event log (the replay key). */
 export type ArenaMoment = { index: number; kind: string; effect?: string; amount?: number; stacks?: number; reason?: string };
 
+type ArenaEvent = { type: string; player?: number; kind?: unknown; effect?: unknown; amount?: unknown; stacks?: unknown; reason?: unknown };
+
+/** A fighter's status events (engine `arena-effect`), newest last, each with its log position so its moment plays once. */
+export function arenaMomentsFor(game: { events: ArenaEvent[] }, seatId: number): ArenaMoment[] {
+  const list: ArenaMoment[] = [];
+  game.events.forEach((event, index) => {
+    if (event.type !== "arena-effect" || event.player !== seatId) return;
+    list.push({ index, kind: String(event.kind), effect: event.effect ? String(event.effect) : undefined, amount: event.amount === undefined ? undefined : Number(event.amount), stacks: event.stacks === undefined ? undefined : Number(event.stacks), reason: event.reason ? String(event.reason) : undefined });
+  });
+  return list.slice(-6);
+}
+
 type Rule = { id: string; name: string; alias?: string; maxStacks: number; durationUnit?: string; buff?: boolean };
 const RULES = effectsJson.effects as Rule[];
 const ORDER = RULES.map((entry) => entry.id);

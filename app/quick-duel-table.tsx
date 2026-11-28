@@ -14,8 +14,10 @@ import cardPlaceholderUrl from "./assets/art/card-placeholder-v2.webp";
 import { PayrollSlip } from "./career-payroll";
 import { comboRequirementText } from "./combo-engine.ts";
 import { beltRequirements, stripeStatus, type BeltRequirements, type StripeStatus } from "./belt-progress.ts";
+import { arenaCardDecor, arenaMomentsFor, type ArenaSeatState } from "./arena-card-fx";
 import "./quick-duel-hand.css";
 import "./hp-bar.css";
+import "./experiment-panel.css";
 
 const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
@@ -92,8 +94,14 @@ const isAttackCard = (card: EngineCard) => num(card.stats?.["Attack Power"]) > 0
 const isDefenseCard = (card: EngineCard) => num(card.stats?.Guard) > 0 && (card.subtype === "Defense" || (card as MatCard).details?.Type === "Defense");
 
 /** The engine-driven game mat. Exported for the Test Arena, which hosts it with the arena rule variant. */
-export function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch, seatOverlay, seatDecor, nudge }: TableProps) {
+export function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch, seatOverlay, seatDecor: hostDecor, nudge }: TableProps) {
   const game = session.game;
+  // With the Status effects experiment on, fighters wear their statuses the way the Test Arena shows them.
+  const statusDecor = (game as EngineGame & { statusEffectsEnabled?: boolean }).statusEffectsEnabled
+    ? (seat: EngineSeat) => arenaCardDecor((seat as EngineSeat & { arena?: ArenaSeatState }).arena, arenaMomentsFor(game, seat.id), seat.id === HUMAN ? "right" : "left")
+    : undefined;
+  const seatDecor = hostDecor ?? statusDecor;
+  const experimentsOn = (((game as unknown as { setup?: unknown }).setup as { table?: { experiments?: { modules: string[] } } }).table?.experiments?.modules ?? []).length;
   if (import.meta.env.DEV) (window as unknown as { __ddbSession?: EngineSession }).__ddbSession = session;
   const [tick, setTick] = useState(0);
   const rerender = () => setTick((value) => value + 1);
@@ -260,7 +268,7 @@ export function QuickDuelTable({ session, sessionKey, agentName, guided, motion,
 
     <header className="playtest-topbar battle-versus-hud">
       <HudFighter seat={human} side="player" title={agentName} />
-      <div className="versus-center" aria-label={`Round ${game.round}`}><span>ROUND</span><b>{game.round}</b></div>
+      <div className="versus-center" aria-label={`Round ${game.round}`}><span>ROUND</span><b>{game.round}</b>{experimentsOn > 0 && <em className="versus-experiments" title="Experimental updates are on for this match (set in the match setup)">TEST RULES · {experimentsOn}</em>}</div>
       <HudFighter seat={computer} side="ai" title={computer.isBoss ? bossTitle(game) : "COMPUTER"} />
     </header>
 
@@ -864,7 +872,7 @@ function ChoiceDialog({ game, pending, zones, onChoose }: { game: EngineGame; pe
   const best = pending.kind === "attack-zone" ? zones?.[0]?.zone : undefined;
   return <div className="playtest-inspector-backdrop effect-choice-backdrop"><section className="effect-choice-dialog paper-stack" role="dialog" aria-modal="true" aria-labelledby="effect-choice-title">
     <span className="eyebrow">Printed effect · your decision</span><h2 id="effect-choice-title">{choiceTitle(pending)}</h2><p>{choicePrompt(game, pending, HUMAN)}</p>
-    <div className="effect-choice-options">{pending.options.map((option, index) => { const card = findInstance(game, option.id); const damage = zoneDamage(option.id); return <button type="button" ref={index === 0 ? firstRef : undefined} onClick={() => onChoose(option.id)} key={option.id}><span>{card ? card.subtype || card.cardType : damage ? (damage.zone === best ? "BEST ZONE" : "ZONE") : "OPTION"}</span><b>{option.label}</b><small>{card ? card.rulesText?.slice(0, 80) ?? card.catalogId : damage ? `Preview: ${damage.amount} damage if unblocked` : ""}</small></button>; })}</div>
+    <div className="effect-choice-options">{pending.options.map((option, index) => { const card = findInstance(game, String((option as { cardId?: string }).cardId ?? option.id)); const damage = zoneDamage(option.id); return <button type="button" ref={index === 0 ? firstRef : undefined} onClick={() => onChoose(option.id)} key={option.id}><span>{card ? card.subtype || card.cardType : damage ? (damage.zone === best ? "BEST ZONE" : "ZONE") : "OPTION"}</span><b>{option.label}</b><small>{card ? card.rulesText?.slice(0, 80) ?? card.catalogId : damage ? `Preview: ${damage.amount} damage if unblocked` : ""}</small></button>; })}</div>
   </section></div>;
 }
 

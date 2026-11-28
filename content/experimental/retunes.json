@@ -1,0 +1,1068 @@
+{
+  "$comment": "v1.7 retunes of existing cards (engine/experiments.mjs). patch replaces printed fields; effects (when present) replace the card's structured effects for tables that switch the module on. engineNote says where this test version differs from docs/arena-card-proposals.md.",
+  "schemaVersion": 1,
+  "rulesVersion": "v1.7-draft",
+  "retunes": [
+    {
+      "group": "draw",
+      "catalogId": "DDB-KAT-CORE-010",
+      "name": "Clean Slate Drill",
+      "patch": {
+        "fpCost": 3,
+        "tags": [
+          "Kata",
+          "Deck Control",
+          "Training",
+          "Draw",
+          "Deck-Thin"
+        ]
+      }
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-KAT-CORE-031",
+      "name": "Kata of the Unlearned Bad Habit",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Destroy 1 Junk card from your hand or discard pile. If you destroyed it from your hand, draw 1 card, then discard 1 card.",
+        "tags": [
+          "Kata",
+          "Deck Control",
+          "Training",
+          "Spoof",
+          "Deck-Thin",
+          "Cycle"
+        ]
+      },
+      "effects": [
+        {
+          "id": "kata-unlearned-habit-destroy",
+          "trigger": "onPlay",
+          "action": "destroy",
+          "target": "chosen-card",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "cardType",
+              "value": "Junk"
+            },
+            {
+              "kind": "zones",
+              "value": [
+                "hand",
+                "discard"
+              ]
+            },
+            {
+              "kind": "drawIfSourceZone",
+              "value": "hand"
+            },
+            {
+              "kind": "drawAmount",
+              "value": 1
+            }
+          ],
+          "resolver": "kata.destroyChoice",
+          "afterMove": {
+            "discard": 1,
+            "fromZone": "hand"
+          }
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-KAT-CORE-025",
+      "name": "Gekisai Dai Ichi",
+      "patch": {
+        "rulesText": "Look at the top 5 cards of your deck. Put 1 Attack or Kata into your hand. Discard the rest.",
+        "tags": [
+          "Kata",
+          "Deck Control",
+          "Attack Setup",
+          "Tutor",
+          "Draw"
+        ]
+      },
+      "effects": [
+        {
+          "id": "kata-gekisai-look-five",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "lookCount",
+              "value": 5
+            },
+            {
+              "kind": "eligibleTypes",
+              "value": [
+                "Attack",
+                "Kata"
+              ]
+            },
+            {
+              "kind": "keepCount",
+              "value": 1
+            },
+            {
+              "kind": "restAction",
+              "value": "discard"
+            }
+          ],
+          "resolver": "kata.deckLook"
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-KAT-CORE-029",
+      "name": "Kanku Dai",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Look at the top 4 cards of your deck. Put 1 card into your hand. Return the rest in any order.",
+        "tags": [
+          "Kata",
+          "Deck Control",
+          "Tutor",
+          "Draw"
+        ]
+      },
+      "effects": [
+        {
+          "id": "kata-kanku-look-four",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "lookCount",
+              "value": 4
+            },
+            {
+              "kind": "keepCount",
+              "value": 1
+            },
+            {
+              "kind": "restAction",
+              "value": "reorder"
+            }
+          ],
+          "resolver": "kata.deckLook"
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-KAT-CORE-055",
+      "name": "Shadowboxing",
+      "patch": {
+        "rulesText": "Discard up to 2 cards, then draw that many cards. If you discarded a Junk card this way, draw 1 card, then discard 1 card.",
+        "tags": [
+          "Kata",
+          "Deck Control",
+          "Draw",
+          "Cycle"
+        ]
+      },
+      "effects": [
+        {
+          "id": "kata-shadowboxing-cycle",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "self",
+          "conditions": [
+            {
+              "kind": "discardUpTo",
+              "value": 2
+            },
+            {
+              "kind": "drawEqualDiscarded",
+              "value": true
+            }
+          ],
+          "resolver": "kata.variableCycle",
+          "ifJunk": {
+            "draw": 1,
+            "discard": 1
+          }
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-006",
+      "name": "Caffeinated Mochi",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Draw 2 cards, then discard 1 card. Lose 1 Speed until end of round.",
+        "tags": [
+          "Flow",
+          "Deck Control",
+          "Consumable",
+          "Draw",
+          "Cycle"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-caffeinated-mochi-draw",
+          "effect": "core.draw",
+          "trigger": "onPlay",
+          "target": "self",
+          "amount": 2,
+          "action": "draw",
+          "duration": "immediate"
+        },
+        {
+          "id": "consumable-caffeinated-mochi-discard",
+          "trigger": "onPlay",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate"
+        },
+        {
+          "id": "consumable-caffeinated-mochi-speed",
+          "effect": "combat.modifySpeed",
+          "trigger": "onPlay",
+          "target": "self",
+          "amount": -1,
+          "duration": "endOfRound",
+          "action": "modifySpeed"
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-024",
+      "name": "Fresh Martial Arts Gi",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Destroy 1 Junk card from your hand or discard pile. If you do, draw 2 cards, then discard 1 card.",
+        "tags": [
+          "Deck Control",
+          "Consumable",
+          "Deck-Thin",
+          "Draw"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-fresh-gi-thin",
+          "trigger": "onPlay",
+          "action": "destroy",
+          "target": "chosen-card",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "cardType",
+              "value": "Junk"
+            },
+            {
+              "kind": "zones",
+              "value": [
+                "hand",
+                "discard"
+              ]
+            }
+          ],
+          "afterMove": {
+            "draw": 2,
+            "discard": 1
+          }
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-025",
+      "name": "Green Tea",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Draw 2 cards, then discard 1 card. If you discarded a Junk card, gain 1 Focus.",
+        "tags": [
+          "Deck Control",
+          "Consumable",
+          "Draw",
+          "Cycle",
+          "Economy"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-green-tea-draw",
+          "trigger": "onPlay",
+          "action": "draw",
+          "target": "self",
+          "amount": 2,
+          "duration": "immediate"
+        },
+        {
+          "id": "consumable-green-tea-discard",
+          "trigger": "onPlay",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "ifJunk": {
+            "focus": 1
+          }
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-048",
+      "name": "Sensei's Advice",
+      "patch": {
+        "rulesText": "You may destroy 1 Junk card from your hand or discard pile. If you do, draw 2 cards, then discard 1 card; otherwise draw 1 card.",
+        "tags": [
+          "Flow",
+          "Deck Control",
+          "Consumable",
+          "Deck-Thin",
+          "Draw"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-sensei-advice-thin",
+          "trigger": "onPlay",
+          "action": "destroy",
+          "target": "chosen-card",
+          "amount": 1,
+          "conditions": [
+            {
+              "kind": "cardType",
+              "value": "Junk"
+            },
+            {
+              "kind": "zones",
+              "value": [
+                "hand",
+                "discard"
+              ]
+            }
+          ],
+          "afterMove": {
+            "draw": 2,
+            "discard": 1
+          },
+          "ifNoOptions": {
+            "draw": 1
+          }
+        }
+      ],
+      "engineNote": "Destroying is not optional in this test version: with a Junk card available you destroy one."
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-051",
+      "name": "Sparring Dummy",
+      "patch": {
+        "rulesText": "Reveal the top 4 cards of your deck. Put 1 Attack or Kata among them into your hand; discard the rest. You may destroy 1 Junk discarded this way.",
+        "tags": [
+          "Deck Control",
+          "Consumable",
+          "Tutor",
+          "Draw"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-sparring-dummy-look-four",
+          "trigger": "onPlay",
+          "action": "custom",
+          "target": "chosen-card",
+          "conditions": [
+            {
+              "kind": "lookCount",
+              "value": 4
+            },
+            {
+              "kind": "eligibleTypes",
+              "value": [
+                "Attack",
+                "Kata"
+              ]
+            },
+            {
+              "kind": "keepCount",
+              "value": 1
+            },
+            {
+              "kind": "restAction",
+              "value": "discard"
+            }
+          ],
+          "resolver": "kata.deckLook"
+        }
+      ],
+      "engineNote": "The optional Junk destroy is not built (it was not built for the printed card either)."
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-DEF-CORE-044",
+      "name": "Step Back",
+      "patch": {
+        "tags": [
+          "Dodge",
+          "Movement",
+          "Draw",
+          "Cycle"
+        ],
+        "buildPaths": [
+          "Flow",
+          "Momentum",
+          "Deck-Thin"
+        ]
+      }
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-ATK-CORE-025",
+      "name": "Front Jab",
+      "patch": {
+        "fpCost": 3,
+        "tags": [
+          "Punch",
+          "Hand",
+          "Draw",
+          "Cycle"
+        ]
+      }
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-026",
+      "name": "Herbal Tea",
+      "patch": {
+        "rulesText": "Draw 2 cards, then discard 1 card. If you discarded a Junk card, destroy it.",
+        "tags": [
+          "Flow",
+          "Deck Control",
+          "Consumable",
+          "Cycle",
+          "Deck-Thin"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-herbal-tea-draw",
+          "trigger": "onPlay",
+          "action": "draw",
+          "target": "self",
+          "amount": 2,
+          "duration": "immediate"
+        },
+        {
+          "id": "consumable-herbal-tea-discard",
+          "trigger": "onPlay",
+          "action": "discard",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "ifJunk": {
+            "destroy": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "draw",
+      "catalogId": "DDB-CON-CORE-018",
+      "name": "Energy Gel of Questionable Origin",
+      "patch": {
+        "rulesText": "If you played a Kata this turn, draw 3 cards; otherwise draw 2 cards. Then discard 2 cards.",
+        "tags": [
+          "Flow",
+          "Deck Control",
+          "Consumable",
+          "Draw",
+          "Cycle"
+        ]
+      },
+      "effects": [
+        {
+          "id": "consumable-energy-gel-draw-kata",
+          "trigger": "onPlay",
+          "action": "draw",
+          "target": "self",
+          "amount": 3,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "playedKataThisTurn",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "consumable-energy-gel-draw",
+          "trigger": "onPlay",
+          "action": "draw",
+          "target": "self",
+          "amount": 2,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "playedKataThisTurn",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "consumable-energy-gel-discard",
+          "trigger": "onPlay",
+          "action": "discard",
+          "target": "self",
+          "amount": 2,
+          "duration": "immediate"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-003",
+      "name": "Bubble Wrap Gi",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Chest slot. +1 DEF against all zones. The first time you take damage each round, reduce it by 1; then exhaust this card. Ready it during your next Initiate."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-003-all-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "equipment-deq-003-first-damage-reduction",
+          "effect": "combat.preventDamage",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "firstDamageThisRound",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "preventDamage"
+        },
+        {
+          "id": "equipment-deq-003-exhaust",
+          "effect": "equipment.exhaust",
+          "trigger": "passive",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "firstDamageThisRound",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "exhaust"
+        },
+        {
+          "id": "equipment-deq-003-next-initiate-ready",
+          "effect": "equipment.ready",
+          "trigger": "onInitiate",
+          "target": "source",
+          "amount": 1,
+          "duration": "immediate",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "sourceExhausted",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "ready"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-010",
+      "name": "Dojo Door",
+      "patch": {
+        "stats": {
+          "Guard": "3"
+        },
+        "rulesText": "Occupies both hands. +3 DEF against all zones and −2 Speed. You cannot Attack with a Weapon or use Flow while this is Equipped."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-010-all-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 3,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "equipment-deq-010-speed-penalty",
+          "effect": "combat.modifySpeed",
+          "trigger": "passive",
+          "target": "self",
+          "amount": -2,
+          "duration": "whileEquipped",
+          "resolver": "equipment.structured",
+          "action": "modifySpeed"
+        },
+        {
+          "id": "equipment-deq-010-no-weapon-attacks",
+          "effect": "core.custom",
+          "trigger": "passive",
+          "target": "self",
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "equipmentRestriction",
+              "value": "noWeaponAttacks"
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "equipment-deq-010-no-flow",
+          "effect": "core.custom",
+          "trigger": "passive",
+          "target": "self",
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "equipmentRestriction",
+              "value": "noFlow"
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        }
+      ],
+      "engineNote": "'Use Flow' is read as: no Flow draw while this is Equipped."
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-029",
+      "name": "Museum Rope Barrier",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Accessory. The first Attack targeting you each round gets −1 Attack Power. Destroy this after it has affected two Attacks."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-029-first-incoming-attack-penalty",
+          "effect": "combat.modifyAttackPower",
+          "trigger": "onAttackDeclared",
+          "target": "opponent",
+          "amount": -1,
+          "duration": "immediate",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "firstIncomingAttackThisRound",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "modifyAttackPower"
+        },
+        {
+          "id": "equipment-deq-029-destroy-after-three-affected",
+          "effect": "core.custom",
+          "trigger": "passive",
+          "target": "source",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "sourceAffectedCountThreshold",
+              "value": 2,
+              "operator": "eq"
+            }
+          ],
+          "action": "custom"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-032",
+      "name": "Participation Trophy Shield",
+      "patch": {
+        "rulesText": "Occupies one hand. +1 DEF against all zones. If you are at least 3 XP behind the leader, it provides +2 DEF instead."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-032-all-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "equipment-deq-032-lowest-xp-extra-defense",
+          "effect": "core.custom",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "xpBehindLeaderAtLeast",
+              "value": 3,
+              "operator": "eq"
+            }
+          ],
+          "action": "custom"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-037",
+      "name": "Sensei's Disapproving Stare",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Accessory. Once per round, the first Attack targeting you gets −1 Attack Power. If that Attack still deals damage, exhaust this card."
+      },
+      "engineNote": "The exhaust rider is not built yet; this test version only changes the cost."
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-040",
+      "name": "Stunt Double",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Accessory. Once per game, when you would take damage, destroy this to prevent up to 4 of that damage."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-040-once-game-prevent-all-damage",
+          "effect": "core.custom",
+          "trigger": "passive",
+          "target": "self",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "oncePerGame",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "custom",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-DEQ-CORE-044",
+      "name": "Trash Can Lid",
+      "patch": {
+        "fpCost": 5,
+        "stats": {
+          "Guard": "1"
+        },
+        "rulesText": "Occupies one hand. +1 DEF against all zones. Once per round, if you Block a Weapon Attack, your next purchase costs 1 less Focus, minimum 1."
+      },
+      "effects": [
+        {
+          "id": "equipment-deq-044-all-defense",
+          "effect": "equipment.modifyDefenseContribution",
+          "trigger": "passive",
+          "target": "self",
+          "amount": 1,
+          "duration": "whileEquipped",
+          "conditions": [
+            {
+              "kind": "incomingZones",
+              "value": [
+                "High",
+                "Mid",
+                "Low"
+              ]
+            }
+          ],
+          "resolver": "equipment.structured",
+          "action": "custom"
+        },
+        {
+          "id": "equipment-deq-044-weapon-block-purchase-discount",
+          "effect": "economy.modifyCost",
+          "trigger": "onBlock",
+          "target": "self",
+          "amount": -1,
+          "duration": "endOfRound",
+          "resolver": "equipment.structured",
+          "conditions": [
+            {
+              "kind": "nextPurchaseOnly",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "kind": "minimumFinalCost",
+              "value": 1,
+              "operator": "eq"
+            },
+            {
+              "kind": "incomingAttackUsesWeapon",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "kind": "oncePerRound",
+              "value": true,
+              "operator": "eq"
+            }
+          ],
+          "action": "custom"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-RIT-CORE-012",
+      "name": "X-Ray Paper",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "Reaction. When you are targeted by an Attack, destroy this to prevent up to 3 damage from that Attack. This provides 0 Guard."
+      },
+      "effects": [
+        {
+          "id": "reaction-x-ray-paper-zero-damage",
+          "effect": "core.custom",
+          "trigger": "onAttackDeclared",
+          "target": "self",
+          "amount": 3,
+          "resolver": "reaction.preventIncomingDamage",
+          "conditions": [
+            {
+              "kind": "incomingAttackTargetsSelf"
+            }
+          ],
+          "action": "custom"
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-ATK-CORE-003",
+      "name": "Ankle Invoice",
+      "patch": {
+        "fpCost": 4,
+        "rulesText": "On Hit, choose one matching Armor or Gear card on the target. It provides 2 less DEF until end of turn. If the target has Barrier, remove 1 Barrier."
+      },
+      "effects": [
+        {
+          "id": "attack-ankle-invoice-suppress-equipment",
+          "trigger": "onHit",
+          "target": "chosen-equipment",
+          "amount": -2,
+          "duration": "endOfTurn",
+          "resolver": "attack.final.equipmentSuppression",
+          "effect": "combat.modifyGuard",
+          "action": "modifyGuard"
+        },
+        {
+          "id": "attack-ankle-invoice-barrier",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "barrier",
+          "amount": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "barrier"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-ATK-CORE-009",
+      "name": "Centerline Breaker",
+      "patch": {
+        "fpCost": 5,
+        "rulesText": "If the target has matching Armor or Barrier, this Attack gains Piercing 2. On Hit, remove 1 Barrier from the target."
+      },
+      "effects": [
+        {
+          "id": "attack-centerline-matching-armor-piercing",
+          "trigger": "onAttackDeclared",
+          "target": "source",
+          "amount": 2,
+          "conditions": [
+            {
+              "kind": "targetHasMatchingArmor",
+              "operator": "eq",
+              "value": true
+            }
+          ],
+          "resolver": "attack.piercing",
+          "effect": "combat.piercing",
+          "action": "piercing"
+        },
+        {
+          "id": "attack-centerline-barrier-piercing",
+          "trigger": "onAttackDeclared",
+          "target": "source",
+          "amount": 2,
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "barrier"
+            },
+            {
+              "kind": "targetHasMatchingArmor",
+              "operator": "eq",
+              "value": false
+            }
+          ],
+          "resolver": "attack.piercing",
+          "effect": "combat.piercing",
+          "action": "piercing"
+        },
+        {
+          "id": "attack-centerline-barrier-strip",
+          "trigger": "onHit",
+          "action": "status.remove",
+          "status": "barrier",
+          "amount": 1,
+          "target": "opponent",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "barrier"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-ATK-CORE-069",
+      "name": "Uppercut",
+      "patch": {
+        "fpCost": 5,
+        "rulesText": "If the target has already used Tempo this round or has Static Shock, this Attack gets +2 Attack Power."
+      },
+      "effects": [
+        {
+          "id": "attack-uppercut-spent-tempo-power",
+          "trigger": "onAttackDeclared",
+          "target": "source",
+          "amount": 2,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetTempoUsed",
+              "operator": "eq",
+              "value": true
+            }
+          ],
+          "resolver": "attack.conditionalPower",
+          "effect": "combat.modifyAttackPower",
+          "action": "modifyAttackPower"
+        },
+        {
+          "id": "attack-uppercut-shock-power",
+          "trigger": "onAttackDeclared",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 2,
+          "duration": "immediate",
+          "conditions": [
+            {
+              "kind": "targetHasStatus",
+              "operator": "includes",
+              "value": "shock"
+            },
+            {
+              "kind": "targetTempoUsed",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "fortress",
+      "catalogId": "DDB-KAT-CORE-040",
+      "name": "Naihanchi",
+      "patch": {
+        "rulesText": "Your next Low or Mid Attack this turn gets +1 Attack Power. If it Hits a target with Barrier, remove 1 Barrier."
+      },
+      "effects": [
+        {
+          "id": "kata-naihanchi-next-attack",
+          "trigger": "onPlay",
+          "action": "modifyAttackPower",
+          "target": "source",
+          "amount": 1,
+          "duration": "nextAttack"
+        }
+      ],
+      "engineNote": "Test version: +1 on your next Attack in any zone; the Barrier rider is not built yet."
+    }
+  ]
+}

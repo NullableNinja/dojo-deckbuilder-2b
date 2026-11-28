@@ -166,6 +166,9 @@ function requirementSatisfied(requirement, context) {
       return (requirement.requiredFamilies ?? []).every((family) => cards.some((card) => familyMatches(card, family)))
         && (!(requirement.anyFamilies ?? []).length || (requirement.anyFamilies ?? []).some((family) => cards.some((card) => familyMatches(card, family))));
     }
+    // Status requirements (the status layer, engine/arena-rules.mjs, passes these facts in; without it they are empty).
+    case "targetHasStatus": return (requirement.statuses ?? []).every((status) => context.targetStatuses.includes(status));
+    case "statusAppliedThisTurn": return context.statusesAppliedThisTurn.includes(requirement.status);
     default: return null;
   }
 }
@@ -218,6 +221,8 @@ export function comboContext(data, player, currentCard, currentZone, event = {})
     playedCardFacts,
     attackFacts,
     blockFacts,
+    targetStatuses: event.targetStatuses ?? [],
+    statusesAppliedThisTurn: event.statusesAppliedThisTurn ?? [],
   };
 }
 

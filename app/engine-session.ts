@@ -52,7 +52,8 @@ export type SessionSetup = {
   characterCards?: EngineCard[];
 };
 /** `cardPool`: the Catalog IDs this table plays with (the seated players' collections); null is the full catalog. */
-export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[]; cardPool?: string[] | null };
+/** `experiments`: optional v1.7 test packages (engine/experiments.mjs); left out when none are on. */
+export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[]; cardPool?: string[] | null; experiments?: { modules: string[]; exclude?: string[] } };
 export type Decision = { kind: "action"; action: EngineAction } | { kind: "choice"; optionId: string };
 export type SavedSession = { format: 1; setup: SessionSetup; decisions: Decision[] };
 export type BotPolicy = { chooseAction(game: EngineGame, legal: EngineAction[]): EngineAction; chooseChoice(game: EngineGame, pending: EnginePending): { optionId: string } };

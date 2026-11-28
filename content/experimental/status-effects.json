@@ -82,7 +82,7 @@
       "maxStacks": 1,
       "duration": null,
       "voidsNextCard": true,
-      "summary": "The next card you play on your turn (an Attack, Kata, Equipment or Consumable) is stamped DENIED: it goes to your discard pile and does nothing. The stamp is used up."
+      "summary": "The next card you play on your turn is stamped DENIED: a Kata, Equipment or Consumable goes to your discard pile and does nothing. An Attack may be kept by discarding another card from your hand; otherwise it is cancelled. The stamp is used up."
     },
     {
       "id": "papercut",

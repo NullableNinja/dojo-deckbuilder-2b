@@ -19,7 +19,7 @@ Most effects are applied **on Hit**: when the Attack that carries them Hits (dea
 
 **1.3 Refresh.** "Refreshes" means applying it again resets its duration to full.
 
-**1.4 Duration.** Effects last one of:
+**1.4 Duration.** Effects last one of (an "until the end of your next turn" effect put on you during your own turn lasts through your *following* turn, so it never ends at the Hide of the turn it arrived):
 - **N rounds:** counted at **Honor**. "2 rounds" ends at the second Honor after it was applied.
 - **Until the end of your next turn:** ends at your next **Hide** (the same timing as Witness Protection).
 - **Until used:** ends the moment it does its job (Denied, Barrier).
@@ -82,7 +82,10 @@ Damage at Honor ignores DEF, Guard and Armor. It can knock a fighter out; check 
 
 ### 2.6 Denied
 *A rubber stamp slams across the card: DENIED.*
-- The **next card you play on your turn** (an Attack, Kata, Equipment or Consumable) is **void**: it goes to your discard pile and does nothing. Focus already spent stays spent; an Attack voided this way is not declared and deals nothing.
+- The **next card you play on your turn** is stamped:
+  - a **Kata, Equipment or Consumable** is **void**: it goes to your discard pile and does nothing;
+  - an **Attack** gives you a choice: **discard another card from your hand** to keep the Attack, or **cancel it** (it is void, is not declared and deals nothing). With no other card in hand, it is cancelled.
+- Either way the stamp is used up. Focus already spent stays spent. *(Owner decision 91: the audit's discard-or-cancel for Attacks, our "next card is void" for everything else.)*
 - **Duration:** until used. Defense and Reaction cards played on an opponent's turn are not affected.
 - *Sample card:* **Rubber Stamp of Refusal** (Reaction Item): "When an opponent declares an Attack, Deny them."
 
@@ -170,7 +173,12 @@ Variants to test later: a two-handed version that Reimburses on 3+ damage but tw
 
 ---
 
-## 5. Promoting an effect into the real game
+## 5. Playing with these rules today
+These rules are an **experimental update**. Switch on **Status effects** under *Experimental updates* in the match setup
+(Quick Duel, Tag Team and Boss Blitz on the shared engine); the Test Arena (`#arena`) always has them on. See
+`content/experimental/experiments.json` and `engine/experiments.mjs`.
+
+## 5a. Promoting an effect into the real game
 1. Pick the effect and approve its numbers after arena and simulator testing (`npm run simulate`).
 2. Move its rule block into `content/dojo-game.json`, add an official ruling in `content/rules.json`, and add a glossary entry.
 3. Implement it in the engine's real resolvers (the arena variant is the reference) with the same tests.

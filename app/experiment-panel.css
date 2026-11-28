@@ -1,0 +1,39 @@
+/* "Experimental updates" in the match setup. Brass marks the test packages (certification pending); ember is the
+   switch accent, like house rules. Theme-safe: only semantic tokens, so light and dark both read. */
+@layer components {
+  .experiment-panel { margin: 14px 0 0; border: 1px dashed var(--pf-brass); background: color-mix(in srgb, var(--pf-brass-soft) 22%, transparent); padding: 14px; }
+  .experiment-panel legend { padding-inline: 5px; color: var(--pf-brass-text); font-family: var(--pf-mono); font-size: 8px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+  .experiment-panel > p { margin: 0 0 10px; color: var(--pf-muted); font-size: 10px; line-height: 1.45; }
+  .experiment-panel.is-disabled { opacity: .62; }
+  .experiment-panel__bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .experiment-panel__bulk .button { min-height: 44px; padding-inline: 12px; font-size: 10px; }
+  .experiment-panel__count { margin-right: auto; color: var(--pf-ink-soft); font-family: var(--pf-mono); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+
+  .experiment-module { border-top: 1px solid var(--pf-line); }
+  .experiment-module__switch { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; min-height: 44px; padding: 9px 0; cursor: pointer; }
+  .experiment-module__switch input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--pf-action); }
+  .experiment-module__switch b { display: block; color: var(--pf-ink); font-size: 12px; }
+  .experiment-module__switch small { display: block; margin-top: 2px; color: var(--pf-muted); font-size: 10px; line-height: 1.4; }
+  .experiment-module__tag { align-self: center; border: 1px solid var(--pf-line-strong); padding: 2px 6px; color: var(--pf-ink-soft); font-family: var(--pf-mono); font-size: 8px; font-style: normal; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .experiment-module.is-on .experiment-module__tag { border-color: var(--pf-brass); background: var(--pf-brass-soft); color: var(--pf-brass-text); }
+
+  .experiment-module__cards { margin: 0 0 10px 26px; }
+  .experiment-module__cards summary { display: flex; align-items: center; min-height: 44px; color: var(--pf-blue); font-size: 10px; font-weight: 800; cursor: pointer; }
+  .experiment-module__cards summary:focus-visible, .experiment-module__switch:focus-within { outline: 2px solid var(--pf-blue); outline-offset: 2px; }
+  .experiment-module__cards ul { display: grid; gap: 0; max-height: 360px; margin: 0; padding: 0; overflow-y: auto; list-style: none; border: 1px solid var(--pf-line); background: var(--pf-surface); }
+  .experiment-module__cards li + li { border-top: 1px solid var(--pf-line); }
+  .experiment-module__cards label { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; min-height: 44px; padding: 8px 10px; cursor: pointer; }
+  .experiment-module__cards input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--pf-action); }
+  .experiment-module__cards b { display: block; color: var(--pf-ink); font-size: 11px; }
+  .experiment-module__cards small { display: block; margin-top: 2px; color: var(--pf-ink-soft); font-size: 10px; line-height: 1.4; }
+  .experiment-module__cards .experiment-entry__meta { color: var(--pf-muted); font-family: var(--pf-mono); font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .experiment-module__cards .experiment-entry__note { color: var(--pf-brass-text); font-style: italic; }
+  .experiment-module__cards li.is-excluded b, .experiment-module__cards li.is-excluded small { color: var(--pf-faint); text-decoration: line-through; }
+  .experiment-module__cards li.is-excluded .experiment-entry__note { text-decoration: none; }
+}
+
+/* "TEST RULES" tab under the round badge while experimental updates are on (the mat is the same in both themes:
+   brass paper with manila ink: both tokens keep their contrast in light and dark). */
+@layer components {
+  .playtest-shell--live .versus-center > .versus-experiments { position: absolute; z-index: 2; top: calc(100% + 2px); left: 50%; transform: translateX(-50%) rotate(-2deg); border: 1px solid var(--pf-manila-ink); background: var(--pf-brass); padding: 2px 6px; color: var(--pf-manila-ink); font-family: var(--pf-mono); font-size: 7px; font-style: normal; font-weight: 900; letter-spacing: .1em; white-space: nowrap; box-shadow: 2px 2px 0 color-mix(in srgb, var(--pf-ink) 45%, transparent); }
+}

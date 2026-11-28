@@ -47,7 +47,7 @@ export const HEADLESS_SUPPORTED_CONDITIONS = new Set([
   // Structured parameters and lifecycle facts are consumed by resolver hosts,
   // rather than treated as unknown predicates.
   "incomingZones", "discardCost", "nonHonorSceneChangedThisRound", "choiceKind", "sourceAffectedCountThreshold",
-  "scheduledTiming", "firstSwapThisGame", "discardedByEffect", "selfIsLowestXp", "speedPenaltyEvent",
+  "scheduledTiming", "firstSwapThisGame", "discardedByEffect", "selfIsLowestXp", "xpBehindLeaderAtLeast", "speedPenaltyEvent",
   "forcedDiscardEvent", "resolvedCardType", "sceneChangeOccurred", "eventCardType", "nextMatchingEvent",
   "boughtCardThisTurn", "event", "grantFlowTo", "beltExam", "firstNovelPurchasedCardType", "requiresCondition",
   "attackSpeedBonus", "attackPowerBonus", "optional", "onPaidGainFocus", "readyTiming", "maxAttacksAfterSource",

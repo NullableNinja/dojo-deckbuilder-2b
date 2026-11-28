@@ -137,7 +137,7 @@ export function incomingAttack(game: EngineGame, human: number): EngineCard | nu
 }
 
 const CHOICE_TITLE: Record<string, string> = {
-  defense: "Defend or take the hit", reaction: "Play a Reaction?", "card-boxed": "Card returned to the box", reversal: "Reversal window", "attack-zone": "Declare the zone",
+  defense: "Defend or take the hit", reaction: "Play a Reaction?", "denied-attack": "DENIED: pay or cancel", "status-reward": "Choose your payout", "card-boxed": "Card returned to the box", reversal: "Reversal window", "attack-zone": "Declare the zone",
   "card-movement": "Choose a card", "cycle-discard-draw": "Discard to draw?", "deck-look": "Choose from the revealed cards",
   "discard-or-destroy": "Discard or destroy", "equipment-toggle": "Choose Equipment", "hit-choice": "Choose the hit effect",
   "incoming-attack-choice": "Answer the incoming Attack", "zone-choice": "Choose a zone", structured: "Resolve the printed effect",
@@ -156,6 +156,7 @@ export function choicePrompt(game: EngineGame, pending: EnginePending, human: nu
   if (pending.kind === "reversal") return "You blocked it. Counter with a Reversal Attack, or let the moment pass.";
   if (pending.kind === "attack-zone") return "This Attack can go High, Mid or Low. Choose where it lands.";
   if (pending.kind === "zone-choice") return "Choose a zone for this effect.";
+  if (typeof pending.prompt === "string") return pending.prompt;
   const source = typeof pending.sourceCardId === "string" ? findInstance(game, pending.sourceCardId)?.name : null;
   return source ? `${source} asks you to choose.` : "Choose one option.";
 }

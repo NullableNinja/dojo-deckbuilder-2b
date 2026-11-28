@@ -2,6 +2,7 @@ import { attackPower, chooseAttack, chooseDefense, choosePractice, choosePurchas
 import { comboTimingAllows, comboContext, comboEffects, evaluateCombo } from "./combo-runtime.mjs";
 import { CHARACTER_ABILITIES, ZONE_GRANT_SPENT_ON_ELIGIBLE_ATTACK, characterZoneGrants } from "./character-abilities.mjs";
 import { effectiveDefinition, pooledDecks, resolveTableOptions, tableOption, tableOptionsAreDefault } from "./table-options.mjs";
+import { applyExperiments } from "./experiments.mjs";
 
 import { Rng } from "./rng.mjs";
 
@@ -176,7 +177,7 @@ const isExhaustCost = (effect) => effectAction(effect) === "exhaust" && effect.t
 const structuredParameterKinds = new Set([
   "choiceKind", "choiceOptions", "incomingZones", "discardCost", "nonHonorSceneChangedThisRound",
   "sourceAffectedCountThreshold", "scheduledTiming", "minimumDraw", "firstSwapThisGame", "discardedByEffect",
-  "selfIsLowestXp", "speedPenaltyEvent", "forcedDiscardEvent", "sceneChangeOccurred",
+  "selfIsLowestXp", "xpBehindLeaderAtLeast", "minFocusValue", "drawIfNoMatch", "speedPenaltyEvent", "forcedDiscardEvent", "sceneChangeOccurred",
   "eventCardType", "nextMatchingEvent", "boughtCardThisTurn", "event", "grantFlowTo", "beltExam",
   "firstNovelPurchasedCardType", "requiresCondition", "attackSpeedBonus", "attackPowerBonus", "optional",
   "onPaidGainFocus", "readyTiming", "maxAttacksAfterSource", "duration", "optionalExhaust", "mustDifferFromFirstAttackZone",
@@ -211,9 +212,11 @@ export function resolveMode(definition, requested = null) {
 
 export class Game {
   constructor(data, { seed = 1, strategies = ["balanced", "balanced"], characters = [], mode = null, players: playerCount = null, rosters = [], teams = null, table = {} } = {}) {
-    this.data = data;
-    // Table options (definition.tableOptions) are resolved first: house rules can change the definition.
+    // Table options (definition.tableOptions) are resolved first: house rules can change the definition,
+    // and experiments (engine/experiments.mjs) can add or retune cards.
     this.tableOptions = resolveTableOptions(data.definition, table);
+    data = applyExperiments(data, this.tableOptions.experiments);
+    this.data = data;
     this.definition = effectiveDefinition(data.definition, this.tableOptions);
     this.cardPool = this.resolveCardPool(this.tableOptions.cardPool);
     this.mode = resolveMode(this.definition, mode);
@@ -283,7 +286,8 @@ export class Game {
 
   /** True when a card may be used at this table: no pool, a deck the pool does not filter, or a pooled card. */
   inCardPool(card) {
-    return !this.cardPool || !this.cardPool.decks.has(card.deck) || this.cardPool.ids.has(card.catalogId);
+    // Experimental cards (engine/experiments.mjs) are on the table whenever their module is on, whatever the pool.
+    return !this.cardPool || card.experiment?.kind === "card" || !this.cardPool.decks.has(card.deck) || this.cardPool.ids.has(card.catalogId);
   }
 
   /** Market cards for this table: every card in the Market decks that is in the card pool. */
@@ -350,6 +354,8 @@ export class Game {
     for (let count = 0; count < amount; count += 1) {
       if (!player.deck.length && player.discard.length) player.deck = this.rng.shuffle(player.discard.splice(0));
       const card = player.deck.pop(); if (!card) break; player.hand.push(card); this.track(card, "drawn", player);
+      // "If you drew a card earlier this turn": draws during your own Yell or Ascend (not the Initiate or Hide draw).
+      if (player.turnStats && player.id === this.activePlayer && (this.phase === "Yell" || this.phase === "Ascend")) player.turnStats.extraDraws = (player.turnStats.extraDraws ?? 0) + 1;
     }
   }
 
@@ -977,6 +983,12 @@ export class Game {
     this.telemetry.comboEffectsResolved += Math.max(0, this.telemetry.effectApplications - before);
   }
 
+  /** Status ids a rule extension has put on a fighter (none in the canonical game). */
+  statusIdsOf(_player) { return []; }
+
+  /** A rule extension resolves its own "status.*" effects; the canonical game has none, so they are unsupported. */
+  applyStatusEffect(_player, _card, _effect, _context) { return false; }
+
   cardEffects(card, trigger) { return (this.effects.get(card.catalogId)?.effects ?? []).filter((effect) => effect.trigger === trigger); }
 
   revealLocation() {
@@ -1123,6 +1135,13 @@ export class Game {
       targetSpeedHigher: this.currentSpeed(context.opponent) > this.currentSpeed(context.player),
       targetXpHigher: context.opponent.xp > context.player.xp,
       targetTempoUsed: !context.opponent.tempo,
+      // Status conditions read the rule extension's statuses; without one, nobody has any.
+      targetHasStatus: this.statusIdsOf(context.opponent),
+      selfHasStatus: this.statusIdsOf(context.player),
+      targetHasTempo: Boolean(context.opponent?.tempo),
+      drewCardThisTurn: (context.player.turnStats.extraDraws ?? 0) > 0,
+      discardedCardThisTurn: (context.player.turnStats.discardedThisTurn ?? []).length > 0,
+      targetBlockedThisRound: Boolean(context.opponent?.turnStats?.blocked),
       hasWeaponEquipped: context.player.equipment.some((card) => card.subtype === "Weapon"),
       playedKataThisTurn: (context.player.turnStats.kataCount ?? 0) > 0,
       completedBeltExamThisRound: Boolean(context.player.turnStats.completedBeltExamThisRound),
@@ -1382,13 +1401,14 @@ export class Game {
     const requestedType = (effect.conditions ?? []).find((condition) => condition.kind === "cardType")?.value;
     const candidates = sourceZones.flatMap((zone) => targetPlayer[zone] ?? []).filter((candidate) => !this.isDeclaredAttackCard(candidate) && (!requestedType || [candidate.cardType, candidate.subtype, candidate.category].includes(requestedType)));
     const options = candidates.map((candidate) => ({ id: candidate.instanceId, label: candidate.name }));
-    if (!options.length) return false;
+    if (!options.length) { if (effect.ifNoOptions) this.applyMoveReward(player, null, effect.ifNoOptions); return false; }
     this.offerChoice({
       kind: "card-movement", playerId: player.id, targetPlayerId: targetPlayer.id, movement, amount: effectiveAmount,
       sourceZones, sourceCardId: effect.sourceCardId ?? null, effectId: effect.id ?? null,
       discardBranch: effect.discardBranch === true, branchDraw: num(effect.branchDraw ?? 0), branchFocus: num(effect.branchFocus ?? 0), branchDefense: num(effect.branchDefense ?? 0),
       drawIfSourceZone: (effect.conditions ?? []).find((condition) => condition.kind === "drawIfSourceZone")?.value ?? null,
       drawAmount: num((effect.conditions ?? []).find((condition) => condition.kind === "drawAmount")?.value ?? 0),
+      ...(effect.afterMove ? { afterMove: effect.afterMove } : {}), ...(effect.ifJunk ? { ifJunk: effect.ifJunk } : {}), ...(effect.otherwise ? { otherwise: effect.otherwise } : {}),
       options,
     });
     return true;
@@ -1406,6 +1426,8 @@ export class Game {
     if (pending.drawIfSourceZone === sourceZone && pending.drawAmount > 0) this.draw(targetPlayer, pending.drawAmount);
     const remaining = Number(pending.amount ?? 1) - 1;
     this.pendingChoice = null;
+    this.applyMoveReward(targetPlayer, card, card.category === "Junk" && pending.ifJunk ? pending.ifJunk : pending.otherwise, sourceZone);
+    this.applyMoveReward(targetPlayer, card, pending.afterMove, sourceZone);
     if (pending.then) return this.beginAttack(pending.playerId, this.cardByInstance(pending.playerId, pending.then.cardId), { ...pending.then, zoneCostPaid: true });
     if (remaining > 0 && this.queueCardChoice(this.players[pending.playerId], targetPlayer, pending, pending.movement, remaining)) return true;
     if (pending.discardBranch) {
@@ -1419,9 +1441,24 @@ export class Game {
     return true;
   }
 
+  /**
+   * A reward a card-movement effect names in data ("afterMove", "ifJunk", "otherwise", "ifNoOptions"):
+   * { draw, discard, focus, destroy, fromZone }. `destroy` destroys the moved card; `fromZone` limits it to cards
+   * that came from that zone. Generic: no card is named.
+   */
+  applyMoveReward(player, card, reward, sourceZone = null) {
+    if (!reward || !player) return false;
+    if (reward.fromZone && reward.fromZone !== sourceZone) return false;
+    if (reward.destroy && card && player.discard.includes(card)) this.destroyCard(player, card);
+    if (reward.focus) this.gainFocusFor(player, num(reward.focus));
+    if (reward.draw) this.draw(player, num(reward.draw));
+    if (reward.discard) this.offerChoice(() => this.queueCardChoice(player, player, { id: "move-reward" }, "discard", num(reward.discard)));
+    return true;
+  }
+
   queueDiscardDrawChoice(player, effect) {
       const candidates = player.hand.filter((card) => !this.isDeclaredAttackCard(card) && (!effect.candidateType || [card.cardType, card.subtype, card.category].includes(effect.candidateType)));
-      this.offerChoice({ kind: "cycle-discard-draw", playerId: player.id, drawAmount: num(effect.drawAmount ?? effect.amount ?? 1), postDrawDiscard: effect.postDrawDiscard === true, revealSelected: effect.revealSelected === true, sourceCardId: effect.sourceCardId ?? null, effectId: effect.id ?? null, options: [{ id: "skip", label: "Skip" }, ...candidates.map((card) => ({ id: card.instanceId, label: card.name }))] });
+      this.offerChoice({ kind: "cycle-discard-draw", playerId: player.id, ...(effect.ifJunk ? { ifJunk: effect.ifJunk } : {}), drawAmount: num(effect.drawAmount ?? effect.amount ?? 1), postDrawDiscard: effect.postDrawDiscard === true, revealSelected: effect.revealSelected === true, sourceCardId: effect.sourceCardId ?? null, effectId: effect.id ?? null, options: [{ id: "skip", label: "Skip" }, ...candidates.map((card) => ({ id: card.instanceId, label: card.name }))] });
     return true;
   }
 
@@ -1448,12 +1485,14 @@ export class Game {
     const lookCount = num((effect.conditions ?? []).find((condition) => condition.kind === "lookCount")?.value ?? (["consumable.topThreeAttackSelection", "consumable.reorderTopThree"].includes(effect.resolver) ? 3 : effect.resolver === "defense.deckLookChoice" ? 2 : 1));
     const eligible = (effect.conditions ?? []).find((condition) => condition.kind === "eligibleTypes")?.value ?? (effect.resolver === "consumable.topThreeAttackSelection" ? ["Attack"] : []);
     const looked = player.deck.slice(-Math.max(0, lookCount));
-    const options = looked.filter((card) => !eligible.length || eligible.includes(card.cardType) || eligible.includes(card.subtype) || eligible.includes(card.category)).map((card) => ({ id: card.instanceId, label: card.name }));
+    const minFocusValue = num((effect.conditions ?? []).find((condition) => condition.kind === "minFocusValue")?.value ?? 0);
+    const options = looked.filter((card) => (!eligible.length || eligible.includes(card.cardType) || eligible.includes(card.subtype) || eligible.includes(card.category)) && (!minFocusValue || num(card.focusValue) >= minFocusValue)).map((card) => ({ id: card.instanceId, label: card.name }));
     player.revealed.push(...looked); this.telemetry.cardsRevealed += looked.length;
     this.offerChoice({
       kind: "deck-look", playerId: player.id, lookedCardIds: looked.map((card) => card.instanceId),
       restAction: (effect.conditions ?? []).find((condition) => condition.kind === "restAction")?.value ?? (["consumable.topThreeAttackSelection", "defense.deckLookChoice"].includes(effect.resolver) ? "discard" : "reorder"),
       focusIfNoMatch: num((effect.conditions ?? []).find((condition) => condition.kind === "noMatchFocus")?.value ?? 0),
+      drawIfNoMatch: num((effect.conditions ?? []).find((condition) => condition.kind === "drawIfNoMatch")?.value ?? 0),
       focusIfDifferentTypes: num((effect.conditions ?? []).find((condition) => condition.kind === "differentCardTypesFocus")?.value ?? 0),
       discardFocusCardType: effect.resolver === "defense.deckLookChoice" ? "Junk" : null,
       options: [{ id: "skip", label: "Keep the revealed cards" }, ...options],
@@ -1655,18 +1694,19 @@ export class Game {
         return true;
       }
       if (params.selfIsLowestXp) { if (player.xp <= opponent.xp) add("modifyDefense", amount || 1); return true; }
+      if (params.xpBehindLeaderAtLeast !== undefined) { const leader = Math.max(...this.players.map((entry) => entry.xp)); if (leader - player.xp >= Number(params.xpBehindLeaderAtLeast)) add("modifyDefense", amount || 1); return true; }
       if (params.forcedDiscardEvent) {
         if (context.forcedDiscardEvent) context.forcedDiscardReduction = (context.forcedDiscardReduction ?? 0) + Math.max(0, amount || 1);
         return true;
       }
       if (params.oncePerGame && effect.trigger === "passive" && !context.attackCard) {
-        this.addStatus(player, { action: "preventDamage", amount: 99, duration: "nextAttack", sourceId: card.instanceId });
+        this.addStatus(player, { action: "preventDamage", amount: amount > 0 ? amount : 99, duration: "nextAttack", sourceId: card.instanceId });
         this.markUsedEffect(player, effect);
         return true;
       }
       // "Once per game, when you are targeted by an Attack, destroy this. That Attack deals 0 damage to you."
       if (params.oncePerGame && effect.trigger === "onAttackDeclared" && effect.target === "self") { context.damagePrevention = (context.damagePrevention ?? 0) + ALL_DAMAGE; this.destroyCard(player, card); this.markUsedEffect(player, effect); return true; }
-      if (params.oncePerGame && resolver === "equipment.structured" && effect.trigger === "passive" && context.attackCard) { add("preventDamage", 99, "nextAttack"); this.markUsedEffect(player, effect); return true; }
+      if (params.oncePerGame && resolver === "equipment.structured" && effect.trigger === "passive" && context.attackCard) { add("preventDamage", amount > 0 ? amount : 99, "nextAttack"); this.markUsedEffect(player, effect); return true; }
       if (effect.trigger === "onHit" && params.attackUsesSourceEquipment) {
         if (effect.target === "opponent" && params.scheduledTiming === "endOfTargetNextTurn") this.addStatus(target, { action: "delayedDamage", amount, duration: "endOfTargetNextTurn", sourcePlayerId: player.id, sourceId: card.instanceId });
         else if (effect.target === "opponent" && params.scheduledTiming === "nextRound") add("modifySpeed", amount, "nextRound");
@@ -1832,7 +1872,9 @@ export class Game {
       if (effect.resolver === "attack.final.hitChoice") action = "hitChoice";
       if (REVERSAL_BONUS_RESOLVERS[effect.resolver]) action = "reversalBonus";
       if (TARGETED_COMBO_RESOLVERS.has(effect.resolver)) action = "structured";
-      if (action === "gainFocus") { const gained = effect.resolver === "consumable.revealTopFocusValue" ? Math.max(1, Number(effectContext.revealedFocusValue ?? amount)) : amount; player.focus += gained; player.turnStats.focusGenerated = (player.turnStats.focusGenerated ?? 0) + gained; this.telemetry.focusGenerated += gained; }
+      // Rule extensions (the status layer, engine/arena-rules.mjs) claim their own "status.*" effects.
+      if (typeof action === "string" && action.startsWith("status.")) { if (!this.applyStatusEffect(player, card, effect, effectContext)) this.unsupportedEffect(card, effect); }
+      else if (action === "gainFocus") { const gained = effect.resolver === "consumable.revealTopFocusValue" ? Math.max(1, Number(effectContext.revealedFocusValue ?? amount)) : amount; player.focus += gained; player.turnStats.focusGenerated = (player.turnStats.focusGenerated ?? 0) + gained; this.telemetry.focusGenerated += gained; }
       else if (action === "draw") this.draw(player, Math.max(0, amount));
       else if (action === "reversalBonus") this.armReversalBonus(player, effectContext.opponent, effect, card);
       else if (action === "reveal") this.reveal(effect.target === "opponent" ? effectContext.opponent : player, Math.max(1, amount));
@@ -2112,7 +2154,7 @@ export class Game {
     this.markComboCardPlayed(attacker, card, zone, { outsideTurn: reversal });
     this.activateCombos(attacker, "afterResolve", card, zone, { currentAttackHit: damage > 0, currentDefense: defenseCard, currentDefenseBlocked: blocked, isReversal: reversal });
     if (!reversal) this.cardPlayedEvent(attacker, card, zone);
-    if (!reversal && (flow || context.flow) && !attacker.turnStats.flowDrawUsed) { this.draw(attacker, 1); attacker.turnStats.flowDrawUsed = true; }
+    if (!reversal && (flow || context.flow) && !attacker.turnStats.flowDrawUsed && !this.equipmentRestrictions(attacker).includes("noFlow")) { this.draw(attacker, 1); attacker.turnStats.flowDrawUsed = true; }
     if (damage > 0) { this.track(card, "damageDealt", attacker, damage); this.track(card, "hits", attacker); }
     if (defenseCard) this.track(defenseCard, damage === 0 ? "blocks" : "damagePrevented", defender, damage === 0 ? 1 : Math.max(0, block - attack + damage));
     this.emit({ type: "attack", attacker: attacker.id, defender: defender.id, card: card.catalogId, defense: defenseCard?.catalogId ?? null, attack, block, damage, defenseFocus: defenseCard && defender.id === this.activePlayer ? focus(defenseCard) : 0, zone: zone ?? card.zone ?? null, reversal, breakdown });
@@ -2913,6 +2955,7 @@ export class Game {
         if (!card) return false;
         if (pending.revealSelected) this.emit({ type: "card-revealed", player: player.id, card: card.catalogId });
         this.discardCard(player, card); this.draw(player, pending.drawAmount);
+        if (pending.ifJunk && card.category === "Junk") { this.pendingChoice = null; this.applyMoveReward(player, card, pending.ifJunk); }
         if (pending.postDrawDiscard) {
           this.pendingChoice = { kind: "card-movement", playerId: player.id, targetPlayerId: player.id, movement: "discard", amount: 1, sourceCardId: pending.sourceCardId, effectId: pending.effectId, options: player.hand.map((candidate) => ({ id: candidate.instanceId, label: candidate.name })) };
           return true;
@@ -2927,7 +2970,8 @@ export class Game {
       const chosen = selected === "skip" ? null : looked.find((card) => card.instanceId === selected);
       if (chosen) player.hand.push(chosen);
       const rest = looked.filter((card) => card !== chosen);
-      if (pending.restAction === "discard") player.discard.push(...rest); else player.deck.push(...(pending.restAction === "shuffle" ? this.rng.shuffle(rest) : rest));
+      if (pending.restAction === "discard") player.discard.push(...rest); else if (pending.restAction === "bottom") player.deck.unshift(...rest); else player.deck.push(...(pending.restAction === "shuffle" ? this.rng.shuffle(rest) : rest));
+      if (!chosen && pending.drawIfNoMatch) this.draw(player, pending.drawIfNoMatch);
       const foundEligible = Boolean(chosen);
       const discardedRequestedType = pending.discardFocusCardType && rest.some((card) => [card.cardType, card.subtype, card.category].includes(pending.discardFocusCardType));
       if ((!foundEligible && pending.focusIfNoMatch) || (pending.focusIfDifferentTypes && new Set(looked.map(cardType)).size >= 2) || (discardedRequestedType && pending.discardFocusCardType)) {
@@ -3021,7 +3065,7 @@ export class Game {
 
   run({ policy = null, maxSteps = 100000 } = {}) {
     const controller = policy ?? { chooseAction: (game, legal) => game.defaultAction(legal), chooseChoice: (game) => game.defaultChoice() }; let steps = 0;
-    while (this.winner === null && steps < maxSteps) { steps += 1; this.advanceAutomaticEvents(); this.assertInvariants(steps); if (this.pendingChoice) { const pending = this.getPendingChoice(); if (this.lastPresentedChoice !== this.pendingChoice) { this.telemetry.choicesPresented += 1; this.lastPresentedChoice = this.pendingChoice; } const choice = controller.chooseChoice ? controller.chooseChoice(this, pending) : this.defaultChoice(); this.decisions.push({ step: steps, kind: "choice", pendingKind: pending.kind, choice: structuredClone(choice) }); if (!this.resolveChoice(choice)) throw new Error(`Policy selected illegal choice at seed ${this.seed}`); this.assertInvariants(steps); continue; } const legal = this.getLegalActions(); if (!legal.length) throw new Error(`No legal actions in ${this.phase} for player ${this.activePlayer}`); const action = controller.chooseAction ? controller.chooseAction(this, legal) : this.defaultAction(legal); this.decisions.push({ step: steps, kind: "action", phase: this.phase, action: structuredClone(action) }); if (!this.applyAction(action)) throw new Error(`Policy selected illegal action at seed ${this.seed}: ${JSON.stringify(action)}`); this.assertInvariants(steps); }
+    while (this.winner === null && steps < maxSteps) { steps += 1; this.advanceAutomaticEvents(); this.assertInvariants(steps); if (this.winner !== null) break; if (this.pendingChoice) { const pending = this.getPendingChoice(); if (this.lastPresentedChoice !== this.pendingChoice) { this.telemetry.choicesPresented += 1; this.lastPresentedChoice = this.pendingChoice; } const choice = controller.chooseChoice ? controller.chooseChoice(this, pending) : this.defaultChoice(); this.decisions.push({ step: steps, kind: "choice", pendingKind: pending.kind, choice: structuredClone(choice) }); if (!this.resolveChoice(choice)) throw new Error(`Policy selected illegal choice at seed ${this.seed}`); this.assertInvariants(steps); continue; } const legal = this.getLegalActions(); if (!legal.length) throw new Error(`No legal actions in ${this.phase} for player ${this.activePlayer}`); const action = controller.chooseAction ? controller.chooseAction(this, legal) : this.defaultAction(legal); this.decisions.push({ step: steps, kind: "action", phase: this.phase, action: structuredClone(action) }); if (!this.applyAction(action)) throw new Error(`Policy selected illegal action at seed ${this.seed}: ${JSON.stringify(action)}`); this.assertInvariants(steps); }
     if (this.winner === null) throw new Error(`Game exceeded ${maxSteps} steps at seed ${this.seed}`);
     const winnerFamilies = new Set();
     for (const player of this.players) for (const id of player._used ?? []) if (player.id === this.winner && this.cardStats.has(id)) { const stats = this.cardStats.get(id); stats.winnerOwned += 1; winnerFamilies.add(stats.family); }
