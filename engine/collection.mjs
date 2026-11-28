@@ -7,7 +7,7 @@
  * read from content/packs.json, so nothing here knows a card, a Character or a Boss by name or id.
  * Storage, clocks and the browser live in app/career.ts.
  */
-import { Rng } from "./core.mjs";
+import { Rng } from "./rng.mjs";
 
 export const CAREER_SCHEMA = 1;
 const TICKET = "booster-ticket";

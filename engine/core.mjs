@@ -3,12 +3,9 @@ import { comboTimingAllows, comboContext, comboEffects, evaluateCombo } from "./
 import { CHARACTER_ABILITIES, ZONE_GRANT_SPENT_ON_ELIGIBLE_ATTACK, characterZoneGrants } from "./character-abilities.mjs";
 import { effectiveDefinition, pooledDecks, resolveTableOptions, tableOption, tableOptionsAreDefault } from "./table-options.mjs";
 
-export class Rng {
-  constructor(seed = 1) { this.seed = Number(seed) || 1; this.state = this.seed >>> 0; }
-  next() { this.state = (1664525 * this.state + 1013904223) >>> 0; return this.state / 2 ** 32; }
-  pick(array) { return array.length ? array[Math.floor(this.next() * array.length)] : undefined; }
-  shuffle(array) { for (let index = array.length - 1; index > 0; index -= 1) { const other = Math.floor(this.next() * (index + 1)); [array[index], array[other]] = [array[other], array[index]]; } return array; }
-}
+import { Rng } from "./rng.mjs";
+
+export { Rng };
 
 const num = (value) => Number.parseInt(String(value ?? 0), 10) || 0;
 const remove = (array, value) => { const index = array.indexOf(value); if (index >= 0) array.splice(index, 1); };
