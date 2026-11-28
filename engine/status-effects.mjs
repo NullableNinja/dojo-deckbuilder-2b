@@ -1,42 +1,53 @@
 /**
- * Draft status effects (burn, poison, freeze) and the Reimburse keyword, driven entirely by
- * content/experimental/status-effects.json. Framework-free and deterministic (no randomness at all).
+ * Draft status effects and the Reimburse keyword, driven entirely by content/experimental/status-effects.json.
+ * Framework-free and deterministic (no randomness at all).
  *
- * EXPERIMENTAL: the Test Arena uses this on small "combatants" so the effects can be seen and tuned before
- * any card carries them. It is not wired into engine/core.mjs. When an effect is approved it moves into
- * content/dojo-game.json and the real resolvers; this module is the readable reference for how it should behave.
+ * EXPERIMENTAL: the Test Arena uses this on small "combatants" so effects can be seen and tuned before any
+ * card carries them. It is not wired into engine/core.mjs. When an effect is approved it moves into
+ * content/dojo-game.json and the real resolvers; this module is the readable reference for how it behaves.
  *
  * Every function mutates the combatants it is given and returns the events it produced, in order, so a UI can
  * replay them as animation and a test can assert them. Nothing here knows a card by name.
+ *
+ * Two actions exist: `strike` (an Attack, aimed at a zone) and `brace` (a Defense). Both cost Focus.
  */
 
 export function createCatalog(json) {
   return {
     effects: new Map(json.effects.map((effect) => [effect.id, effect])),
     keywords: new Map(json.keywords.map((keyword) => [keyword.id, keyword])),
+    actions: json.actions,
+    focusRegen: json.round?.focusRegen ?? 0,
   };
 }
 
-/** A fighter for the arena: stats, the keywords it carries (e.g. a Reimburse weapon), and its statuses. */
-export function createCombatant({ id, name, hp = 25, maxHp = hp, atk = 3, def = 2, speed = 3, keywords = [] }) {
-  return { id, name, hp, maxHp, atk, def, speed, keywords: [...keywords], statuses: [], grace: {}, healedThisRound: 0 };
+/** A fighter for the arena: stats, Focus, the keywords it carries (e.g. a Reimburse weapon), and its statuses. */
+export function createCombatant({ id, name, hp = 25, maxHp = hp, atk = 3, def = 2, speed = 3, focus = 3, maxFocus = focus, keywords = [] }) {
+  return { id, name, hp, maxHp, atk, def, speed, focus, maxFocus, keywords: [...keywords], statuses: [], grace: {}, healedThisRound: 0, braced: 0, lastZone: null };
 }
 
 export const statusOf = (combatant, effectId) => combatant.statuses.find((status) => status.id === effectId) ?? null;
 export const isFrozen = (combatant) => Boolean(statusOf(combatant, "freeze"));
 
-/** Can this fighter take the action ("attack" or "reaction") right now? Statuses carry a `blocks` list. */
+const sumOf = (catalog, combatant, field, perStack = false) =>
+  combatant.statuses.reduce((total, status) => total + (catalog.effects.get(status.id)?.[field] ?? 0) * (perStack ? status.stacks : 1), 0);
+
+/** Can this fighter take the action ("attack" or "brace") right now? Statuses carry a `blocks` list. */
 export function canAct(catalog, combatant, action) {
   return !combatant.statuses.some((status) => catalog.effects.get(status.id)?.blocks?.includes(action));
 }
 
-/** Speed after statuses (Freeze lowers it). */
-export function effectiveSpeed(catalog, combatant) {
-  return Math.max(0, combatant.speed - combatant.statuses.reduce((total, status) => total + (catalog.effects.get(status.id)?.speedPenalty ?? 0), 0));
-}
+/** Speed after statuses (Laminated and Wet Floor lower it). */
+export const effectiveSpeed = (catalog, combatant) => Math.max(0, combatant.speed - sumOf(catalog, combatant, "speedPenalty"));
+
+/** DEF after a Brace and statuses (Wet Floor lowers it). */
+export const effectiveDefense = (catalog, combatant) => Math.max(0, combatant.def + combatant.braced - sumOf(catalog, combatant, "defensePenalty"));
+
+/** What a card costs this fighter right now (Red Tape adds to it). */
+export const playCost = (catalog, combatant, base) => base + sumOf(catalog, combatant, "costPenaltyPerStack", true);
 
 const remove = (combatant, effectId) => { combatant.statuses = combatant.statuses.filter((status) => status.id !== effectId); };
-const healingPenalty = (catalog, combatant) => combatant.statuses.reduce((total, status) => total + (catalog.effects.get(status.id)?.healingPenalty ?? 0), 0);
+const healingPenalty = (catalog, combatant) => sumOf(catalog, combatant, "healingPenalty");
 
 /** Put a status on a fighter. Returns events: applied, stacked, resisted, thaw. */
 export function applyStatus(catalog, target, effectId, { stacks = 1, source = null } = {}) {
@@ -46,7 +57,10 @@ export function applyStatus(catalog, target, effectId, { stacks = 1, source = nu
   if (target.hp <= 0) return events;
   if (effect.graceRounds && (target.grace[effectId] ?? 0) > 0) return [{ type: "resisted", target: target.id, effect: effectId, reason: "grace" }];
   const existing = statusOf(target, effectId);
-  if (existing && effect.maxStacks === 1) return [{ type: "resisted", target: target.id, effect: effectId, reason: "already" }];
+  if (existing && effect.maxStacks === 1) {
+    if (effect.refreshOnReapply && effect.duration) { existing.turns = effect.duration; return [{ type: "stacked", target: target.id, effect: effectId, stacks: 1, gained: 0, source }]; }
+    return [{ type: "resisted", target: target.id, effect: effectId, reason: "already" }];
+  }
   if (effect.thaws && isFrozen(target)) {
     remove(target, "freeze");
     target.grace.freeze = catalog.effects.get("freeze")?.graceRounds ?? 0;
@@ -65,16 +79,63 @@ export function applyStatus(catalog, target, effectId, { stacks = 1, source = nu
 }
 
 /**
- * One Attack. `power` is the card's Attack Power; the attacker's ATK adds to it and the defender's DEF absorbs it.
- * Freeze stops a frozen attacker, and shatters on the first Hit it takes. Reimburse heals the attacker.
+ * Pay for and gate a card. Returns { ok, events }: not ok when a status blocks it, Focus is short, or a Denied
+ * stamp voids it (the Focus is still spent in that case).
  */
-export function strike(catalog, attacker, defender, { power = 3 } = {}) {
+function playCard(catalog, actor, action, baseCost) {
+  if (!canAct(catalog, actor, action)) {
+    const blocker = actor.statuses.find((status) => catalog.effects.get(status.id)?.blocks?.includes(action))?.id ?? null;
+    return { ok: false, events: [{ type: "blocked", actor: actor.id, action, effect: blocker }] };
+  }
+  const cost = playCost(catalog, actor, baseCost);
+  if (actor.focus < cost) return { ok: false, events: [{ type: "no-focus", actor: actor.id, cost, have: actor.focus }] };
+  actor.focus -= cost;
+  const events = [{ type: "paid", actor: actor.id, cost, action }];
+  const denied = statusOf(actor, "denied");
+  if (denied && catalog.effects.get("denied")?.voidsNextCard) {
+    remove(actor, "denied");
+    events.push({ type: "denied", actor: actor.id, action });
+    return { ok: false, events };
+  }
+  return { ok: true, events };
+}
+
+/** A Defense: +DEF against the next Hit. */
+export function brace(catalog, actor) {
+  if (actor.hp <= 0) return [];
+  const played = playCard(catalog, actor, "brace", catalog.actions.brace.focusCost);
+  if (!played.ok) return played.events;
+  actor.braced = catalog.actions.brace.defenseBonus;
+  return [...played.events, { type: "braced", actor: actor.id, bonus: actor.braced }];
+}
+
+/**
+ * One Attack at a zone. `power` is the card's Attack Power; the attacker's ATK adds to it and the defender's DEF
+ * (with any Brace and Wet Floor) absorbs it. Stapled pins the zone, Paper Cut stings the attacker, Laminate stops
+ * a sealed attacker and rips on the first Hit, Reimburse files a receipt.
+ */
+export function strike(catalog, attacker, defender, { power = 3, zone = "Mid" } = {}) {
   if (attacker.hp <= 0 || defender.hp <= 0) return [];
-  if (!canAct(catalog, attacker, "attack")) return [{ type: "blocked", actor: attacker.id, action: "attack", effect: attacker.statuses.find((status) => catalog.effects.get(status.id)?.blocks?.includes("attack"))?.id ?? null }];
+  const played = playCard(catalog, attacker, "attack", catalog.actions.strike.focusCost);
+  const events = [...played.events];
+  if (!played.ok) return events;
+  if (statusOf(attacker, "stapled") && attacker.lastZone && attacker.lastZone !== zone) {
+    events.push({ type: "zone-locked", actor: attacker.id, from: zone, to: attacker.lastZone });
+    zone = attacker.lastZone;
+  }
+  attacker.lastZone = zone;
+  const cuts = sumOf(catalog, attacker, "selfDamageOnAttackPerStack", true);
+  if (cuts > 0) {
+    attacker.hp = Math.max(0, attacker.hp - cuts);
+    events.push({ type: "cut", target: attacker.id, amount: cuts });
+    if (attacker.hp <= 0) { events.push({ type: "ko", target: attacker.id }); return events; }
+  }
   const raw = Math.max(0, power + attacker.atk);
-  const absorbed = Math.min(defender.def, raw);
+  const def = effectiveDefense(catalog, defender);
+  const absorbed = Math.min(def, raw);
+  defender.braced = 0;
   let dealt = raw - absorbed;
-  const events = [{ type: "strike", actor: attacker.id, target: defender.id, raw, absorbed }];
+  events.push({ type: "strike", actor: attacker.id, target: defender.id, raw, absorbed, zone });
   if (dealt <= 0) { events.push({ type: "absorbed", target: defender.id, amount: absorbed }); return events; }
   const frozen = statusOf(defender, "freeze");
   if (frozen) {
@@ -101,7 +162,7 @@ export function strike(catalog, attacker, defender, { power = 3 } = {}) {
   return events;
 }
 
-/** Honor: tick every fighter's statuses in catalog order (Burn, Poison, then Freeze timers), then reset per-round caps. */
+/** Honor: tick every fighter's statuses in catalog order, regain Focus, drop Braces, reset per-round caps. */
 export function endRound(catalog, combatants) {
   const events = [];
   for (const combatant of combatants) {
@@ -126,11 +187,14 @@ export function endRound(catalog, combatants) {
           remove(combatant, effectId);
           events.push({ type: effectId === "freeze" ? "thaw" : "expire", target: combatant.id, effect: effectId, by: "time" });
           if (effect.graceRounds) combatant.grace[effectId] = effect.graceRounds + 1; // +1: this Honor's decrement below
+          if (effect.zoneLock) combatant.lastZone = null;
         }
       }
     }
     for (const key of Object.keys(combatant.grace)) if (combatant.grace[key] > 0) combatant.grace[key] -= 1;
     combatant.healedThisRound = 0;
+    combatant.braced = 0;
+    if (combatant.hp > 0) combatant.focus = Math.min(combatant.maxFocus, combatant.focus + catalog.focusRegen);
   }
   return events;
 }

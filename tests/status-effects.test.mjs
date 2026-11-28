@@ -2,11 +2,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { applyStatus, canAct, createCatalog, createCombatant, effectiveSpeed, endRound, isFrozen, statusOf, strike } from "../engine/status-effects.mjs";
+import { applyStatus, brace, canAct, createCatalog, createCombatant, effectiveDefense, effectiveSpeed, endRound, isFrozen, playCost, statusOf, strike } from "../engine/status-effects.mjs";
 
 const catalog = createCatalog(JSON.parse(readFileSync(new URL("../content/experimental/status-effects.json", import.meta.url), "utf8")));
-const pair = (over = {}) => [createCombatant({ id: "a", name: "A", atk: 3, def: 2, ...over.a }), createCombatant({ id: "b", name: "B", atk: 3, def: 2, ...over.b })];
-const types = (events) => events.map((event) => event.type);
+const pair = (over = {}) => [createCombatant({ id: "a", name: "A", atk: 3, def: 2, focus: 9, ...over.a }), createCombatant({ id: "b", name: "B", atk: 3, def: 2, focus: 9, ...over.b })];
+const types = (events) => events.map((event) => event.type).filter((type) => type !== "paid");
 
 test("burn stacks to 3, ignores DEF, lasts 2 rounds and refreshes", () => {
   const [, b] = pair();
@@ -33,12 +33,12 @@ test("poison ticks its stacks then decays: 3 stacks cost 3 + 2 + 1", () => {
   assert.equal(statusOf(b, "poison").stacks, 4, "capped at 4");
 });
 
-test("freeze blocks Attacks and Reactions, cuts Speed, and shatters on the first Hit", () => {
+test("freeze blocks Attacks and Braces, cuts Speed, and shatters on the first Hit", () => {
   const [a, b] = pair();
   applyStatus(catalog, a, "freeze");
   assert.equal(isFrozen(a), true);
   assert.equal(canAct(catalog, a, "attack"), false);
-  assert.equal(canAct(catalog, a, "reaction"), false);
+  assert.equal(canAct(catalog, a, "brace"), false);
   assert.equal(effectiveSpeed(catalog, a), 1);
   assert.deepEqual(types(strike(catalog, a, b)), ["blocked"]);
   const hit = strike(catalog, b, a, { power: 3 });
@@ -100,4 +100,70 @@ test("a KO stops further ticks and strikes", () => {
   const events = endRound(catalog, [b]);
   assert.deepEqual(types(events), ["tick", "ko"]);
   assert.deepEqual(strike(catalog, a, b), []);
+});
+
+test("Stapled pins your Attacks to the zone you last used, and wears off", () => {
+  const [a, b] = pair();
+  strike(catalog, a, b, { zone: "High" });
+  applyStatus(catalog, a, "stapled");
+  const events = strike(catalog, a, b, { zone: "Low" });
+  assert.ok(types(events).includes("zone-locked"));
+  assert.equal(events.find((event) => event.type === "strike").zone, "High");
+  endRound(catalog, [a]); endRound(catalog, [a]);
+  assert.equal(statusOf(a, "stapled"), null);
+  assert.equal(strike(catalog, a, b, { zone: "Low" }).find((event) => event.type === "strike").zone, "Low", "free again");
+});
+
+test("Red Tape makes every card cost more Focus, and a fighter short on Focus cannot act", () => {
+  const [a, b] = pair({ a: { focus: 2, maxFocus: 3 } });
+  applyStatus(catalog, a, "redtape", { stacks: 2 });
+  assert.equal(playCost(catalog, a, 1), 3);
+  const events = strike(catalog, a, b);
+  assert.deepEqual(types(events), ["no-focus"]);
+  assert.equal(a.focus, 2, "nothing was spent");
+  endRound(catalog, [a]);
+  assert.equal(a.focus, 3, "Honor regains Focus up to the maximum");
+});
+
+test("Denied voids the next card, spends the Focus, and is used up", () => {
+  const [a, b] = pair();
+  applyStatus(catalog, a, "denied");
+  const before = a.focus;
+  const events = strike(catalog, a, b);
+  assert.deepEqual(types(events), ["denied"]);
+  assert.equal(a.focus, before - 1);
+  assert.equal(b.hp, 25, "no damage");
+  assert.equal(statusOf(a, "denied"), null);
+  assert.ok(types(strike(catalog, a, b)).includes("damage"));
+  applyStatus(catalog, b, "denied");
+  assert.deepEqual(types(brace(catalog, b)), ["denied"], "a Brace is a card too");
+  assert.equal(b.braced, 0);
+});
+
+test("Paper Cut stings the attacker per cut, up to 3 cuts", () => {
+  const [a, b] = pair();
+  applyStatus(catalog, a, "papercut", { stacks: 5 });
+  assert.equal(statusOf(a, "papercut").stacks, 3);
+  const events = strike(catalog, a, b);
+  assert.deepEqual(events.find((event) => event.type === "cut"), { type: "cut", target: "a", amount: 3 });
+  assert.equal(a.hp, 22);
+});
+
+test("Wet Floor cuts Speed and DEF; a Brace adds DEF to the next Hit only", () => {
+  const [a, b] = pair();
+  applyStatus(catalog, b, "wetfloor");
+  assert.equal(effectiveSpeed(catalog, b), 1);
+  assert.equal(effectiveDefense(catalog, b), 1);
+  brace(catalog, b);
+  assert.equal(effectiveDefense(catalog, b), 4);
+  strike(catalog, a, b, { power: 3 });
+  assert.equal(b.braced, 0, "the Brace is spent by the Hit");
+  assert.equal(b.hp, 25 - Math.max(0, 6 - 4), "ATK 3 + power 3 against DEF 4");
+});
+
+test("Laminate also stops a Brace", () => {
+  const [a] = pair();
+  applyStatus(catalog, a, "freeze");
+  assert.equal(canAct(catalog, a, "brace"), false);
+  assert.deepEqual(types(brace(catalog, a)), ["blocked"]);
 });
