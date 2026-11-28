@@ -39,7 +39,9 @@ const THEME_COLORS: Record<Theme, string> = {
 
 export const readInitialTheme = (): Theme => {
   if (typeof window === "undefined") return "light";
-  const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+  // Blocked site storage throws on access; fall back to the system theme instead of a blank page.
+  let saved: string | null = null;
+  try { saved = window.localStorage.getItem(THEME_STORAGE_KEY); } catch { /* storage blocked: use the system theme */ }
   if (saved === "light" || saved === "dark") return saved;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
@@ -121,7 +123,7 @@ export const readUserPreferences = (): UserPreferences => {
 
 export const writeUserPreferences = (preferences: UserPreferences) => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(USER_PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+  try { window.localStorage.setItem(USER_PREFERENCES_STORAGE_KEY, JSON.stringify(preferences)); } catch { /* storage blocked or full: preferences last this visit */ }
 };
 
 export const updateUserPreferences = (update: Partial<Omit<UserPreferences, "lab">> & { lab?: Partial<LabProfile> }) => {

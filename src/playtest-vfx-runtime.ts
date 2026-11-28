@@ -26,7 +26,8 @@ function parseMatch(value: string | null): PlaytestMatchSnapshot | null {
 }
 
 function vfxMode(): VfxMode {
-  const stored = window.localStorage.getItem(MODE_KEY);
+  let stored: string | null = null;
+  try { stored = window.localStorage.getItem(MODE_KEY); } catch { /* storage blocked: follow the system motion setting */ }
   if (stored === "off" || stored === "reduced" || stored === "full") return stored;
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full";
 }
@@ -212,7 +213,9 @@ function installMatchStateBridge() {
   if (vfxWindow.__ddbPlaytestVfxInstalled) return;
   vfxWindow.__ddbPlaytestVfxInstalled = true;
 
-  let previous = parseMatch(window.localStorage.getItem(MATCH_KEY));
+  let previousRaw: string | null = null;
+  try { previousRaw = window.localStorage.getItem(MATCH_KEY); } catch { /* storage blocked: start with no previous match */ }
+  let previous = parseMatch(previousRaw);
   const originalSetItem = Storage.prototype.setItem;
   const originalRemoveItem = Storage.prototype.removeItem;
 

@@ -42,6 +42,10 @@ function readSaved(): SavedSession | null {
   try { return JSON.parse(window.localStorage.getItem(ENGINE_DUEL_STORAGE_KEY) ?? "null") as SavedSession | null; } catch { return null; }
 }
 
+function clearSaved() {
+  try { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); } catch { /* storage blocked: nothing was saved */ }
+}
+
 /** Starts (or resumes) a Quick Duel session and keeps its save up to date. */
 export default function QuickDuelMat({ start, startKey, rulesVersion, table, difficulty, onExit, ...props }: QuickDuelMatProps) {
   const [session] = useState<EngineSession | null>(() => {
@@ -54,7 +58,7 @@ export default function QuickDuelMat({ start, startKey, rulesVersion, table, dif
     return new EngineSession({ mode, seed: newSeed(), fighters: rosters ? rosters.map((roster) => roster[0]) : [start.fighterId, start.opponentId], ...(rosters ? { rosters } : {}), humanSeats: [HUMAN], rulesVersion, table, difficulty });
   });
   useEffect(() => {
-    if (!session) { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); onExit(); }
+    if (!session) { clearSaved(); onExit(); }
   }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!session) return null;
   const save = (current: EngineSession) => {
@@ -63,7 +67,7 @@ export default function QuickDuelMat({ start, startKey, rulesVersion, table, dif
       else window.localStorage.setItem(ENGINE_DUEL_STORAGE_KEY, JSON.stringify(current.save()));
     } catch { /* storage full or blocked: the duel continues unsaved */ }
   };
-  return <QuickDuelTable {...props} session={session} sessionKey={startKey} onSave={save} onExit={() => { window.localStorage.removeItem(ENGINE_DUEL_STORAGE_KEY); onExit(); }} />;
+  return <QuickDuelTable {...props} session={session} sessionKey={startKey} onSave={save} onExit={() => { clearSaved(); onExit(); }} />;
 }
 
 const HUMAN = 0;

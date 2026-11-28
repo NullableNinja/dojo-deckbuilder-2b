@@ -3048,7 +3048,8 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
     return name === "Paper-Fu Agent" ? "Field Agent" : name;
   });
   const [mode, setMode] = useState<GameModeId>(() => {
-    const saved = window.localStorage.getItem("ddb-selected-game-mode");
+    let saved: string | null = null;
+    try { saved = window.localStorage.getItem("ddb-selected-game-mode"); } catch { /* storage blocked: default mode */ }
     return CANONICAL_GAME_MODES.some((entry) => entry.id === saved) ? saved as GameModeId : "quick-duel";
   });
   const [settings, setSettings] = useState<HouseSettings>(() => {
@@ -3216,22 +3217,24 @@ export default function PlaytestView({ goTo }: { goTo: (view: "rules" | "cards" 
   }, [match]);
 
   useEffect(() => {
-    window.localStorage.setItem("ddb-field-settings", JSON.stringify(settings));
-    window.localStorage.setItem("ddb-vfx-mode", settings.motion);
+    try {
+      window.localStorage.setItem("ddb-field-settings", JSON.stringify(settings));
+      window.localStorage.setItem("ddb-vfx-mode", settings.motion);
+    } catch { /* storage blocked or full: settings last this visit */ }
   }, [settings]);
   useEffect(() => {
-    window.localStorage.setItem("ddb-selected-game-mode", mode);
+    try { window.localStorage.setItem("ddb-selected-game-mode", mode); } catch { /* storage blocked: the mode lasts this visit */ }
   }, [mode]);
   useEffect(() => {
     try {
       if (match) window.localStorage.setItem("ddb-field-match", JSON.stringify(match));
       else window.localStorage.removeItem("ddb-field-match");
     } catch {
-      window.localStorage.removeItem("ddb-field-match");
+      try { window.localStorage.removeItem("ddb-field-match"); } catch { /* storage blocked: the match is not saved */ }
     }
   }, [match]);
   useEffect(() => {
-    window.localStorage.setItem(BINDER_STORAGE_KEY, JSON.stringify([...savedCardIds]));
+    try { window.localStorage.setItem(BINDER_STORAGE_KEY, JSON.stringify([...savedCardIds])); } catch { /* storage blocked: the binder lasts this visit */ }
   }, [savedCardIds]);
   useEffect(() => {
     const controller = new AbortController();

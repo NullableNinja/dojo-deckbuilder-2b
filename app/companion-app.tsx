@@ -686,7 +686,7 @@ export default function CompanionApp() {
 
   useEffect(() => {
     applyThemeToDocument(theme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* storage blocked: the theme lasts this visit */ }
   }, [theme]);
 
   useEffect(() => {
