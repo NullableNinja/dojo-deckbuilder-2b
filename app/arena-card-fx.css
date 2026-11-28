@@ -188,3 +188,23 @@
   @media (prefers-reduced-motion: reduce) { .arena-card-fx *, .fighter-panel.has-arena-fx { animation: none !important; } }
   .motion-off .arena-card-fx *, .motion-reduced .arena-card-fx * { animation: none !important; }
 }
+
+/* Barrier (Guarded): blue folder flaps close over the card edges; the tab shows the sheets left. */
+@layer components {
+  .folder-flap { position: absolute; top: -6px; bottom: -6px; width: 16%; border: 3px solid #17263a; background: linear-gradient(90deg, #4f7fd8, #7aa6ff); box-shadow: 3px 4px 0 rgba(23, 38, 58, .45); }
+  .folder-flap--l { left: -8px; border-radius: 8px 2px 2px 8px; }
+  .folder-flap--r { right: -8px; border-radius: 2px 8px 8px 2px; }
+  .folder-tab { position: absolute; left: 50%; bottom: -16px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; color: #fff; border: 2px solid #17263a; border-radius: 6px 6px 2px 2px; background: #2c4fb0; box-shadow: 3px 4px 0 rgba(23, 38, 58, .5); font: 400 13px/1 var(--pf-impact); letter-spacing: .1em; transform: translateX(-50%); }
+  .folder-tab span { display: inline-flex; gap: 3px; }
+  .folder-tab span i { width: 7px; height: 11px; border: 1.5px solid #17263a; background: #fffaf0; }
+  .folder-hit { position: absolute; inset: 0; background: radial-gradient(ellipse, rgba(140, 180, 255, .7), rgba(140, 180, 255, 0) 65%); opacity: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .playtest-shell:not(.motion-off):not(.motion-reduced) {
+      & .folder-flap--l { animation: flap-l .45s steps(4) both; }
+      & .folder-flap--r { animation: flap-r .45s steps(4) both; }
+      & .folder-hit { animation: reopen .6s steps(4) forwards; }
+    }
+  }
+  @keyframes flap-l { from { transform: translateX(-30px) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes flap-r { from { transform: translateX(30px) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+}

@@ -110,6 +110,19 @@
       "speedModifier": -2,
       "defenseModifier": -1,
       "summary": "Slippery footing for 2 rounds: Speed 2 lower and DEF 1 lower."
+    },
+    {
+      "id": "barrier",
+      "name": "Barrier",
+      "alias": "Guarded",
+      "icon": "shield",
+      "tone": "ice",
+      "maxStacks": 5,
+      "duration": 1,
+      "durationUnit": "ownTurns",
+      "refreshOnReapply": true,
+      "absorbPerStack": 1,
+      "summary": "A filed folder of protection: each stack absorbs 1 damage from Hits (after DEF and Guard), and absorbed stacks are used up. Up to 5 stacks. Lasts until used up or the end of your next turn. Damage at Honor is not absorbed."
     }
   ],
   "keywords": [

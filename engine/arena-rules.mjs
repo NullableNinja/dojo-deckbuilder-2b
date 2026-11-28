@@ -182,6 +182,16 @@ export class ArenaGame extends Game {
     const result = super.characterEvent(player, type, event);
     if (!player) return result;
     if (type === "damageIncoming" && result.damage > 0) {
+      const barrier = this.arenaState(player).effects.find((entry) => this.arenaRule(entry.id)?.absorbPerStack);
+      if (barrier) {
+        const absorbed = Math.min(result.damage, barrier.stacks * this.arenaRule(barrier.id).absorbPerStack);
+        result.damage -= absorbed;
+        barrier.stacks -= Math.ceil(absorbed / this.arenaRule(barrier.id).absorbPerStack);
+        this.announce("absorbed", player, { effect: barrier.id, amount: absorbed, left: barrier.stacks });
+        if (barrier.stacks <= 0) this.dropArenaEffect(player, barrier.id, "used");
+      }
+    }
+    if (type === "damageIncoming" && result.damage > 0) {
       const laminate = this.arenaEffect(player, "freeze");
       if (laminate) {
         const bonus = this.arenaRule("freeze").tearBonusDamage ?? 0;

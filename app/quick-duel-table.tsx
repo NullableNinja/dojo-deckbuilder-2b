@@ -15,6 +15,7 @@ import { PayrollSlip } from "./career-payroll";
 import { comboRequirementText } from "./combo-engine.ts";
 import { beltRequirements, stripeStatus, type BeltRequirements, type StripeStatus } from "./belt-progress.ts";
 import "./quick-duel-hand.css";
+import "./hp-bar.css";
 
 const CardInspector = lazyWithRetry(() => import("./card-inspector").then((module) => ({ default: module.CardInspector })));
 
@@ -294,11 +295,47 @@ export function QuickDuelTable({ session, sessionKey, agentName, guided, motion,
   </main>;
 }
 
+const HP_BANDS = [80, 60, 40, 20]; // above 80% band 5 … below 20% band 1
+const hpBand = (percent: number) => 5 - HP_BANDS.filter((edge) => percent <= edge).length;
+/** Which status look the life bar takes (strongest first): an arena draft effect, or a real damage-prevention status. */
+function hpMood(seat: EngineSeat) {
+  const arena = (seat as EngineSeat & { arena?: { effects: { id: string; stacks: number }[] } }).arena?.effects ?? [];
+  const has = (id: string) => arena.some((entry) => entry.id === id);
+  const guarded = has("barrier") || seat.statuses.some((status) => status.action === "preventDamage" && Number(status.amount) > 0);
+  return [has("freeze") && "frozen", has("poison") && "poisoned", has("burn") && "burning", guarded && "guarded", has("papercut") && "bleeding", has("wetfloor") && "soaked"].filter(Boolean) as string[];
+}
+
 function HudFighter({ seat, side, title }: { seat: EngineSeat; side: "player" | "ai"; title: string }) {
   const percent = Math.max(0, Math.min(100, seat.hp / Math.max(1, seat.maxHp) * 100));
-  return <div className={`battle-hud-fighter battle-hud-fighter--${side} hp-tier-${healthTier(seat.hp, seat.maxHp)}`} style={{ "--hp-progress": `${percent}%` } as CSSProperties}>
+  // The chip trail: after a Hit the lost chunk shows in cream, then drains away; a heal flashes the bar.
+  const [trail, setTrail] = useState(percent);
+  const [healed, setHealed] = useState(0);
+  const previous = useRef(percent);
+  useEffect(() => {
+    const before = previous.current; previous.current = percent;
+    if (percent > before) { setTrail(percent); setHealed((value) => value + 1); return; }
+    if (percent < before) { const timer = window.setTimeout(() => setTrail(percent), 520); return () => window.clearTimeout(timer); }
+  }, [percent]);
+  const moods = hpMood(seat);
+  const notches = Math.max(1, Math.floor(seat.maxHp / 5));
+  return <div className={`battle-hud-fighter battle-hud-fighter--${side} hp-tier-${healthTier(seat.hp, seat.maxHp)} hp-band-${hpBand(percent)}${moods.map((mood) => ` hp-${mood}`).join("")}`} style={{ "--hp-progress": `${percent}%` } as CSSProperties}>
     <span><small>{side === "player" ? "YOU" : seat.isBoss ? "BOSS" : "COMPUTER"} · {seat.character.name}</small></span><b>{title}</b>
-    <div><strong>{seat.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${seat.character.name} health`} aria-valuemin={0} aria-valuemax={seat.maxHp} aria-valuenow={seat.hp}><em style={{ width: `${percent}%` }} /></i></div>
+    <div className="hp-row"><strong>{seat.hp}<small> HP</small></strong><i role="progressbar" aria-label={`${seat.character.name} health${moods.length ? `, ${moods.join(", ")}` : ""}`} aria-valuemin={0} aria-valuemax={seat.maxHp} aria-valuenow={seat.hp}>
+      <em className="hp-trail" style={{ width: `${Math.max(trail, percent)}%` }} />
+      <em className="hp-fill" style={{ width: `${percent}%` }}>
+        <span className="hp-gloss" />
+        {moods.includes("poisoned") && <span className="hp-bubbles">{Array.from({ length: 7 }, (_, index) => <i key={index} style={{ left: `${8 + index * 13}%`, animationDelay: `${(index * 370) % 2100}ms` }} />)}</span>}
+        {moods.includes("burning") && <span className="hp-flames" />}
+        {moods.includes("frozen") && <span className="hp-frost" />}
+        {moods.includes("soaked") && <span className="hp-wave" />}
+      </em>
+      <span className="hp-notches" style={{ "--notches": notches } as CSSProperties} />
+      {healed > 0 && <span key={healed} className="hp-heal" />}
+    </i>
+    {moods.includes("guarded") && <b className="hp-shield" title="Guarded: damage is reduced">⛨</b>}
+    {moods.includes("bleeding") && <span className="hp-drips"><i /><i /><i /></span>}
+    {moods.includes("burning") && <span className="hp-sparks"><i /><i /><i /><i /></span>}
+    </div>
   </div>;
 }
 
@@ -405,6 +442,7 @@ const ARENA_CUE: Record<string, { cue: (name: string, event: { [key: string]: un
   tick: { cue: (name, event) => `${name.toUpperCase()} −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 7 },
   cut: { cue: (_name, event) => `PAPER CUT −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 5 },
   "zone-locked": { cue: () => "STAPLED!", kind: "block", shake: false, tone: "block", rank: 4 },
+  absorbed: { cue: (_name, event) => `GUARDED −${event.amount}`, kind: "block", shake: false, tone: "block", rank: 6 },
   resisted: { cue: () => "RESISTED", kind: "block", shake: false, tone: "block", rank: 3 },
   ended: { cue: (name) => `${name.toUpperCase()} ENDS`, kind: "certified", shake: false, tone: "summary", rank: 1 },
 };

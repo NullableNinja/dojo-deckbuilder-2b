@@ -179,13 +179,23 @@ function Ledger({ paid, amount }: { paid?: number; amount?: number }) {
   </span>;
 }
 
+// ---- Barrier (Guarded): a folder closes around the card ----------------------------------------------------------
+
+function FolderBarrier({ stacks, hit }: { stacks: number; hit?: number }) {
+  return <span className="card-fx card-fx--barrier">
+    <i className="folder-flap folder-flap--l" /><i className="folder-flap folder-flap--r" />
+    <b className="folder-tab">GUARDED <span>{Array.from({ length: stacks }, (_, index) => <i key={index} />)}</span></b>
+    {hit !== undefined && <i key={hit} className="folder-hit" />}
+  </span>;
+}
+
 // ---- Putting it together -----------------------------------------------------------------------------------------
 
 /** The class and the layer for one fighter's card. */
 export function arenaCardDecor(arena: ArenaSeatState | undefined, pulses: ArenaPulses, lastHeal?: number): { className?: string; panel?: ReactNode } | null {
   if (!arena) return null;
   const has = (id: string) => arena.effects.find((entry) => entry.id === id);
-  const burn = has("burn"), ink = has("poison"), lam = has("freeze"), staple = has("stapled"), tape = has("redtape"), denied = has("denied"), cut = has("papercut"), wet = has("wetfloor");
+  const barrier = has("barrier"), burn = has("burn"), ink = has("poison"), lam = has("freeze"), staple = has("stapled"), tape = has("redtape"), denied = has("denied"), cut = has("papercut"), wet = has("wetfloor");
   const tornRecently = pulses.tear;
   const classes = ["has-arena-fx", burn && "fx-burning", ink && `fx-inked fx-inked-${ink.stacks}`, lam && "fx-laminated", wet && "fx-wet", staple && "fx-stapled", denied && "fx-denied"].filter(Boolean).join(" ");
   return {
@@ -199,6 +209,7 @@ export function arenaCardDecor(arena: ArenaSeatState | undefined, pulses: ArenaP
       {staple && <Stapled zone={arena.lastZone} strain={pulses["zone-locked"]} />}
       {lam && <Laminate />}
       {!lam && tornRecently !== undefined && <LaminateTear key={tornRecently} />}
+      {barrier && <FolderBarrier stacks={barrier.stacks} hit={pulses.absorbed} />}
       {denied && <DeniedStamp />}
       {(arena.reimburse || pulses.reimburse !== undefined) && <Ledger paid={pulses.reimburse} amount={lastHeal} />}
     </span>,

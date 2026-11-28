@@ -137,3 +137,18 @@ test("Reimburse heals 1 on a Hit of 2+, once per round; a loaded Hit applies its
   assert.equal(game.arenaEffect(them, "poison")?.stacks, 2, "the loaded effect landed on the Hit");
   assert.equal(events(game, "reimburse").length, 1);
 });
+
+test("Barrier absorbs Hit damage stack by stack and is used up", () => {
+  const session = arena(19);
+  assert.ok(until(session, atYell));
+  const game = session.game; const [me, them] = game.players;
+  me.atk = 6; me.tempo = false;
+  const card = withAttack(session);
+  const plain = previewAttack(game, 0, card.instanceId);
+  game.applyArenaEffect(them, "barrier", { stacks: 2 });
+  const shielded = previewAttack(game, 0, card.instanceId);
+  assert.ok(plain.damage >= 3);
+  assert.equal(shielded.damage, plain.damage - 2);
+  game.applyArenaEffect(them, "barrier", { stacks: 1 });
+  assert.equal(game.arenaEffect(them, "barrier").stacks, 3);
+});
