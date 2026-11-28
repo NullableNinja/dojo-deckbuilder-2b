@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "status": "experimental",
+  "description": "Draft status effects for the Test Arena (#arena). These are NOT part of the printed rules or the canonical engine: they exist so the owner can see and feel burn, poison, freeze and lifesteal before any card uses them. The numbers are starting points to be tuned in the simulator. Promoting an effect means moving it into content/dojo-game.json plus a ruling.",
+  "round": {
+    "tickAt": "honor",
+    "summary": "Round effects resolve in the Honor phase, after everyone has acted, in the order listed below."
+  },
+  "effects": [
+    {
+      "id": "burn",
+      "name": "Burn",
+      "icon": "flame",
+      "tone": "ember",
+      "maxStacks": 3,
+      "duration": 2,
+      "refreshOnReapply": true,
+      "tick": { "damagePerStack": 1, "ignoresDefense": true },
+      "thaws": true,
+      "summary": "Lose 1 HP per stack at Honor (ignores DEF). Stacks to 3. Lasts 2 rounds and refreshes when applied again. Fire thaws Freeze."
+    },
+    {
+      "id": "poison",
+      "name": "Poison",
+      "icon": "drop",
+      "tone": "violet",
+      "maxStacks": 4,
+      "duration": null,
+      "decayPerRound": 1,
+      "tick": { "damagePerStack": 1, "ignoresDefense": true },
+      "healingPenalty": 1,
+      "summary": "Lose 1 HP per stack at Honor, then lose one stack. Stacks to 4, so 3 stacks cost 3 + 2 + 1 = 6 HP in all. Poisoned fighters recover 1 less HP from healing."
+    },
+    {
+      "id": "freeze",
+      "name": "Freeze",
+      "icon": "snowflake",
+      "tone": "ice",
+      "maxStacks": 1,
+      "duration": 1,
+      "blocks": ["attack", "reaction"],
+      "speedPenalty": 2,
+      "shatter": { "bonusDamage": 2 },
+      "graceRounds": 1,
+      "summary": "A frozen fighter cannot Attack or use Reactions and has -2 Speed. The first Hit shatters the ice for +2 damage and ends Freeze. Otherwise it thaws at Honor. After thawing, a fighter cannot be frozen again for 1 round."
+    }
+  ],
+  "keywords": [
+    {
+      "id": "reimburse",
+      "name": "Reimburse",
+      "icon": "heart",
+      "tone": "rose",
+      "amount": 1,
+      "minDamage": 2,
+      "capPerRound": 1,
+      "summary": "When an Attack with this Hits for at least 2 HP, recover 1 HP (once per round, all sources combined). Never above Max HP. Armor-absorbed and prevented damage does not count."
+    }
+  ]
+}

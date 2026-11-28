@@ -10,6 +10,7 @@ export type SitePage =
   | "lab"
   | "settings"
   | "collection"
+  | "arena"
   | "search";
 
 export type RulingsTab = "official" | "house";
@@ -26,6 +27,7 @@ export type SiteRoute =
   | { page: "lab" }
   | { page: "settings" }
   | { page: "collection" }
+  | { page: "arena" }
   | { page: "search"; query?: string };
 
 const SITE_PAGES = new Set<SitePage>([
@@ -40,6 +42,7 @@ const SITE_PAGES = new Set<SitePage>([
   "lab",
   "settings",
   "collection",
+  "arena",
   "search",
 ]);
 
@@ -117,6 +120,7 @@ export function parseRoute(location: string): SiteRoute {
     case "lab": return { page: "lab" };
     case "settings": return { page: "settings" };
     case "collection": return { page: "collection" };
+    case "arena": return { page: "arena" };
     case "search": {
       const query = nonEmpty(parts.join("/"));
       return query ? { page: "search", query } : { page: "search" };
@@ -144,6 +148,7 @@ export function serializeRoute(route: SiteRoute): string {
     case "lab": return "#lab";
     case "settings": return "#settings";
     case "collection": return "#collection";
+    case "arena": return "#arena";
     case "search": return `#search${route.query ? `/${encodePart(route.query)}` : ""}`;
   }
 }
@@ -234,6 +239,7 @@ export const topLevelRoute = (page: SitePage): SiteRoute => {
     case "lab": return { page: "lab" };
     case "settings": return { page: "settings" };
     case "collection": return { page: "collection" };
+    case "arena": return { page: "arena" };
     case "search": return { page: "search" };
   }
 };
