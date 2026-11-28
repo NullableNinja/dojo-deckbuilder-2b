@@ -1,8 +1,10 @@
 // Turns canonical engine state into what the mat shows: phase labels, status chips, the latest
 // combat receipt, fight-log lines and decision prompts. Presentation only: no rules live here.
 import { clashCardByCatalogId, type EngineCard } from "./clash-engine.ts";
+import arenaEffectsJson from "../content/experimental/status-effects.json" with { type: "json" };
 import type { EngineEvent, EngineGame, EnginePending, EngineSeat, EngineStatus } from "./engine-session.ts";
 import { previewAttack, previewDefense } from "../engine/preview.mjs";
+const ARENA_EFFECTS = arenaEffectsJson.effects as { id: string; name: string; durationUnit?: string }[];
 
 export type MatPhase = "player-initiate" | "player-yell" | "player-ascend" | "defense-window" | "reversal-window" | "ai-ready";
 
@@ -62,6 +64,11 @@ export function statusLabels(seat: EngineSeat): string[] {
     const duration = status.duration ? DURATION_LABEL[status.duration] : null;
     return duration ? `${label} · ${duration}` : label;
   });
+  // Test Arena draft effects (engine/arena-rules.mjs) read as ordinary status chips.
+  for (const entry of (seat as EngineSeat & { arena?: { effects: { id: string; stacks: number; turns: number | null }[] } }).arena?.effects ?? []) {
+    const rule = ARENA_EFFECTS.find((effect) => effect.id === entry.id);
+    labels.push(`${rule?.name ?? entry.id}${entry.stacks > 1 ? ` ×${entry.stacks}` : ""}${entry.turns !== null ? ` · ${entry.turns} ${rule?.durationUnit === "ownTurns" ? "turn" : "rd"}` : ""}`);
+  }
   if (seat.tempo) labels.unshift("Tempo ready");
   return [...new Set(labels)].slice(0, 6);
 }

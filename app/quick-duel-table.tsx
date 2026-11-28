@@ -32,6 +32,10 @@ type TableProps = {
   onSave: (session: EngineSession) => void;
   onExit: () => void;
   onRematch: () => void;
+  /** Extra layers drawn over each fighter's art (the Test Arena's lingering effects). */
+  seatOverlay?: (seat: EngineSeat) => ReactNode;
+  /** Change it to make the table re-read the game after an outside change (the Test Arena's console). */
+  nudge?: number;
 };
 
 export const ENGINE_DUEL_STORAGE_KEY = "ddb-engine-duel";
@@ -84,11 +88,13 @@ const num = (value: unknown) => Number.parseInt(String(value ?? 0), 10) || 0;
 const isAttackCard = (card: EngineCard) => num(card.stats?.["Attack Power"]) > 0;
 const isDefenseCard = (card: EngineCard) => num(card.stats?.Guard) > 0 && (card.subtype === "Defense" || (card as MatCard).details?.Type === "Defense");
 
-function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch }: TableProps) {
+/** The engine-driven game mat. Exported for the Test Arena, which hosts it with the arena rule variant. */
+export function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave, onExit, onRematch, seatOverlay, nudge }: TableProps) {
   const game = session.game;
   if (import.meta.env.DEV) (window as unknown as { __ddbSession?: EngineSession }).__ddbSession = session;
   const [tick, setTick] = useState(0);
   const rerender = () => setTick((value) => value + 1);
+  useEffect(() => { if (nudge) rerender(); }, [nudge]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deskView, setDeskView] = useState<DeskView | null>(null);
   const [inspected, setInspected] = useState<MatCard | null>(null);
@@ -260,12 +266,12 @@ function QuickDuelTable({ session, sessionKey, agentName, guided, motion, onSave
     <section className="playtest-arena">
       <div className="mat-stage" aria-hidden="true">{currentLocation && artistUrl(currentLocation) && <img src={artistUrl(currentLocation)} alt="" decoding="async" />}<span className="mat-stage-burst" /><span className="mat-stage-curtain mat-stage-curtain--left" /><span className="mat-stage-curtain mat-stage-curtain--right" /><span className="mat-stage-floor" /></div>
       <section className="playtest-table">
-        <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
+        <div className="fighter-column fighter-column--player">{human.roster && <EngineRosterRail seat={human} tags={legal.filter((action) => action.type === "tag")} onTag={act} />}<SeatPanel game={game} seat={human} overlay={seatOverlay?.(human)} label="You" vfx={vfx?.human} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} onOpenCombo={() => setDeskView("combo")} /></div>
         <div className="combat-stage-column">
           <CombatStage game={game} phase={phase} location={currentLocation} selected={selected} incoming={incoming} exchange={exchange} log={log} coach={guided ? coach : null} preview={selectedPreview} takeTheHit={previews.takeTheHit} onInspect={setInspected} onDropCard={(instanceId) => { const card = human.hand.find((entry) => entry.instanceId === instanceId); if (card) commitHandCard(card); }} />
           {phase === "ai-ready" && !over && <span className="ai-thinking"><i /><i /><i /> {game.pendingChoice ? "Computer is deciding" : "Clipboard thinking"}</span>}
         </div>
-        <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
+        <div className={`fighter-column fighter-column--enemy${computer.isBoss ? " fighter-column--boss" : ""}`}>{computer.roster && <EngineRosterRail seat={computer} tags={[]} />}<SeatPanel game={game} seat={computer} overlay={seatOverlay?.(computer)} label={computer.isBoss ? `Boss · ${bossTitle(game)}` : "Computer"} enemy vfx={vfx?.computer} vfxVariant={vfx ? vfx.id % 5 : undefined} onInspect={setInspected} /></div>
       </section>
     </section>
 
@@ -387,11 +393,44 @@ function coachLine(game: EngineGame, phase: MatPhase, legal: EngineAction[], sel
   return "The computer is taking its turn.";
 }
 
+/** Test Arena effects (engine/arena-rules.mjs `arena-effect` events) as mat cues: a word, a shake, a flash on the fighter. */
+const ARENA_CUE: Record<string, { cue: (name: string, event: { [key: string]: unknown }) => string; kind: VfxKind; shake: boolean; tone: Vfx["tone"]; rank: number }> = {
+  tear: { cue: () => "RIIIP!", kind: "hit", shake: true, tone: "damage", rank: 9 },
+  applied: { cue: (name) => `${name.toUpperCase()}!`, kind: "certified", shake: true, tone: "certified", rank: 8 },
+  stacked: { cue: (name, event) => `${name.toUpperCase()} ×${event.stacks}`, kind: "certified", shake: true, tone: "certified", rank: 8 },
+  denied: { cue: () => "DENIED!", kind: "block", shake: true, tone: "block", rank: 8 },
+  reimburse: { cue: (_name, event) => `PAID +${event.amount}`, kind: "certified", shake: false, tone: "certified", rank: 6 },
+  tick: { cue: (name, event) => `${name.toUpperCase()} −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 7 },
+  cut: { cue: (_name, event) => `PAPER CUT −${event.amount}`, kind: "hit", shake: true, tone: "damage", rank: 5 },
+  "zone-locked": { cue: () => "STAPLED!", kind: "block", shake: false, tone: "block", rank: 4 },
+  resisted: { cue: () => "RESISTED", kind: "block", shake: false, tone: "block", rank: 3 },
+  ended: { cue: (name) => `${name.toUpperCase()} ENDS`, kind: "certified", shake: false, tone: "summary", rank: 1 },
+};
+function arenaVfx(events: { type: string; [key: string]: unknown }[], side: (id: unknown) => "human" | "computer") {
+  const arena = events.filter((event) => event.type === "arena-effect" && ARENA_CUE[String(event.kind)]);
+  if (!arena.length) return null;
+  const top = arena.reduce((best, event) => (ARENA_CUE[String(event.kind)].rank > ARENA_CUE[String(best.kind)].rank ? event : best), arena[0]);
+  const rule = ARENA_CUE[String(top.kind)];
+  const cue = rule.cue(String(top.effectName ?? top.effect ?? ""), top);
+  const who = side(top.player);
+  const announcement = `${who === "human" ? "You" : "The opponent"}: ${cue.toLowerCase()}`;
+  return {
+    cue, cueScale: rule.rank >= 8 ? 1.4 : 1.1, announcement, overrideAttack: top.kind === "tear" || top.kind === "applied" || top.kind === "stacked",
+    vfx: { [who]: rule.kind, screen: rule.shake ? "impact" as const : undefined, cue, cueScale: rule.rank >= 8 ? 1.4 : 1.1, tone: rule.tone, announcement } as Omit<Vfx, "id">,
+  };
+}
+
 function vfxFor(events: { type: string; [key: string]: unknown }[], game: EngineGame, belts: EngineGame["definition"]["progression"]["belts"]): Omit<Vfx, "id"> | null {
   const knockout = events.find((event) => event.type === "knockout");
   const attack = [...events].reverse().find((event) => event.type === "attack");
   const promotion = events.find((event) => event.type === "promotion");
   const side = (id: unknown): "human" | "computer" => id === HUMAN ? "human" : "computer";
+  const arena = arenaVfx(events, side);
+  if (attack && arena?.overrideAttack) {
+    const attacker = side(attack.attacker); const defender = side(attack.defender);
+    return { [attacker]: "attack" as VfxKind, [defender]: knockout ? "ko" as VfxKind : "hit" as VfxKind, screen: "impact", cue: knockout ? "K.O.!" : arena.cue, cueScale: knockout ? 1.7 : arena.cueScale ?? 1.4, tone: "damage", announcement: arena.announcement };
+  }
+  if (!attack && arena) return arena.vfx;
   if (attack) {
     const damage = Number(attack.damage);
     const blocked = damage <= 0;
@@ -540,7 +579,7 @@ function StatGlyph({ stat }: { stat: "HP" | "FP" | "ATK" | "DEF" | "SPD" }) {
   return <svg className={`fighter-stat-glyph stat-${stat.toLocaleLowerCase()}`} viewBox="0 0 24 24" aria-hidden="true">{paths[stat]}</svg>;
 }
 
-function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpenCombo }: { game: EngineGame; seat: EngineSeat; label: string; enemy?: boolean; vfx?: VfxKind; vfxVariant?: number; onInspect: (card: MatCard) => void; onOpenCombo?: () => void }) {
+function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpenCombo, overlay }: { game: EngineGame; seat: EngineSeat; label: string; enemy?: boolean; vfx?: VfxKind; vfxVariant?: number; onInspect: (card: MatCard) => void; onOpenCombo?: () => void; overlay?: ReactNode }) {
   const belts = game.definition.progression.belts;
   const fighter = seat.character as MatCard;
   const art = fighterIllustrationUrl(fighter) ?? artistUrl(fighter) ?? cardPlaceholderUrl;
@@ -557,7 +596,7 @@ function SeatPanel({ game, seat, label, enemy, vfx, vfxVariant, onInspect, onOpe
       <div><StatGlyph stat="HP" /><b>{seat.hp}</b><span>/ {seat.maxHp} HP</span></div>
       <span className="fighter-hp-track" role="progressbar" aria-valuemin={0} aria-valuemax={seat.maxHp} aria-valuenow={seat.hp}><i style={{ width: `${hpProgress}%` }} /></span>
     </div>
-    <button type="button" className="fighter-panel-art fighter-card-illustration" onClick={() => onInspect(fighter)} aria-label={`Inspect ${fighter.name}`}><span className="fighter-art-halo" aria-hidden="true" /><img src={art} alt={fighter.name} decoding="async" /><span>Inspect fighter</span></button>
+    <button type="button" className="fighter-panel-art fighter-card-illustration" onClick={() => onInspect(fighter)} aria-label={`Inspect ${fighter.name}`}><span className="fighter-art-halo" aria-hidden="true" /><img src={art} alt={fighter.name} decoding="async" />{overlay}<span>Inspect fighter</span></button>
     <div className="fighter-stats fighter-stats--combat" aria-label={`${fighter.name} combat statistics`}>
       {([["ATK", stats.atk], ["DEF", stats.def], ["SPD", stats.speed]] as const).map(([stat, value]) => <b key={stat}><StatGlyph stat={stat} /><small>{stat}</small><span>{value}</span></b>)}
     </div>

@@ -4,8 +4,11 @@
 // fantasy game. All layers share the Dummy's 220 x 320 canvas and sit over it. Presentation only.
 import { useId, type CSSProperties } from "react";
 import { SACK_PATH } from "./arena-dummy";
+import "./arena-effects.css";
 
-const Layer = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => <svg className={`fx-layer ${className}`} viewBox="0 0 220 320" aria-hidden="true">{children}</svg>;
+// Every layer shares the fighter art's 220 x 320 canvas and sits bottom-aligned, like the art (object-fit: contain, bottom).
+const FIT = "xMidYMax meet";
+const Layer = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => <svg className={`fx-layer ${className}`} viewBox="0 0 220 320" preserveAspectRatio={FIT} aria-hidden="true">{children}</svg>;
 
 // ---- Laminated (Freeze) ------------------------------------------------------------------------------------------
 
@@ -24,7 +27,7 @@ export function LaminatePouch() {
 /** The pouch tearing open down a jagged seam: two halves peel away, scraps fly, a "RIP!" burst pops. */
 export function LaminateRip() {
   return <div className="fx-rip" aria-hidden="true">
-    <svg className="fx-layer" viewBox="0 0 220 320">
+    <svg className="fx-layer" viewBox="0 0 220 320" preserveAspectRatio={FIT}>
       <path className="rip-half rip-half--l" d="M10 40Q10 14 36 14L108 14L112 50L104 82L114 118L102 150L112 190L104 226L112 262L106 312L36 312Q10 312 10 286Z" />
       <path className="rip-half rip-half--r" d="M210 40Q210 14 184 14L116 14L120 50L112 82L122 118L110 150L120 190L112 226L120 262L114 312L184 312Q210 312 210 286Z" />
       {Array.from({ length: 9 }, (_, index) => <rect key={index} className="rip-scrap" x="108" y="150" width={8 + (index % 3) * 4} height={6 + (index % 2) * 5} style={{ "--dx": `${(index - 4) * 22}px`, "--dy": `${-60 + (index % 4) * 30}px`, "--rot": `${index * 53}deg` } as CSSProperties} />)}
@@ -103,7 +106,7 @@ export function Receipt({ delay }: { delay: number }) {
 
 /** A rubber-stamp impression: double border, big letters, ink that slams down. `tone` picks the ink. */
 export function StampMark({ text, tone = "red", className = "" }: { text: string; tone?: "red" | "blue" | "brass"; className?: string }) {
-  return <svg className={`fx-layer fx-stamp fx-stamp--${tone} ${className}`} viewBox="0 0 220 320" aria-hidden="true">
+  return <svg className={`fx-layer fx-stamp fx-stamp--${tone} ${className}`} viewBox="0 0 220 320" preserveAspectRatio={FIT} aria-hidden="true">
     <g transform="translate(110 150) rotate(-13)">
       <rect x="-86" y="-30" width="172" height="60" rx="6" className="stamp-border" />
       <rect x="-80" y="-24" width="160" height="48" rx="3" className="stamp-border stamp-border--inner" />
@@ -176,4 +179,26 @@ export function WetFloor() {
     </g>
     {[[44, 270], [168, 274], [76, 262]].map(([x, y], index) => <path key={index} d="M0 0C3 5 5 8 0 10C-5 8-3 5 0 0Z" className="splash-drop" transform={`translate(${x} ${y})`} style={{ animationDelay: `${index * 420}ms` }} />)}
   </Layer>;
+}
+
+// ---- On the game mat ---------------------------------------------------------------------------------------------
+
+type ArenaSeatState = { effects: { id: string; stacks: number; turns: number | null }[]; armed: { effect: string; stacks: number } | null; reimburse: boolean; lastZone: string | null };
+
+/** Everything lingering on one fighter, drawn over its art on the mat. Reads the engine's `seat.arena` state. */
+export function ArenaSeatEffects({ arena }: { arena: ArenaSeatState | undefined }) {
+  if (!arena) return null;
+  const has = (id: string) => arena.effects.find((entry) => entry.id === id);
+  const burn = has("burn"), ink = has("poison"), lam = has("freeze"), staple = has("stapled"), tape = has("redtape"), denied = has("denied"), cuts = has("papercut"), wet = has("wetfloor");
+  return <span className={`arena-fx${wet ? " is-wet" : ""}${lam ? " is-laminated" : ""}`} aria-hidden="true">
+    {wet && <WetFloor />}
+    {ink && <InkBlots stacks={ink.stacks} />}
+    {burn && <Scorch stacks={burn.stacks} />}
+    {cuts && <PaperCuts stacks={cuts.stacks} />}
+    {tape && <RedTape stacks={tape.stacks} />}
+    {staple && <StapledNote zone={arena.lastZone} />}
+    {lam && <LaminatePouch />}
+    {denied && <StampMark text="DENIED" tone="red" />}
+    {arena.reimburse && <span className="arena-fx-ledger"><Receipt delay={0} /></span>}
+  </span>;
 }

@@ -42,7 +42,10 @@ export class ArenaGame extends Game {
 
   arenaHas(player, flag) { return this.arenaState(player).effects.some((entry) => this.arenaRule(entry.id)?.[flag]); }
 
-  announce(kind, player, fields = {}) { this.emit({ type: "arena-effect", kind, player: player.id, ...fields }); }
+  announce(kind, player, fields = {}) {
+    const rule = fields.effect ? this.arenaRule(fields.effect) ?? this.arenaCatalog.keywords.get(fields.effect) : null;
+    this.emit({ type: "arena-effect", kind, player: player.id, ...(rule ? { effectName: rule.name } : {}), ...fields });
+  }
 
   dropArenaEffect(player, effectId, reason) {
     const state = this.arenaState(player);
