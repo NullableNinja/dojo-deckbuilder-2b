@@ -122,7 +122,51 @@
       "durationUnit": "ownTurns",
       "refreshOnReapply": true,
       "absorbPerStack": 1,
-      "summary": "A filed folder of protection: each stack absorbs 1 damage from Hits (after DEF and Guard), and absorbed stacks are used up. Up to 5 stacks. Lasts until used up or the end of your next turn. Damage at Honor is not absorbed."
+      "summary": "A filed folder of protection: each stack absorbs 1 damage from Hits (after DEF and Guard), and absorbed stacks are used up. Up to 5 stacks. Lasts until used up or the end of your next turn. Damage at Honor is not absorbed.",
+      "buff": true
+    },
+    {
+      "id": "shock",
+      "name": "Static Shock",
+      "alias": "Shock",
+      "icon": "bolt",
+      "tone": "volt",
+      "maxStacks": 1,
+      "duration": 1,
+      "durationUnit": "ownTurns",
+      "refreshOnReapply": true,
+      "joltOnFirstCard": 2,
+      "noTempo": true,
+      "summary": "Charged with static until the end of your next turn: the first card you play on your turn jolts you for 2 HP, and you cannot gain Tempo."
+    },
+    {
+      "id": "haste",
+      "name": "Rush Order",
+      "alias": "Haste",
+      "icon": "rush",
+      "tone": "rush",
+      "maxStacks": 1,
+      "duration": 2,
+      "durationUnit": "rounds",
+      "refreshOnReapply": true,
+      "buff": true,
+      "speedModifier": 2,
+      "drawAtTurnStart": 1,
+      "summary": "A buff. Stamped RUSH for 2 rounds: +2 Speed, and draw 1 extra card at the start of each of your turns."
+    },
+    {
+      "id": "brittle",
+      "name": "Dog-Eared",
+      "alias": "Brittle",
+      "icon": "crease",
+      "tone": "paper",
+      "maxStacks": 2,
+      "duration": 2,
+      "durationUnit": "rounds",
+      "refreshOnReapply": true,
+      "bonusDamageTakenPerStack": 1,
+      "guardPenaltyPerStack": 1,
+      "summary": "Creased and soft for 2 rounds: Hits against you deal +1 damage per stack, and Defense cards you play give 1 less Guard per stack. Stacks to 2."
     }
   ],
   "keywords": [

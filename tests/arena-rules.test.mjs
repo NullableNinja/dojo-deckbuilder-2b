@@ -152,3 +152,47 @@ test("Barrier absorbs Hit damage stack by stack and is used up", () => {
   game.applyArenaEffect(them, "barrier", { stacks: 1 });
   assert.equal(game.arenaEffect(them, "barrier").stacks, 3);
 });
+
+test("Static Shock jolts the first card you play on your turn (once) and takes away Tempo", () => {
+  const session = arena(23);
+  assert.ok(until(session, atYell));
+  const game = session.game; const [me, them] = game.players;
+  me.tempo = true; me.speed = 9;
+  assert.equal(game.hasTempoAdvantage(me, them), true);
+  game.applyArenaEffect(me, "shock");
+  assert.equal(game.hasTempoAdvantage(me, them), false);
+  const first = withAttack(session); const second = withAttack(session);
+  const hp = me.hp;
+  assert.ok(session.act({ type: "play-attack", playerId: 0, cardId: first.instanceId }));
+  session.stepBots();
+  assert.equal(me.hp, hp - 2);
+  const after = me.hp;
+  if (session.legalFor(0).some((action) => action.cardId === second.instanceId)) {
+    session.act({ type: "play-attack", playerId: 0, cardId: second.instanceId }); session.stepBots();
+    assert.equal(me.hp, after, "only the first card jolts");
+  }
+  assert.equal(events(game, "jolt").length, 1);
+});
+
+test("Rush Order gives +2 Speed and an extra card at the start of your turn", () => {
+  const session = arena(29);
+  const game = session.game; const me = game.players[0];
+  const speed = game.currentSpeed(me);
+  game.applyArenaEffect(me, "haste");
+  assert.equal(game.currentSpeed(me), speed + 2);
+  const round = game.round;
+  assert.ok(until(session, (s) => s.game.round > round && s.game.activePlayer === 0 && s.game.phase === "Initiate"));
+  assert.ok(events(game, "rush-draw").length >= 1);
+});
+
+test("Dog-Eared adds +1 damage per stack to Hits and lowers Guard", () => {
+  const session = arena(31);
+  assert.ok(until(session, atYell));
+  const game = session.game; const [me, them] = game.players;
+  me.atk = 6; me.tempo = false;
+  const card = withAttack(session);
+  const plain = previewAttack(game, 0, card.instanceId);
+  game.applyArenaEffect(them, "brittle", { stacks: 2 });
+  assert.equal(previewAttack(game, 0, card.instanceId).damage, plain.damage + 2);
+  assert.equal(game.statusValue(them, "modifyGuard"), -2);
+});

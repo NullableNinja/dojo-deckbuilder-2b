@@ -95,6 +95,7 @@ export class ArenaGame extends Game {
     const base = super.statusValue(player, action, options);
     if (action === "modifySpeed") return base + this.arenaTotal(player, "speedModifier");
     if (action === "modifyDefense") return base + this.arenaTotal(player, "defenseModifier");
+    if (action === "modifyGuard") return base - this.arenaTotal(player, "guardPenaltyPerStack", true);
     return base;
   }
 
@@ -148,6 +149,7 @@ export class ArenaGame extends Game {
       this.announce("zone-locked", attacker, { effect: "stapled", from: action.zone, to: this.lockedZone(attacker) });
       action = { ...action, zone: this.lockedZone(attacker) };
     }
+    if (!action.reversal) this.joltIfCharged(attacker);
     const declared = super.beginAttack(playerId, card, action);
     const cuts = this.arenaTotal(attacker, "selfDamageOnAttackPerStack", true);
     if (declared && cuts > 0) {
@@ -159,6 +161,7 @@ export class ArenaGame extends Game {
 
   resolvePlayedCard(player, card, options = {}) {
     if (card && player.hand.includes(card) && this.arenaHas(player, "voidsNextCard") && this.canPlayCard(player, card)) { this.voidCard(player, card); return { voided: true }; }
+    if (card && player.hand.includes(card) && this.canPlayCard(player, card)) this.joltIfCharged(player);
     return super.resolvePlayedCard(player, card, options);
   }
 
@@ -166,6 +169,30 @@ export class ArenaGame extends Game {
   markComboAttack(player, card, zone, flags = {}) {
     super.markComboAttack(player, card, zone, flags);
     if (!flags.reversal && zone) this.arenaState(player).lastZone = zone;
+  }
+
+  /** Static Shock: the first card played on your own turn jolts you. Called before an Attack or card resolves. */
+  joltIfCharged(player) {
+    const jolt = this.arenaTotal(player, "joltOnFirstCard");
+    if (!jolt || player.id !== this.activePlayer) return;
+    const state = this.arenaState(player);
+    const key = `${this.round}:${this.turns}`;
+    if (state.joltedTurn === key) return;
+    state.joltedTurn = key;
+    player.hp = Math.max(0, player.hp - jolt);
+    this.announce("jolt", player, { effect: "shock", amount: jolt });
+  }
+
+  /** Static Shock takes away Tempo. */
+  hasTempoAdvantage(fighter, opposing) {
+    return !this.arenaHas(fighter, "noTempo") && super.hasTempoAdvantage(fighter, opposing);
+  }
+
+  /** Rush Order: an extra card at the start of your turn. */
+  startTurn(player) {
+    super.startTurn(player);
+    const extra = this.arenaTotal(player, "drawAtTurnStart");
+    if (extra > 0 && player.hp > 0) { this.draw(player, extra); this.announce("rush-draw", player, { effect: "haste", amount: extra }); }
   }
 
   // ---- Prices -----------------------------------------------------------------------------------------------------
@@ -181,6 +208,10 @@ export class ArenaGame extends Game {
   characterEvent(player, type, event = {}) {
     const result = super.characterEvent(player, type, event);
     if (!player) return result;
+    if (type === "damageIncoming" && result.damage > 0) {
+      const crease = this.arenaTotal(player, "bonusDamageTakenPerStack", true);
+      if (crease > 0) { result.damage += crease; this.announce("crease", player, { effect: "brittle", amount: crease }); }
+    }
     if (type === "damageIncoming" && result.damage > 0) {
       const barrier = this.arenaState(player).effects.find((entry) => this.arenaRule(entry.id)?.absorbPerStack);
       if (barrier) {
