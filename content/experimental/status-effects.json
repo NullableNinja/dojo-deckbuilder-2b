@@ -1,76 +1,71 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "status": "experimental",
-  "description": "Draft status effects for the Test Arena (#arena). These are NOT part of the printed rules or the canonical engine: they exist so the owner can see and feel the effects before any card uses them. Every effect is a paper-world prop (laminate, scorch, ink, tape, staples, stamps) rather than fantasy magic. Each has a generic alias (freeze, burn, poison) for talking about it. The numbers are starting points to be tuned in the simulator. Promoting an effect means moving it into content/dojo-game.json plus a ruling.",
-  "round": {
-    "tickAt": "honor",
-    "focusRegen": 2,
-    "summary": "Round effects resolve in the Honor phase, after everyone has acted, in the order listed below. Fighters regain 2 Focus at Honor (up to their maximum)."
+  "description": "Arena rule variant: draft status effects layered on the real Quick Duel rules (engine/arena-rules.mjs). Every effect is a paper-world prop (laminate, scorch, ink, staples, red tape, stamps) rather than fantasy magic, and each keeps a generic alias. Nothing here is part of the printed rules or normal play; the Test Arena (#arena) plays real matches with it switched on so the effects can be judged in combat. Promoting an effect means moving it into content/dojo-game.json, a card that applies it, and a ruling.",
+  "timing": {
+    "rounds": "Counted at Honor: an effect that lasts 2 rounds is gone at the second Honor after it lands.",
+    "ownTurns": "Counted at the end of the affected fighter's own turn (Hide): 1 means 'until the end of its next turn', like Witness Protection."
   },
   "effects": [
     {
       "id": "burn", "name": "Scorch", "alias": "Burn", "icon": "flame", "tone": "ember",
-      "maxStacks": 3, "duration": 2, "refreshOnReapply": true,
-      "tick": { "damagePerStack": 1, "ignoresDefense": true },
+      "maxStacks": 3, "duration": 2, "durationUnit": "rounds", "refreshOnReapply": true,
+      "honorDamagePerStack": 1,
       "thaws": true,
-      "summary": "Lose 1 HP per stack at Honor (ignores DEF). Stacks to 3, lasts 2 rounds, refreshes when applied again. Scorching melts Laminate."
+      "summary": "At each Honor, lose 1 HP per stack; DEF, Guard and Armor do not help. Stacks to 3, lasts 2 rounds and refreshes when applied again. Scorch melts Laminate."
     },
     {
       "id": "poison", "name": "Ink Blot", "alias": "Poison", "icon": "drop", "tone": "violet",
       "maxStacks": 4, "duration": null, "decayPerRound": 1,
-      "tick": { "damagePerStack": 1, "ignoresDefense": true },
+      "honorDamagePerStack": 1,
       "healingPenalty": 1,
-      "summary": "Lose 1 HP per stack at Honor, then the ink fades by one stack. Stacks to 4, so 3 stacks cost 3 + 2 + 1 = 6 HP. A smudged fighter recovers 1 less HP from healing."
+      "summary": "At each Honor, lose 1 HP per stack, then the ink fades by one stack (3 stacks cost 3 + 2 + 1 = 6 HP). Stacks to 4. A smudged fighter recovers 1 less HP from healing."
     },
     {
-      "id": "freeze", "name": "Laminated", "alias": "Freeze", "icon": "snowflake", "tone": "ice",
-      "maxStacks": 1, "duration": 1,
-      "blocks": ["attack", "brace"],
-      "speedPenalty": 2,
-      "shatter": { "bonusDamage": 2 },
+      "id": "freeze", "name": "Laminated", "alias": "Freeze", "icon": "laminate", "tone": "ice",
+      "maxStacks": 1, "duration": 1, "durationUnit": "ownTurns",
+      "blocksAttacks": true, "blocksDefense": true,
+      "speedModifier": -2,
+      "tearBonusDamage": 2,
       "graceRounds": 1,
-      "summary": "Sealed in a laminate pouch: cannot Attack or Brace, -2 Speed. The first Hit rips the pouch open for +2 damage and ends it. Otherwise the seal gives way at Honor. After that the fighter cannot be laminated again for 1 round."
+      "summary": "Sealed in a laminate pouch until the end of your next turn: you cannot declare Attacks or play Defense cards, and your Speed is 2 lower. The first Hit you take tears the pouch: +2 damage, and Laminate ends. When it ends you cannot be laminated again until after the next Honor."
     },
     {
       "id": "stapled", "name": "Stapled", "icon": "staple", "tone": "steel",
-      "maxStacks": 1, "duration": 2,
+      "maxStacks": 1, "duration": 2, "durationUnit": "rounds", "refreshOnReapply": true,
       "zoneLock": true,
-      "summary": "Pinned to one spot: your Attacks must hit the same zone (High, Mid or Low) as your last Attack. Lasts 2 rounds."
+      "summary": "Pinned in place for 2 rounds: your Attacks must be declared in the zone of your last Attack. Attacks that cannot reach that zone cannot be declared."
     },
     {
       "id": "redtape", "name": "Red Tape", "icon": "tape", "tone": "ember",
-      "maxStacks": 2, "duration": 2, "refreshOnReapply": true,
-      "costPenaltyPerStack": 1,
-      "summary": "Everything takes longer: each card you play costs 1 more Focus per stack. Stacks to 2, lasts 2 rounds."
+      "maxStacks": 2, "duration": 2, "durationUnit": "rounds", "refreshOnReapply": true,
+      "focusTaxPerStack": 1,
+      "summary": "Paperwork slows everything: Market purchases and learning a Combo cost 1 more Focus per stack. Stacks to 2, lasts 2 rounds."
     },
     {
       "id": "denied", "name": "Denied", "icon": "stamp", "tone": "ember",
       "maxStacks": 1, "duration": null,
       "voidsNextCard": true,
-      "summary": "The next card you play is stamped DENIED and does nothing (it still costs Focus). The stamp is used up when it lands."
+      "summary": "The next card you play on your turn (an Attack, Kata, Equipment or Consumable) is stamped DENIED: it goes to your discard pile and does nothing. The stamp is used up."
     },
     {
       "id": "papercut", "name": "Paper Cut", "icon": "cut", "tone": "rose",
-      "maxStacks": 3, "duration": 3, "refreshOnReapply": true,
+      "maxStacks": 3, "duration": 3, "durationUnit": "rounds", "refreshOnReapply": true,
       "selfDamageOnAttackPerStack": 1,
-      "summary": "Stings whenever you swing: each time you Attack, lose 1 HP per cut. Up to 3 cuts, lasting 3 rounds."
+      "summary": "Stings whenever you swing: each time you declare an Attack, lose 1 HP per cut. Up to 3 cuts, lasting 3 rounds."
     },
     {
       "id": "wetfloor", "name": "Wet Floor", "icon": "sign", "tone": "brass",
-      "maxStacks": 1, "duration": 2,
-      "speedPenalty": 2, "defensePenalty": 1,
-      "summary": "Slippery footing: -2 Speed and -1 DEF for 2 rounds."
+      "maxStacks": 1, "duration": 2, "durationUnit": "rounds", "refreshOnReapply": true,
+      "speedModifier": -2, "defenseModifier": -1,
+      "summary": "Slippery footing for 2 rounds: Speed 2 lower and DEF 1 lower."
     }
   ],
   "keywords": [
     {
       "id": "reimburse", "name": "Reimburse", "alias": "Lifesteal", "icon": "receipt", "tone": "rose",
       "amount": 1, "minDamage": 2, "capPerRound": 1,
-      "summary": "When an Attack with this Hits for at least 2 HP, file a receipt and recover 1 HP (once per round, all sources combined). Never above Max HP. Armor-absorbed and prevented damage does not count."
+      "summary": "A Weapon keyword. When one of your Attacks Hits for 2 or more, file a receipt: recover 1 HP, once per round, never above Max HP. Blocked, prevented and Armor-absorbed damage does not count."
     }
-  ],
-  "actions": {
-    "strike": { "focusCost": 1, "zones": ["High", "Mid", "Low"] },
-    "brace": { "focusCost": 1, "defenseBonus": 3, "summary": "Play a Defense: +3 DEF against the next Hit this round." }
-  }
+  ]
 }

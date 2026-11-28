@@ -1,0 +1,14 @@
+{
+  "catalogId": "ARENA-DUMMY",
+  "id": "ARENA-DUMMY",
+  "name": "Dummy",
+  "cardType": "Character",
+  "subtype": "Fighter",
+  "deck": "Character Deck",
+  "stats": { "ATK": 3, "DEF": 2, "Speed": 3 },
+  "rulesText": "No ability. Holds still, takes notes, files no complaints.",
+  "flavorText": "A flour sack on a stick, a borrowed helmet, a wooden shield and a wooden sword. The Department's favourite volunteer.",
+  "tags": [],
+  "details": {},
+  "image": null
+}

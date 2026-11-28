@@ -5,6 +5,7 @@ import { createModeGame } from "../engine/game-factory.mjs";
 import { clashData, type EngineCard } from "./clash-engine.ts";
 import { difficultyPolicy } from "../engine/difficulty.mjs";
 import { tableCardPool } from "./career.ts";
+import arenaEffects from "../content/experimental/status-effects.json" with { type: "json" };
 
 export type EngineOption = { id: string; label: string };
 export type EnginePending = { kind: string; playerId: number; attackerId?: number; targetPlayerId?: number; cardId?: string; zone?: string; options: EngineOption[]; [key: string]: unknown };
@@ -45,6 +46,10 @@ export type SessionSetup = {
   table?: TableOptions;
   /** How well computer seats play: "student" | "certified" | "master" (engine/difficulty.mjs). */
   difficulty?: string;
+  /** "arena": the real rules plus the draft status effects (engine/arena-rules.mjs), for the Test Arena. */
+  variant?: "arena";
+  /** Fighter cards that are not in the catalog (the Test Arena's Dummy), by catalog ID. */
+  characterCards?: EngineCard[];
 };
 /** `cardPool`: the Catalog IDs this table plays with (the seated players' collections); null is the full catalog. */
 export type TableOptions = { tempo?: boolean; locations?: boolean; balancedMarket?: boolean; houseRules?: string[]; cardPool?: string[] | null };
@@ -55,7 +60,9 @@ export type BotPolicy = { chooseAction(game: EngineGame, legal: EngineAction[]):
 const VISIBLE_BEATS = new Set(["attack", "knockout", "elimination", "promotion", "victory", "scene-change", "combo-completed", "purchase"]);
 const defaultPolicy: BotPolicy = { chooseAction: (game, legal) => game.defaultAction(legal), chooseChoice: (game) => game.defaultChoice() };
 
-function characterFor(catalogId: string) {
+function characterFor(catalogId: string, extra: EngineCard[] = []) {
+  const custom = extra.find((card) => card.catalogId === catalogId);
+  if (custom) return custom;
   const cards = clashData().cards as EngineCard[];
   const card = cards.find((entry) => entry.cardType === "Character" && (entry.catalogId === catalogId || entry.id === catalogId));
   if (!card) throw new Error(`Unknown fighter ${catalogId}`);
@@ -93,9 +100,10 @@ export class EngineSession {
       seed: setup.seed,
       mode: setup.mode,
       players: seats,
-      ...(setup.rosters ? { rosters: setup.rosters } : { characters: setup.fighters.map(characterFor) }),
+      ...(setup.rosters ? { rosters: setup.rosters } : { characters: setup.fighters.map((id) => characterFor(id, setup.characterCards)) }),
       strategies: Array.from({ length: seats }, () => "balanced"),
       ...(this.setup.table ? { table: this.setup.table } : {}),
+      ...(setup.variant === "arena" ? { variant: "arena", arenaEffects } : {}),
     }) as unknown as EngineGame;
     this.game.advanceAutomaticEvents();
   }
